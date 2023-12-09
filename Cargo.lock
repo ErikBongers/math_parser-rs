@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "TestRover"
+name = "test_rover"
 version = "0.1.0"

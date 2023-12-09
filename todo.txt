@@ -1,0 +1,2 @@
+* add tests to cursor.rs
+  > move the tests from main.rs.
