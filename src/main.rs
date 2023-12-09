@@ -1,7 +1,7 @@
-mod cursor;
+mod tokenizer;
 
 use std::fs;
-use crate::cursor::Cursor;
+use tokenizer::cursor::Cursor;
 
 fn main() {
     let file_path = r"data/source1.txt";
@@ -27,4 +27,5 @@ fn parse(txt : &str) {
     println!("first: {0}", c);
     let c = cur.peek(); // next char.
     println!("first: {0}", c);
+    let tok = cur.next_token();
 }
