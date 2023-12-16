@@ -6,6 +6,7 @@ pub struct Cursor<'a> {
 
 pub(crate) const EOF_CHAR: char = '\0';
 
+// https://doc.rust-lang.org/beta/nightly-rustc/rustc_lexer/index.html
 impl<'a> Cursor<'a> {
     pub fn new (text: &str) -> Cursor {
         Cursor {

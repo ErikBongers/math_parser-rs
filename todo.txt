@@ -1,2 +1,20 @@
 * add tests to cursor.rs
   > move the tests from main.rs.
+
+* position?
+  - indexes are BytePos
+  - to slice: &[byte_start..byte_end] //exclusive end.
+  - Cursor.advance_token() returns
+    - Token(Kind, len) => len = ByteLen!
+    > how is identifier picked up if the string is not stored in the token?
+    - BytePos to &&str: https://doc.rust-lang.org/beta/nightly-rustc/src/rustc_parse/lexer/mod.rs.html#543
+
+  > add it to cursor?
+    > indexing is not possible
+    > therefor the iterator has to count all chars as you 'eat' each char.
+    > also count the newlines.
+    > rust uses BytePos.
+      > it adds token.len to the total pos.
+      As the chars.next() 'eats' chars, the iterator as_str() returns the REMAINING str!
+      str.len() -> bytes!!!
+  > write tests for this.

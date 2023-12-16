@@ -14,8 +14,28 @@ fn main() {
     parse(&txt);
 }
 
+struct BytePos(i32);
+
+impl Into<i32> for BytePos {
+    fn into(self) -> i32 {
+        self.0
+    }
+}
+
+fn show_pos(poss: &BytePos) {
+    println!("BytePos: {0}", poss.0);
+}
 fn parse(txt : &str) {
     println!("{0}", txt);
+
+    let poz = BytePos(123);
+    let i: i32 = 321;
+    show_pos(&poz);
+    //show_pos(&i); //ERROR
+
+    let slice = &txt[53..56];
+    println!("slice: {0}", slice);
+
     let mut cur = Cursor::new(txt);
     let c = cur.peek();
     println!("first: {0}", c);
