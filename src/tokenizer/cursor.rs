@@ -1,5 +1,4 @@
 use std::str::Chars;
-use crate::tokenizer::token_type::TokenType::*;
 #[derive(Clone)]
 pub struct Cursor<'a> {
     pub text: &'a str,
@@ -10,7 +9,7 @@ pub struct Cursor<'a> {
     pub is_beginning_of_text: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Range {
     pub source_index: u8,
     pub start :usize,
@@ -19,8 +18,8 @@ pub struct Range {
 
 #[derive(Clone)]
 pub struct Number {
-    significand: f64,
-    exponent: i32,
+    pub significand: f64,
+    pub exponent: i32,
     // Unit unit;
     // NumFormat numFormat = NumFormat::DEC;
     // std::vector<Error> errors;
@@ -66,7 +65,7 @@ impl<'a> Cursor<'a> {
     }
 
     pub fn eat_whitespace(&mut self)  {
-        self.newline_found = self.is_beginning_of_text;
+        self.newline_found = self.is_beginning_of_text; //this will initialy 'reset' the newline_found value to true, since you always start at a newline.
         while self.is_whitespace(self.peek()) {
             let c = self.next();
             if let Some('\n') = c {

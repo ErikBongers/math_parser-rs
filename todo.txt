@@ -12,9 +12,6 @@
   > `a+b` ==> executed and the result is output.
   > !`a+b` ==> executed and the code is output.
 
-
-* clone the cursor in the PeekingTokenizer?
-
 * CodeMirror uses CHARpos for multibytechars!
   > convert bytePos to charPos.
   > use the generated line indexes and multibytechar indexes.

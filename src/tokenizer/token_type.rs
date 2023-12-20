@@ -1,6 +1,6 @@
 enum NumFormat { DEC, BIN, HEX }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
     Whitespace,
     BracOpen,

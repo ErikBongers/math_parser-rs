@@ -5,13 +5,13 @@ use crate::tokenizer::token_type::TokenType::*;
 pub mod token_type;
 pub mod cursor;
 pub mod indexing;
+mod peeking_tokenizer;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Token {
     pub kind: TokenType,
     pub range :Range,
 }
-
 impl Token {
     fn new(kind: TokenType, source_index :u8, start: usize, end :usize) -> Token {
         Token { kind, range: Range { source_index: 0, start, end } }
@@ -22,7 +22,7 @@ impl Cursor<'_> {
     pub fn next_token(&mut self) -> Token {
         self.eat_whitespace();
         let start_pos = self.get_pos();
-        self.is_beginning_of_text = false; // clear this once per next_token insted of once per next() char, for performance.
+        self.is_beginning_of_text = false; // clear this once per next_token instead of once per next(), for performance.
         let first_char = match self.next() {
             None => return Token::new(Eot, 0, 0, 0),
             Some(c) => c
@@ -141,7 +141,7 @@ impl Cursor<'_> {
                 self.next(); //eat end quote
                 QuotedStr
             },
-            c @ ('0'..='9' | '.') => {
+            c @ ('0'..='9') => {
                 self.number = self.parse_number(c);
                 Number
             },
