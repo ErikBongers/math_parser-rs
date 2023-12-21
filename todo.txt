@@ -21,6 +21,14 @@
 * add tests to cursor.rs
   > move the tests from main.rs.
 
+* AST
+  - trait AstNode to cast: https://github.com/rust-lang/rust-analyzer/blob/337e2abb670d403ae05609c5f1aafcffbd3369a6/crates/syntax/src/ast.rs#L43
+  - downcasting a trait object to a specific (exact and original) object : https://stackoverflow.com/questions/33687447/how-to-get-a-reference-to-a-concrete-type-from-a-trait-object?rq=3
+
+
+
+
+
 * Span to LinePos:
   - https://doc.rust-lang.org/beta/nightly-rustc/src/rustc_span/source_map.rs.html#509
   - lookup_char_pos(BytePos0 -> Loc: https://doc.rust-lang.org/beta/nightly-rustc/src/rustc_span/source_map.rs.html#402

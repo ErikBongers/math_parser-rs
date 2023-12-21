@@ -8,3 +8,5 @@ edition = "2021"
 [dependencies]
 matches = "0.1.10"
 unicode-xid = "0.2.4"
+cast_any = { path = "../cast_any_macro" }
+cast_any_derive = { path = "../cast_any_macro/cast_any_macro_derive" }
