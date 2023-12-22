@@ -1,11 +1,15 @@
 mod tokenizer;
+mod parser;
 
-use cast_any_derive::CastAny;
 use std::any::{Any, TypeId};
 use std::fs;
 use cast_any::CastAny;
 use tokenizer::cursor::Cursor;
+use crate::parser::nodes::{BinExpr, ConstExpr, Node, NodeData};
+use crate::tokenizer::cursor::{Number, Range};
 use crate::tokenizer::indexing::FileIndex;
+use crate::tokenizer::Token;
+use crate::tokenizer::token_type::TokenType;
 use crate::tokenizer::token_type::TokenType::Eot;
 
 fn main() {
@@ -70,45 +74,31 @@ fn parse() {
 }
 
 
-//--- TEST Dereferencing
-
-pub trait Node: CastAny {
-
-}
-
-#[derive(CastAny)]
-pub struct BinExpr {
-    pub expr1: Box<dyn Node>,
-    pub expr2: Box<dyn Node>,
-}
-
-impl Node for BinExpr {}
-
-#[derive(CastAny)]
-pub struct ConstExpr {
-    pub value: i32,
-}
-
-impl Node for ConstExpr {}
 
 // unstable as of 12/2023
 // const T_CONST_EXPR: TypeId = TypeId::of::<ConstExpr>();
 // const T_BIN_EXPR: TypeId = TypeId::of::<BinExpr>();
 
 fn test_deref() {
-    let mut nod1 = BinExpr {
-        expr1: Box::new(ConstExpr { value: 12 }),
-        expr2: Box::new(ConstExpr { value: 34 }) };
+    let nod1 = BinExpr {
+        expr1: Box::new(ConstExpr { value: Number{ significand: 12.0, exponent: 0}, node_data: NodeData { error: 0, unit: 0} }),
+        op: Token { kind: TokenType::Plus, range: Range { source_index: 0, start: 0, end: 0}},
+        expr2: Box::new(ConstExpr { value: Number{ significand: 34.0, exponent: 0} , node_data: NodeData { error: 0, unit: 0}}),
+        node_data: NodeData { error: 0, unit : 0},
+    };
 
     let mut nod1 = BinExpr {
         expr1: Box::new(nod1),
-        expr2: Box::new(ConstExpr { value: 56 }) };
+        op: Token { kind: TokenType::Plus, range: Range { source_index: 0, start: 0, end: 0 } },
+        expr2: Box::new(ConstExpr { value: Number { significand: 56.0, exponent: 0 }, node_data: NodeData { error: 0, unit: 0 } }),
+        node_data: NodeData { error: 0, unit: 0 },
+    };
 
     let nod1 = nod1.as_any_mut().downcast_mut::<BinExpr>().unwrap();
 
     resolve_node(&mut nod1.expr1);
     resolve_node(&mut nod1.expr2);
-    println!("{0}", nod1.expr2.as_any().downcast_ref::<ConstExpr>().unwrap().value);
+    println!("{0}", nod1.expr2.as_any().downcast_ref::<ConstExpr>().unwrap().value.significand);
 }
 
 fn resolve_node(expr: &mut Box<dyn Node>) {
@@ -116,7 +106,7 @@ fn resolve_node(expr: &mut Box<dyn Node>) {
         t if TypeId::of::<ConstExpr>() == t => {
             let expr = expr.as_any_mut().downcast_mut::<ConstExpr>().unwrap();
             resolve_const_expr(expr);
-            println!("value: {0}", expr.as_any().downcast_ref::<ConstExpr>().unwrap().value)
+            println!("value: {0}", expr.as_any().downcast_ref::<ConstExpr>().unwrap().value.significand)
         },
         t if TypeId::of::<BinExpr>() == t => {
             // resolve_bin_expr(expr.as_any_mut().downcast_ref::<BinExpr>().unwrap());
@@ -132,7 +122,7 @@ fn resolve_node(expr: &mut Box<dyn Node>) {
 
 fn resolve_const_expr(const_expr: &mut ConstExpr) {
     println!("It's a ConstExpr!");
-    const_expr.value = -const_expr.value;
+    const_expr.value.significand = -const_expr.value.significand;
 }
 
 fn resolve_bin_expr(_bin_expr: &BinExpr) {

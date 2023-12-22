@@ -7,7 +7,7 @@ pub struct PeekingTokenizer<'a> {
 }
 
 impl<'a> PeekingTokenizer<'a> {
-    fn new(text: &'a str) -> Self {
+    pub fn new(text: &'a str) -> Self {
         let mut cur =  Cursor::new(text);
         let token = cur.next_token();
         PeekingTokenizer {
@@ -16,11 +16,11 @@ impl<'a> PeekingTokenizer<'a> {
         }
     }
 
-    fn peek(&self) -> Token {
+    pub fn peek(&self) -> Token {
         self.peeked_token.clone()
     }
 
-    fn peek_second(&mut self) -> Token {
+    pub fn peek_second(&mut self) -> Token {
         //store state.
         let old_cur = self.cur.clone();
         let old_token = self.peeked_token.clone();
@@ -34,13 +34,13 @@ impl<'a> PeekingTokenizer<'a> {
 
         t
     }
-    fn next(&mut self)  -> Token {
+    pub fn next(&mut self)  -> Token {
         let t = self.peeked_token.clone();
         self.peeked_token = self.cur.next_token();
         return t;
     }
 
-    fn get_number(&self) -> Number {
+    pub fn get_number(&self) -> Number {
         self.cur.number.clone()
     }
 }

@@ -1,3 +1,5 @@
+* all lists that have values referenced everywhere like units or so: Vec<Rc<Unit>>
+
 * rethink echo comments
   > only allowed on a separate line and in between statements!
   > cursor needs to  mark when a newline has begun.

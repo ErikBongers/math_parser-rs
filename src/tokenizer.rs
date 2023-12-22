@@ -5,7 +5,7 @@ use crate::tokenizer::token_type::TokenType::*;
 pub mod token_type;
 pub mod cursor;
 pub mod indexing;
-mod peeking_tokenizer;
+pub mod peeking_tokenizer;
 
 #[derive(Debug, Clone)]
 pub struct Token {
