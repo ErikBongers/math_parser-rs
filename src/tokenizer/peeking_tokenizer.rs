@@ -16,8 +16,8 @@ impl<'a> PeekingTokenizer<'a> {
         }
     }
 
-    pub fn peek(&self) -> Token {
-        self.peeked_token.clone()
+    pub fn peek(&self) -> &Token {
+        &self.peeked_token
     }
 
     pub fn peek_second(&mut self) -> Token {
@@ -55,12 +55,12 @@ mod tests {
         //start with peeking '+'
         let peek2 = tok.peek_second();
         // peek 111
-        let t1 = tok.peek();
+        let t1 = tok.peek().clone();
         assert_eq!(t1.kind, tok.next().kind);
         let n1 = tok.get_number();
         assert_eq!(n1.significand, 111.0);
         //peek '+'
-        let t2 = tok.peek();
+        let t2 = tok.peek().clone();
         assert_eq!(t2.kind, tok.next().kind);
         //peek 333
         let t3 = tok.peek();

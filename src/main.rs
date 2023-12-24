@@ -1,5 +1,6 @@
 mod tokenizer;
 mod parser;
+mod resolver;
 
 use std::any::{Any, TypeId};
 use std::fs;
@@ -8,6 +9,7 @@ use tokenizer::cursor::Cursor;
 use crate::parser::nodes::{BinExpr, ConstExpr, Node, NodeData};
 use crate::tokenizer::cursor::{Number, Range};
 use crate::tokenizer::indexing::FileIndex;
+use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
 use crate::tokenizer::Token;
 use crate::tokenizer::token_type::TokenType;
 use crate::tokenizer::token_type::TokenType::Eot;
@@ -15,6 +17,17 @@ use crate::tokenizer::token_type::TokenType::Eot;
 fn main() {
     // parse(&txt);
     test_deref();
+    test_parser();
+}
+
+fn test_parser() {
+    let txt = "2 + 3 * 4";
+    let mut tok = PeekingTokenizer::new(txt);
+    let mut code_block = crate::parser::CodeBlock { statements: Vec::new()};
+    let mut parser = crate::parser::Parser::new(&mut tok, &mut code_block);
+    parser.parse();
+    let stmt = parser.code_block.statements.first().expect("There should be a statement here.");
+    parser::print_nodes(&stmt.node, 0);
 }
 
 struct BytePos(i32);
@@ -96,35 +109,8 @@ fn test_deref() {
 
     let nod1 = nod1.as_any_mut().downcast_mut::<BinExpr>().unwrap();
 
-    resolve_node(&mut nod1.expr1);
-    resolve_node(&mut nod1.expr2);
+    // resolve_node(&mut nod1.expr1);
+    // resolve_node(&mut nod1.expr2);
     println!("{0}", nod1.expr2.as_any().downcast_ref::<ConstExpr>().unwrap().value.significand);
 }
 
-fn resolve_node(expr: &mut Box<dyn Node>) {
-    match expr.as_any().type_id() {
-        t if TypeId::of::<ConstExpr>() == t => {
-            let expr = expr.as_any_mut().downcast_mut::<ConstExpr>().unwrap();
-            resolve_const_expr(expr);
-            println!("value: {0}", expr.as_any().downcast_ref::<ConstExpr>().unwrap().value.significand)
-        },
-        t if TypeId::of::<BinExpr>() == t => {
-            // resolve_bin_expr(expr.as_any_mut().downcast_ref::<BinExpr>().unwrap());
-            let bin_expr = expr.as_any_mut().downcast_mut::<BinExpr>().unwrap();
-            resolve_node(&mut bin_expr.expr1);
-            resolve_node(&mut bin_expr.expr2);
-        },
-        _ => {
-            println!("It's a dunno...");
-        }
-    }
-}
-
-fn resolve_const_expr(const_expr: &mut ConstExpr) {
-    println!("It's a ConstExpr!");
-    const_expr.value.significand = -const_expr.value.significand;
-}
-
-fn resolve_bin_expr(_bin_expr: &BinExpr) {
-    println!("It's a BinExpr!")
-}
