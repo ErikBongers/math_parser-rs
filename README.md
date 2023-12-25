@@ -1,3 +1,6 @@
+12/2023: CURRENTLY CONVERTING FROM CPP TO RUST.
+The online project will still be using the cpp code base.
+
 [![experimental](http://badges.github.io/stability-badges/dist/experimental.svg)](http://github.com/badges/stability-badges)
 # MathParser
 ## Introduction
