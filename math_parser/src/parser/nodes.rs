@@ -1,5 +1,5 @@
 use std::any::Any;
-use cast_any::CastAny;
+use macros::CastAny;
 use crate::tokenizer::cursor::Number;
 use crate::tokenizer::Token;
 

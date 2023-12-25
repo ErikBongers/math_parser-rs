@@ -1,5 +1,5 @@
 use std::any::{Any, TypeId};
-use cast_any::CastAny;
+use macros::CastAny;
 use crate::parser::nodes::{BinExpr, ConstExpr, Node, NodeData, NoneExpr, Statement};
 use crate::tokenizer::cursor::Range;
 use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;

@@ -1,5 +1,5 @@
 [package]
-name = "test_rover"
+name = "math_parser"
 version = "0.1.0"
 edition = "2021"
 
@@ -8,7 +8,6 @@ edition = "2021"
 [dependencies]
 matches = "0.1.10"
 unicode-xid = "0.2.4"
-macros = { path = "macros" }
+macros = { path = "../macros" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-math_parser = { path = "math_parser" }

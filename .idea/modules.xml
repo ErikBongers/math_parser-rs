@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/test_rover.iml" filepath="$PROJECT_DIR$/.idea/test_rover.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/math_parser-rs.iml" filepath="$PROJECT_DIR$/.idea/math_parser-rs.iml" />
     </modules>
   </component>
 </project>
