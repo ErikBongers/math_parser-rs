@@ -41,6 +41,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "math_parser-rs"
+version = "0.1.0"
+dependencies = [
+ "macros",
+ "matches",
+ "math_parser",
+ "serde",
+ "serde_json",
+ "unicode-xid",
+]
+
+[[package]]
 name = "proc-macro2"
 version = "1.0.71"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -104,18 +116,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
-]
-
-[[package]]
-name = "test_rover"
-version = "0.1.0"
-dependencies = [
- "macros",
- "matches",
- "math_parser",
- "serde",
- "serde_json",
- "unicode-xid",
 ]
 
 [[package]]
