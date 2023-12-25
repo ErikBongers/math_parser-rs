@@ -1,12 +1,11 @@
 use std::any::Any;
 use cast_any::CastAny;
-use cast_any_derive::CastAny;
 use crate::tokenizer::cursor::Number;
 use crate::tokenizer::Token;
 
 pub struct NodeData {
-    pub(crate) error: i32, //TODO: Rc<Error>, and store all parser errors in a vec in the Parser: less copying and all errors can be merged with Resolver in one go.
-    pub(crate) unit: i32, //TODO: struct Unit{ range, id: string!!, ...unit_tree in case of complex unit }
+    pub error: i32, //TODO: Rc<Error>, and store all parser errors in a vec in the Parser: less copying and all errors can be merged with Resolver in one go.
+    pub unit: i32, //TODO: struct Unit{ range, id: string!!, ...unit_tree in case of complex unit }
 }
 pub trait Node: CastAny {
 }

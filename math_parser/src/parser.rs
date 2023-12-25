@@ -4,21 +4,32 @@ use crate::parser::nodes::{BinExpr, ConstExpr, Node, NodeData, NoneExpr, Stateme
 use crate::tokenizer::cursor::Range;
 use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
 use crate::tokenizer::token_type::TokenType;
+use crate::resolver::scope::Scope;
 
 pub mod nodes;
 
-pub(crate) struct CodeBlock {
-    pub(crate) statements: Vec<Statement>
+pub struct CodeBlock<'a> {
+    pub statements: Vec<Statement>,
+    pub scope: &'a Scope<'a>
 }
 
-pub(crate) struct Parser<'a> {
+impl<'a> CodeBlock<'a> {
+    pub fn new(scope: &'a Scope<'_>) -> Self {
+        CodeBlock {
+            scope,
+            statements: Vec::new()
+        }
+    }
+}
+
+pub struct Parser<'a> {
     tok: &'a mut PeekingTokenizer<'a>,
     statement_start: Range,
-    pub(crate) code_block: &'a mut CodeBlock,
+    pub code_block: &'a mut CodeBlock<'a>,
 }
 
 impl<'a> Parser<'a> {
-    pub(crate) fn new (tok: &'a mut PeekingTokenizer<'a>, code_block: &'a mut CodeBlock) -> Self {
+    pub fn new (tok: &'a mut PeekingTokenizer<'a>, code_block: &'a mut CodeBlock<'a>) -> Self {
         Parser {
             tok,
             code_block,
@@ -26,7 +37,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub(crate) fn parse(&mut self) {
+    pub fn parse(&mut self) {
         while self.tok.peek().kind != TokenType::Eot {
             let stmt = self.parse_statement();
             self.code_block.statements.push(stmt);
@@ -109,6 +120,8 @@ pub fn print_nodes(expr: &Box<dyn Node>, indent: usize) {
 mod tests {
     use crate::parser::{CodeBlock, Parser};
     use crate::parser::nodes::{BinExpr, ConstExpr};
+    use crate::resolver::globals::Globals;
+    use crate::resolver::scope::Scope;
     use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
     use crate::tokenizer::token_type::TokenType;
 
@@ -116,7 +129,9 @@ mod tests {
     fn test_math_expression() {
         let txt = "2 + 3 * 4";
         let mut tok = PeekingTokenizer::new(txt);
-        let mut code_block = CodeBlock { statements: Vec::new()};
+        let mut globals = Globals::new();
+        let scope = Scope::new(&mut globals);
+        let mut code_block = CodeBlock::new(&scope);
         let mut parser = Parser::new(&mut tok, &mut code_block);
         parser.parse();
         let stmt = parser.code_block.statements.first().expect("There should be a statement here.");

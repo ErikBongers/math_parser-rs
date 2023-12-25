@@ -1,33 +1,36 @@
-mod tokenizer;
-mod parser;
-mod resolver;
-
-use std::any::{Any, TypeId};
 use std::fs;
 use cast_any::CastAny;
-use tokenizer::cursor::Cursor;
-use crate::parser::nodes::{BinExpr, ConstExpr, Node, NodeData};
-use crate::tokenizer::cursor::{Number, Range};
-use crate::tokenizer::indexing::FileIndex;
-use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
-use crate::tokenizer::Token;
-use crate::tokenizer::token_type::TokenType;
-use crate::tokenizer::token_type::TokenType::Eot;
+use math_parser::tokenizer::peeking_tokenizer::PeekingTokenizer;
+use math_parser::parser::{CodeBlock, Parser};
+use math_parser::parser::nodes::{BinExpr, ConstExpr, NodeData};
+use math_parser::resolver::globals::Globals;
+use math_parser::resolver::Resolver;
+use math_parser::resolver::scope::Scope;
+use math_parser::tokenizer::cursor::{Cursor, Number, Range};
+use math_parser::tokenizer::indexing::FileIndex;
+use math_parser::tokenizer::Token;
+use math_parser::tokenizer::token_type::TokenType;
+use math_parser::tokenizer::token_type::TokenType::Eot;
 
 fn main() {
     // parse(&txt);
     test_deref();
-    test_parser();
+    test_resolver();
 }
 
-fn test_parser() {
-    let txt = "2 + 3 * 4";
-    let mut tok = PeekingTokenizer::new(txt);
-    let mut code_block = crate::parser::CodeBlock { statements: Vec::new()};
-    let mut parser = crate::parser::Parser::new(&mut tok, &mut code_block);
+fn test_resolver() {
+    let text = "20 + 30 * 40";
+    let mut tok = PeekingTokenizer::new(text);
+    let mut globals = Globals::new();
+    globals.sources.push(&text);//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
+    let scope = Scope::new(&mut globals);
+    let mut code_block = CodeBlock::new(&scope);
+    let mut parser = Parser::new(&mut tok, &mut code_block);
     parser.parse();
-    let stmt = parser.code_block.statements.first().expect("There should be a statement here.");
-    parser::print_nodes(&stmt.node, 0);
+    let mut resolver = Resolver { code_block: &parser.code_block, results: Vec::new()};
+    resolver.resolve();
+    let json_string = serde_json::to_string(&resolver).unwrap();
+    println!("{}", json_string);
 }
 
 struct BytePos(i32);

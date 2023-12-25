@@ -39,8 +39,8 @@ pub fn op_num_plus_num(globals: &Globals, args: &Vec<Value>, range: &Range) -> V
     //TODO number of args already checked?
     let val1 = &args[0];
     let val2 = &args[1];
-    let Variant::Number{number: ref n1, id:_, constant:_} = val1.variant else { panic!("TODO: return empty Value with error"); };
-    let Variant::Number{number: ref n2, id:_, constant:_} = val2.variant else { panic!("TODO: return empty Value with error"); };
+    let Variant::Number{number: ref n1, constant:_} = val1.variant else { panic!("TODO: return empty Value with error"); };
+    let Variant::Number{number: ref n2, constant:_} = val2.variant else { panic!("TODO: return empty Value with error"); };
     let mut result = val1.clone();
     Value::from( Number { significand: n1.significand + n2.significand, exponent: 0 })
 }
@@ -49,8 +49,8 @@ pub fn op_num_mult_num(globals: &Globals, args: &Vec<Value>, range: &Range) -> V
     //TODO number of args already checked?
     let val1 = &args[0];
     let val2 = &args[1];
-    let Variant::Number{number: ref n1, id:_, constant:_} = val1.variant else { panic!("TODO: return empty Value with error"); };
-    let Variant::Number{number: ref n2, id:_, constant:_} = val2.variant else { panic!("TODO: return empty Value with error"); };
+    let Variant::Number{number: ref n1, constant:_} = val1.variant else { panic!("TODO: return empty Value with error"); };
+    let Variant::Number{number: ref n2, constant:_} = val2.variant else { panic!("TODO: return empty Value with error"); };
     let mut result = val1.clone();
     Value::from( Number { significand: n1.significand * n2.significand, exponent: 0 })
 }
@@ -70,8 +70,7 @@ mod tests {
 
     #[test]
     fn test_operators() {
-        let mut globals = Globals { operators: HashMap::new()};
-        load_operators(&mut globals);
+        let mut globals = Globals::new();
         let operator = globals.operators.get(&operator_id_from(ValueType::Number, OperatorType::Plus, ValueType::Number));
         let Some(operator) = operator else { panic!(""); };
         let val1 = Value::from(Number{significand: 12.0, exponent: 0 });

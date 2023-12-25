@@ -1,3 +1,5 @@
+* Range: replace { start, end } with &str? It's essentially the same and it's safer.
+  > byte indexes can probably still be calculated -> see cursor?
 * all lists that have values referenced everywhere like units or so: Vec<Rc<Unit>>
 
 * rethink echo comments

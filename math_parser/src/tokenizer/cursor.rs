@@ -1,4 +1,6 @@
 use std::str::Chars;
+use serde::Serialize;
+
 #[derive(Clone)]
 pub struct Cursor<'a> {
     pub text: &'a str,
@@ -16,7 +18,7 @@ pub struct Range {
     pub end : usize
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize)]
 pub struct Number {
     pub significand: f64,
     pub exponent: i32,
