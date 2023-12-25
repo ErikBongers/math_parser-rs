@@ -7,3 +7,4 @@ pub trait CastAny  {
 
 extern crate  macros_derive;
 pub use macros_derive::CastAny;
+pub use macros_derive::Node;

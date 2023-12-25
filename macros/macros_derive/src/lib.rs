@@ -18,3 +18,17 @@ fn impl_cast_any_macro(ast: &syn::DeriveInput) -> TokenStream {
     };
     gen.into()
 }
+
+#[proc_macro_derive(Node)]
+pub fn node_derive(input: TokenStream) -> TokenStream {
+    let ast = syn::parse(input).expect("Parsing the syntax for macro CastAny failed.");
+    crate::impl_node(&ast)
+}
+
+fn impl_node(ast: &syn::DeriveInput) -> TokenStream {
+    let name = &ast.ident;
+    let gen = quote! {
+        impl Node for #name { }
+    };
+    gen.into()
+}

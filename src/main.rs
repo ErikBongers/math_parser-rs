@@ -1,11 +1,12 @@
 use std::fs;
 use macros::CastAny;
 use math_parser::tokenizer::peeking_tokenizer::PeekingTokenizer;
-use math_parser::parser::{CodeBlock, Parser};
+use math_parser::parser::{CodeBlock, Parser, print_nodes};
 use math_parser::parser::nodes::{BinExpr, ConstExpr, NodeData};
 use math_parser::resolver::globals::Globals;
 use math_parser::resolver::Resolver;
 use math_parser::resolver::scope::Scope;
+use math_parser::resolver::unit::Unit;
 use math_parser::tokenizer::cursor::{Cursor, Number, Range};
 use math_parser::tokenizer::indexing::FileIndex;
 use math_parser::tokenizer::Token;
@@ -14,12 +15,12 @@ use math_parser::tokenizer::token_type::TokenType::Eot;
 
 fn main() {
     // parse(&txt);
-    test_deref();
+    // test_deref();
     test_resolver();
 }
 
 fn test_resolver() {
-    let text = "20 + 30 * 40";
+    let text = "20.m+30.cm";
     let mut tok = PeekingTokenizer::new(text);
     let mut globals = Globals::new();
     globals.sources.push(&text);//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
@@ -27,6 +28,7 @@ fn test_resolver() {
     let mut code_block = CodeBlock::new(&scope);
     let mut parser = Parser::new(&mut tok, &mut code_block);
     parser.parse();
+    print_nodes(&parser.code_block.statements[0].node, 0);
     let mut resolver = Resolver { code_block: &parser.code_block, results: Vec::new()};
     resolver.resolve();
     let json_string = serde_json::to_string(&resolver).unwrap();
@@ -97,16 +99,16 @@ fn parse() {
 
 fn test_deref() {
     let nod1 = BinExpr {
-        expr1: Box::new(ConstExpr { value: Number{ significand: 12.0, exponent: 0}, node_data: NodeData { error: 0, unit: 0} }),
+        expr1: Box::new(ConstExpr { value: Number{ significand: 12.0, exponent: 0, unit : Unit { range: None, id: "".to_string() }}, node_data: NodeData { error: 0, unit: 0} }),
         op: Token { kind: TokenType::Plus, range: Range { source_index: 0, start: 0, end: 0}},
-        expr2: Box::new(ConstExpr { value: Number{ significand: 34.0, exponent: 0} , node_data: NodeData { error: 0, unit: 0}}),
+        expr2: Box::new(ConstExpr { value: Number{ significand: 34.0, exponent: 0, unit : Unit { range: None, id: "".to_string() }} , node_data: NodeData { error: 0, unit: 0}}),
         node_data: NodeData { error: 0, unit : 0},
     };
 
     let mut nod1 = BinExpr {
         expr1: Box::new(nod1),
         op: Token { kind: TokenType::Plus, range: Range { source_index: 0, start: 0, end: 0 } },
-        expr2: Box::new(ConstExpr { value: Number { significand: 56.0, exponent: 0 }, node_data: NodeData { error: 0, unit: 0 } }),
+        expr2: Box::new(ConstExpr { value: Number { significand: 56.0, exponent: 0 , unit : Unit { range: None, id: "".to_string() }}, node_data: NodeData { error: 0, unit: 0 } }),
         node_data: NodeData { error: 0, unit: 0 },
     };
 

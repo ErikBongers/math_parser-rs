@@ -1,10 +1,11 @@
 use std::any::{Any, TypeId};
 use macros::CastAny;
-use crate::parser::nodes::{BinExpr, ConstExpr, Node, NodeData, NoneExpr, Statement};
+use crate::parser::nodes::{BinExpr, ConstExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement};
 use crate::tokenizer::cursor::Range;
 use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
 use crate::tokenizer::token_type::TokenType;
 use crate::resolver::scope::Scope;
+use crate::tokenizer::Token;
 
 pub mod nodes;
 
@@ -67,14 +68,46 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_mult_expr(&mut self) -> Box<dyn Node> {
-        let expr1 = self.parse_primary_expr();
+        let expr1 = self.parse_postfix_expr();
         match self.tok.peek().kind {
             TokenType::Mult | TokenType::Div | TokenType::Percent | TokenType::Modulo => {
                 let op = self.tok.next().clone();
-                let expr2 = self.parse_primary_expr();
+                let expr2 = self.parse_postfix_expr();
                 Box::new(BinExpr { expr1, op, expr2, node_data: NodeData { error: 0, unit: 0 } })
             },
             _ => expr1
+        }
+    }
+
+    fn parse_postfix_expr(&mut self) -> Box<dyn Node> {
+        let mut expr = self.parse_primary_expr();
+        loop {
+            match self.tok.peek().kind {
+                TokenType::Dot | TokenType::Dec | TokenType::Inc | TokenType::Exclam => {
+                    expr = self.parse_one_postfix(expr);
+                },
+                _ => break
+            }
+        }
+        expr
+    }
+
+    fn parse_one_postfix(&mut self, node: Box<dyn Node>) -> Box<dyn Node> {
+        match self.tok.peek().kind {
+            TokenType::Dot => {
+                self.tok.next();
+                let t = self.tok.peek();
+                let t_type = &t.kind.clone();
+                let mut postfix = PostfixExpr { postfix_id: t.clone(), node };
+                if t_type == &TokenType::Id {
+                    self.tok.next();
+                    // postfix.postfix_id already set!
+                } else {
+                    postfix.postfix_id = Token { kind: TokenType::Nullptr, range : Range { start: 0, end: 0, source_index: 0}} //TODO: since range can be empty: use Option?
+                }
+                Box::new(postfix)
+            },
+            _ => node
         }
     }
 
@@ -109,6 +142,9 @@ pub fn print_nodes(expr: &Box<dyn Node>, indent: usize) {
         },
         t if TypeId::of::<NoneExpr>() == t => {
             println!("{0}", "NoneExpr");
+        },
+        t if TypeId::of::<PostfixExpr>() == t => {
+            println!("{0}", "PostfixExpr");
         },
         _ => {
             println!("{0}", "It's a dunno...");

@@ -14,7 +14,7 @@ pub struct Token {
 }
 impl Token {
     fn new(kind: TokenType, source_index :u8, start: usize, end :usize) -> Token {
-        Token { kind, range: Range { source_index: 0, start, end } }
+        Token { kind, range: Range { source_index, start, end } }
     }
 }
 

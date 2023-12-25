@@ -1,5 +1,7 @@
 use std::str::Chars;
 use serde::Serialize;
+use crate::resolver::globals::Globals;
+use crate::resolver::unit::{Unit, UnitsView};
 
 #[derive(Clone)]
 pub struct Cursor<'a> {
@@ -22,7 +24,7 @@ pub struct Range {
 pub struct Number {
     pub significand: f64,
     pub exponent: i32,
-    // Unit unit;
+    pub unit: Unit,
     // NumFormat numFormat = NumFormat::DEC;
     // std::vector<Error> errors;
     // Range range;
@@ -32,8 +34,31 @@ impl Number {
     pub fn new(significand: f64, exponent: i32) -> Self {
         Number {
             significand,
-            exponent
+            exponent,
+            unit : Unit { range: None, id: "".to_string() }
         }
+    }
+
+    pub fn from(n: f64) -> Number {
+        Number {
+            significand: n,
+            exponent: 0,
+            unit: Unit::none()
+        }
+    }
+
+    pub fn to_si(&self, units_view: &UnitsView, globals: &Globals) -> f64 {
+        if units_view.units.contains(&*self.unit.id) {
+            let to_si = units_view.get_def(&self.unit.id, &globals.unit_defs).unwrap().to_si;
+            to_si(&globals.unit_defs[&*self.unit.id], self.to_double())
+        } else {
+            self.to_double()
+        }
+    }
+
+    pub fn to_double(&self) -> f64 {
+        let base: f64 = 10.0;
+        self.significand * base.powf(self.exponent as f64)
     }
 }
 

@@ -1,5 +1,5 @@
 use std::any::Any;
-use macros::CastAny;
+use macros::{CastAny, Node};
 use crate::tokenizer::cursor::Number;
 use crate::tokenizer::Token;
 
@@ -11,13 +11,12 @@ pub trait Node: CastAny {
 }
 //emulating a base class like Partial: https://docs.rs/partially/latest/partially/
 
-#[derive(CastAny)]
+#[derive(CastAny, Node)]
 pub struct NoneExpr {
     pub node_data: NodeData,
 }
-impl Node for NoneExpr {}
 
-#[derive(CastAny)]
+#[derive(CastAny, Node)]
 pub struct BinExpr {
     pub node_data: NodeData,
     pub expr1: Box<dyn Node>,
@@ -25,21 +24,24 @@ pub struct BinExpr {
     pub expr2: Box<dyn Node>,
 }
 
-impl Node for BinExpr {}
 
-#[derive(CastAny)]
+#[derive(CastAny, Node)]
 pub struct ConstExpr {
     pub node_data: NodeData,
     pub value: Number,
 }
 
-impl Node for ConstExpr {}
 
-#[derive(CastAny)]
+#[derive(CastAny, Node)]
+pub struct PostfixExpr {
+    pub node: Box<dyn Node>,
+    pub postfix_id: Token,
+}
+
+#[derive(CastAny, Node)]
 pub struct Statement {
     pub node_data: NodeData,
     pub node: Box<dyn Node>,
     //TODO: if statement contains a codeBlock: should that just be a Node? This would allow for a codeBlock to return a last value as it's own value.
 }
 
-impl Node for Statement {} //TODO: macro?
