@@ -1,5 +1,7 @@
 use serde::{Serialize, Serializer};
 use serde::ser::{SerializeStruct, SerializeSeq};
+use crate::errors;
+use crate::resolver::globals::Globals;
 use crate::resolver::Resolver;
 use crate::resolver::scope::Scope;
 use crate::resolver::unit::Unit;
@@ -38,9 +40,11 @@ impl<'a> Serialize for Resolver<'a> {
         where
             S: Serializer
     {
-        let mut state = serializer.serialize_struct("result", 1)?;
+        let mut state = serializer.serialize_struct("result", 2)?;
         let context_results: Vec<ScopedValue> = self.results.iter().map(|value| ScopedValue { scope: &self.code_block.scope, value: &value}).collect();
         state.serialize_field("result", &context_results)?;
+        let errors: Vec<ErrorContext> = self.code_block.errors.iter().map(|error| ErrorContext { error, globals: &self.code_block.scope.globals}).collect();
+        state.serialize_field("errors", &errors)?;
         state.end()
     }
 }
@@ -48,5 +52,26 @@ impl<'a> Serialize for Resolver<'a> {
 impl Serialize for Unit {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
         serializer.serialize_str(&self.id)
+    }
+}
+
+struct ErrorContext<'a> {
+    error: &'a errors::Error,
+    globals: &'a Globals<'a>,
+}
+
+impl<'a> Serialize for ErrorContext<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer
+    {
+        let mut state = serializer.serialize_struct("error", 4)?;
+
+        state.serialize_field("id", &self.error.id)?;
+        let error_type = &self.globals.errors.get(&self.error.id).unwrap().error_type;
+        state.serialize_field("type", &error_type)?;
+        state.serialize_field("range", &self.error.range)?;
+        state.serialize_field("stackTrace", &self.error.stack_trace)?;
+        state.end()
     }
 }

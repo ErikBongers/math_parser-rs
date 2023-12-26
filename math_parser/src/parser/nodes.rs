@@ -5,8 +5,8 @@ use crate::tokenizer::cursor::Number;
 use crate::tokenizer::Token;
 
 pub struct NodeData {
-    pub error: i32, //TODO: Rc<Error>, and store all parser errors in a vec in the Parser: less copying and all errors can be merged with Resolver in one go.
     pub unit: Unit,
+    pub has_errors: bool
 }
 pub trait Node: CastAny {
     fn get_node_data(&mut self) -> &mut NodeData;
@@ -24,6 +24,7 @@ pub struct BinExpr {
     pub expr1: Box<dyn Node>,
     pub op: Token,
     pub expr2: Box<dyn Node>,
+    pub implicit_mult: bool,
 }
 
 #[derive(CastAny, Node)]

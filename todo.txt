@@ -1,4 +1,6 @@
-* Units only implemented as Postfix. Alsi implement them directly (as suffix)
+* Errors: store per code block.
+  > this allows for tracing of errors in a function body, and merge them in a 'error stack' of the function call.
+
 * Implement the exponent operators
 * Start building a test suite.
   > at top level project, so that RustRover sees the tests!

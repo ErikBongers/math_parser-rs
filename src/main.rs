@@ -20,7 +20,7 @@ fn main() {
 }
 
 fn test_resolver() {
-    let text = "20.m-31cm";
+    let text = "(20+10).m-31cm";
     let mut tok = PeekingTokenizer::new(text);
     let mut globals = Globals::new();
     globals.sources.push(&text);//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
@@ -31,7 +31,7 @@ fn test_resolver() {
     print_nodes(&parser.code_block.statements[0].node, 0);
     let mut resolver = Resolver { code_block: &parser.code_block, results: Vec::new()};
     resolver.resolve();
-    let json_string = serde_json::to_string(&resolver).unwrap();
+    let json_string = serde_json::to_string_pretty(&resolver).unwrap();
     println!("{}", json_string);
 }
 
@@ -99,17 +99,19 @@ fn parse() {
 
 fn test_deref() {
     let nod1 = BinExpr {
-        expr1: Box::new(ConstExpr { value: Number{ significand: 12.0, exponent: 0, unit : Unit { range: None, id: "".to_string() }}, node_data: NodeData { error: 0, unit: Unit::none()} }),
+        expr1: Box::new(ConstExpr { value: Number{ significand: 12.0, exponent: 0, unit : Unit { range: None, id: "".to_string() }}, node_data: NodeData { has_errors: false, unit: Unit::none()} }),
         op: Token { kind: TokenType::Plus, range: Range { source_index: 0, start: 0, end: 0}},
-        expr2: Box::new(ConstExpr { value: Number{ significand: 34.0, exponent: 0, unit : Unit { range: None, id: "".to_string() }} , node_data: NodeData { error: 0, unit: Unit::none()}}),
-        node_data: NodeData { error: 0, unit : Unit::none()},
+        expr2: Box::new(ConstExpr { value: Number{ significand: 34.0, exponent: 0, unit : Unit { range: None, id: "".to_string() }} , node_data: NodeData { has_errors: false, unit: Unit::none()}}),
+        node_data: NodeData { has_errors: false, unit : Unit::none()},
+        implicit_mult: false
     };
 
     let mut nod1 = BinExpr {
         expr1: Box::new(nod1),
         op: Token { kind: TokenType::Plus, range: Range { source_index: 0, start: 0, end: 0 } },
-        expr2: Box::new(ConstExpr { value: Number { significand: 56.0, exponent: 0 , unit : Unit { range: None, id: "".to_string() }}, node_data: NodeData { error: 0, unit: Unit::none() } }),
-        node_data: NodeData { error: 0, unit: Unit::none() },
+        expr2: Box::new(ConstExpr { value: Number { significand: 56.0, exponent: 0 , unit : Unit { range: None, id: "".to_string() }}, node_data: NodeData { has_errors: false, unit: Unit::none() } }),
+        node_data: NodeData { has_errors: false, unit: Unit::none() },
+        implicit_mult: false
     };
 
     let nod1 = nod1.as_any_mut().downcast_mut::<BinExpr>().unwrap();
@@ -119,3 +121,42 @@ fn test_deref() {
     println!("{0}", nod1.expr2.as_any().downcast_ref::<ConstExpr>().unwrap().value.significand);
 }
 
+#[cfg(test)]
+mod test {
+    use math_parser::parser::{CodeBlock, Parser, print_nodes};
+    use math_parser::resolver::globals::Globals;
+    use math_parser::resolver::Resolver;
+    use math_parser::resolver::scope::Scope;
+    use math_parser::resolver::value::Variant;
+    use math_parser::tokenizer::peeking_tokenizer::PeekingTokenizer;
+
+    #[test]
+    fn test_simple_expr () {
+        test_result("(1.3+2)*2", 6.6, "");
+    }
+
+    #[test]
+    fn test_units () {
+        test_result("(10.3+3).m-300cm", 10.3, "m");
+        test_result("1L", 1.0, "L");
+        test_result("1L+100ml", 1.1, "L");
+    }
+
+    fn test_result(text: &str, expected_result: f64, unit: &str) {
+        let mut tok = PeekingTokenizer::new(text);
+        let mut globals = Globals::new();
+        globals.sources.push(&text);//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
+        let scope = Scope::new(&mut globals);
+        let mut code_block = CodeBlock::new(&scope);
+        let mut parser = Parser::new(&mut tok, &mut code_block);
+        parser.parse();
+        let mut resolver = Resolver { code_block: &parser.code_block, results: Vec::new()};
+        resolver.resolve();
+        let value = resolver.results.last().expect("No result found.");
+        let Variant::Number { number, .. } = &value.variant else {
+            panic!("Result isn't a number.");
+        };
+        assert_eq!(number.to_double(), expected_result);
+        assert_eq!(number.unit.id, unit);
+    }
+}

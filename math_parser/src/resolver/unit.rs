@@ -105,6 +105,8 @@ pub fn create_defs() -> HashMap<&'static str, UnitDef<'static>> {
         ( "F", UnitDef { id: "F", to_si_factor: 0.000001, property: UnitProperty::TEMP, from_si: default_from_si, to_si: default_to_si}),
 
         ( "L", UnitDef { id: "L", to_si_factor: 1.0, property: UnitProperty::VOLUME, from_si: default_from_si, to_si: default_to_si}),
+        ( "mL", UnitDef { id: "mL", to_si_factor: 0.001, property: UnitProperty::VOLUME, from_si: default_from_si, to_si: default_to_si}),
+        //ml, with lower case l is non standard
         ( "ml", UnitDef { id: "ml", to_si_factor: 0.001, property: UnitProperty::VOLUME, from_si: default_from_si, to_si: default_to_si}),
         ( "gal", UnitDef { id: "gal", to_si_factor: 3.785411784, property: UnitProperty::VOLUME, from_si: default_from_si, to_si: default_to_si}),
         ( "pt", UnitDef { id: "pt", to_si_factor: 0.473176473, property: UnitProperty::VOLUME, from_si: default_from_si, to_si: default_to_si}),

@@ -13,7 +13,7 @@ pub struct Cursor<'a> {
     pub is_beginning_of_text: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Range {
     pub source_index: u8,
     pub start :usize,

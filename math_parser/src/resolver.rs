@@ -1,4 +1,4 @@
-mod value;
+pub mod value;
 pub mod operator;
 pub mod globals;
 pub mod scope;

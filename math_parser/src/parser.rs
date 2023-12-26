@@ -1,6 +1,7 @@
 use std::any::{Any, TypeId};
 use std::ops::DerefMut;
 use macros::CastAny;
+use crate::errors::Error;
 use crate::parser::nodes::{BinExpr, ConstExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement};
 use crate::tokenizer::cursor::Range;
 use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
@@ -13,14 +14,16 @@ pub mod nodes;
 
 pub struct CodeBlock<'a> {
     pub statements: Vec<Statement>,
-    pub scope: &'a Scope<'a>
+    pub scope: &'a Scope<'a>,
+    pub errors: Vec<Error>,
 }
 
 impl<'a> CodeBlock<'a> {
     pub fn new(scope: &'a Scope<'_>) -> Self {
         CodeBlock {
             scope,
-            statements: Vec::new()
+            statements: Vec::new(),
+            errors: Vec::new(),
         }
     }
 }
@@ -51,8 +54,8 @@ impl<'a> Parser<'a> {
         Statement {
             node: self.parse_add_expr(),
             node_data: NodeData {
-                error: 0,
-                unit: Unit::none()
+                unit: Unit::none(),
+                has_errors: false,
             }
         }
     }
@@ -63,7 +66,7 @@ impl<'a> Parser<'a> {
             TokenType::Plus | TokenType::Min => {
                 let op = self.tok.next().clone();
                 let expr2 = self.parse_mult_expr();
-                Box::new(BinExpr { expr1, op, expr2, node_data: NodeData { error: 0, unit: Unit::none() } })
+                Box::new(BinExpr { expr1, op, expr2, node_data: NodeData { unit: Unit::none(), has_errors: false, }, implicit_mult: false })
             },
             _ => expr1
         }
@@ -75,7 +78,7 @@ impl<'a> Parser<'a> {
             TokenType::Mult | TokenType::Div | TokenType::Percent | TokenType::Modulo => {
                 let op = self.tok.next().clone();
                 let expr2 = self.parse_postfix_expr();
-                Box::new(BinExpr { expr1, op, expr2, node_data: NodeData { error: 0, unit: Unit::none() } })
+                Box::new(BinExpr { expr1, op, expr2, node_data: NodeData { unit: Unit::none(), has_errors: false, }, implicit_mult: false })
             },
             _ => expr1
         }
@@ -100,7 +103,7 @@ impl<'a> Parser<'a> {
                 self.tok.next();
                 let t = self.tok.peek();
                 let t_type = &t.kind.clone();
-                let mut postfix = PostfixExpr { postfix_id: t.clone(), node, node_data: NodeData{error: 0, unit: Unit::none()} };
+                let mut postfix = PostfixExpr { postfix_id: t.clone(), node, node_data: NodeData{unit: Unit::none(),has_errors: false,} };
                 if t_type == &TokenType::Id {
                     self.tok.next();
                     // postfix.postfix_id already set!
@@ -130,17 +133,37 @@ impl<'a> Parser<'a> {
         expr
     }
 
+    fn match_token(&mut self, token_type: &TokenType) -> bool {
+        if &self.tok.peek().kind != token_type {
+            return false;
+        };
+        self.tok.next();
+        true
+    }
+
     fn parse_primary_expr(&mut self) -> Box<dyn Node> {
         match self.tok.peek().kind {
             TokenType::Number => self.parse_number_expr(),
-            _ => Box::new(NoneExpr { node_data: NodeData { unit: Unit::none(), error: 0}})
+            TokenType::ParOpen => {
+                self.tok.next();
+                let mut expr = self.parse_add_expr();
+                if !self.match_token(&TokenType::ParClose) {
+                    //TODO: report error.
+                }
+                if expr.as_any().type_id() == TypeId::of::<BinExpr>() {
+                    let mut bin_expr = expr.as_any_mut().downcast_mut::<BinExpr>().unwrap();
+                    bin_expr.implicit_mult = false;
+                }
+                expr
+            },
+            _ => Box::new(NoneExpr { node_data: NodeData { unit: Unit::none(), has_errors: false,}})
         }
     }
 
     fn parse_number_expr(&mut self) -> Box<dyn Node> {
         //assuming type of token already checked.
         self.tok.next();
-        Box::new(ConstExpr { value: self.tok.get_number(), node_data: NodeData { error: 0, unit: Unit::none()}})
+        Box::new(ConstExpr { value: self.tok.get_number(), node_data: NodeData { unit: Unit::none(),has_errors: false,}})
     }
 
 }
