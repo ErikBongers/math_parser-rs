@@ -1,3 +1,8 @@
+* Units only implemented as Postfix. Alsi implement them directly (as suffix)
+* Implement the exponent operators
+* Start building a test suite.
+  > at top level project, so that RustRover sees the tests!
+
 * Range: replace { start, end } with &str? It's essentially the same and it's safer.
   > byte indexes can probably still be calculated -> see cursor?
 * all lists that have values referenced everywhere like units or so: Vec<Rc<Unit>>

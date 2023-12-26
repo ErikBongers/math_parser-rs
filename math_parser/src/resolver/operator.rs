@@ -35,28 +35,31 @@ pub fn operator_id_from(type1: ValueType, op: OperatorType, type2: ValueType) ->
 }
 
 pub fn op_num_plus_num(globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
-    //TODO: this is quick and dirty
-    //TODO number of args already checked?
-    let val1 = &args[0];
-    let val2 = &args[1];
-    let Variant::Number{number: ref n1, constant:_} = val1.variant else { panic!("TODO: return empty Value with error"); };
-    let Variant::Number{number: ref n2, constant:_} = val2.variant else { panic!("TODO: return empty Value with error"); };
-    let mut _result = val1;
+    let Variant::Number{number: ref n1, ..} = args[0].variant else { unreachable!("has been checked."); };
+    let Variant::Number{number: ref n2, ..} = args[1].variant else { unreachable!("has been checked."); };
     Value::from( do_term(&globals.units_view, n1, true, n2, range, &globals))
 }
+
+pub fn op_num_min_num(globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
+    let Variant::Number{number: ref n1, ..} = args[0].variant else { unreachable!("has been checked."); };
+    let Variant::Number{number: ref n2, ..} = args[1].variant else { unreachable!("has been checked."); };
+    Value::from( do_term(&globals.units_view, n1, false, n2, range, &globals))
+}
+
 pub fn op_num_mult_num(_globals: &Globals, args: &Vec<Value>, _range: &Range) -> Value {
     //TODO: this is quick and dirty
     //TODO number of args already checked?
     let val1 = &args[0];
     let val2 = &args[1];
-    let Variant::Number{number: ref n1, ..} = val1.variant else { panic!("TODO: return empty Value with error"); };
-    let Variant::Number{number: ref n2, ..} = val2.variant else { panic!("TODO: return empty Value with error"); };
+    let Variant::Number{number: ref n1, ..} = val1.variant else { unreachable!("has been checked."); };
+    let Variant::Number{number: ref n2, ..} = val2.variant else { unreachable!("has been checked."); };
     let mut _result = val1;
     Value::from( Number { significand: n1.significand * n2.significand, exponent: 0, unit : Unit { range: None, id: "".to_string() } })
 }
 
 pub fn load_operators(globals: &mut Globals) {
     globals.operators.insert(operator_id_from(ValueType::Number, OperatorType::Plus, ValueType::Number), op_num_plus_num);
+    globals.operators.insert(operator_id_from(ValueType::Number, OperatorType::Min, ValueType::Number), op_num_min_num);
     globals.operators.insert(operator_id_from(ValueType::Number, OperatorType::Mult, ValueType::Number), op_num_mult_num);
 }
 

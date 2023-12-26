@@ -20,7 +20,7 @@ fn main() {
 }
 
 fn test_resolver() {
-    let text = "20.m+30.cm";
+    let text = "20.m-31cm";
     let mut tok = PeekingTokenizer::new(text);
     let mut globals = Globals::new();
     globals.sources.push(&text);//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
@@ -99,17 +99,17 @@ fn parse() {
 
 fn test_deref() {
     let nod1 = BinExpr {
-        expr1: Box::new(ConstExpr { value: Number{ significand: 12.0, exponent: 0, unit : Unit { range: None, id: "".to_string() }}, node_data: NodeData { error: 0, unit: 0} }),
+        expr1: Box::new(ConstExpr { value: Number{ significand: 12.0, exponent: 0, unit : Unit { range: None, id: "".to_string() }}, node_data: NodeData { error: 0, unit: Unit::none()} }),
         op: Token { kind: TokenType::Plus, range: Range { source_index: 0, start: 0, end: 0}},
-        expr2: Box::new(ConstExpr { value: Number{ significand: 34.0, exponent: 0, unit : Unit { range: None, id: "".to_string() }} , node_data: NodeData { error: 0, unit: 0}}),
-        node_data: NodeData { error: 0, unit : 0},
+        expr2: Box::new(ConstExpr { value: Number{ significand: 34.0, exponent: 0, unit : Unit { range: None, id: "".to_string() }} , node_data: NodeData { error: 0, unit: Unit::none()}}),
+        node_data: NodeData { error: 0, unit : Unit::none()},
     };
 
     let mut nod1 = BinExpr {
         expr1: Box::new(nod1),
         op: Token { kind: TokenType::Plus, range: Range { source_index: 0, start: 0, end: 0 } },
-        expr2: Box::new(ConstExpr { value: Number { significand: 56.0, exponent: 0 , unit : Unit { range: None, id: "".to_string() }}, node_data: NodeData { error: 0, unit: 0 } }),
-        node_data: NodeData { error: 0, unit: 0 },
+        expr2: Box::new(ConstExpr { value: Number { significand: 56.0, exponent: 0 , unit : Unit { range: None, id: "".to_string() }}, node_data: NodeData { error: 0, unit: Unit::none() } }),
+        node_data: NodeData { error: 0, unit: Unit::none() },
     };
 
     let nod1 = nod1.as_any_mut().downcast_mut::<BinExpr>().unwrap();

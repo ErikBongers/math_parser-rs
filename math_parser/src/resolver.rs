@@ -59,7 +59,9 @@ impl<'a> Resolver<'a> {
 
     fn resolve_const_expr(expr: &Box<dyn Node>) -> Value {
         let expr = expr.as_any().downcast_ref::<ConstExpr>().unwrap();
-        Value::from(expr.value.clone())
+        let mut v = expr.value.clone();
+        v.unit = expr.node_data.unit.clone();
+        Value::from(v)
     }
 
     fn resolve_bin_expr(&mut self, expr: &Box<dyn Node>) -> Value {

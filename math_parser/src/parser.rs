@@ -1,10 +1,12 @@
 use std::any::{Any, TypeId};
+use std::ops::DerefMut;
 use macros::CastAny;
 use crate::parser::nodes::{BinExpr, ConstExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement};
 use crate::tokenizer::cursor::Range;
 use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
 use crate::tokenizer::token_type::TokenType;
 use crate::resolver::scope::Scope;
+use crate::resolver::unit::Unit;
 use crate::tokenizer::Token;
 
 pub mod nodes;
@@ -50,7 +52,7 @@ impl<'a> Parser<'a> {
             node: self.parse_add_expr(),
             node_data: NodeData {
                 error: 0,
-                unit: 0
+                unit: Unit::none()
             }
         }
     }
@@ -61,7 +63,7 @@ impl<'a> Parser<'a> {
             TokenType::Plus | TokenType::Min => {
                 let op = self.tok.next().clone();
                 let expr2 = self.parse_mult_expr();
-                Box::new(BinExpr { expr1, op, expr2, node_data: NodeData { error: 0, unit: 0 } })
+                Box::new(BinExpr { expr1, op, expr2, node_data: NodeData { error: 0, unit: Unit::none() } })
             },
             _ => expr1
         }
@@ -73,14 +75,14 @@ impl<'a> Parser<'a> {
             TokenType::Mult | TokenType::Div | TokenType::Percent | TokenType::Modulo => {
                 let op = self.tok.next().clone();
                 let expr2 = self.parse_postfix_expr();
-                Box::new(BinExpr { expr1, op, expr2, node_data: NodeData { error: 0, unit: 0 } })
+                Box::new(BinExpr { expr1, op, expr2, node_data: NodeData { error: 0, unit: Unit::none() } })
             },
             _ => expr1
         }
     }
 
     fn parse_postfix_expr(&mut self) -> Box<dyn Node> {
-        let mut expr = self.parse_primary_expr();
+        let mut expr = self.parse_unit_expr();
         loop {
             match self.tok.peek().kind {
                 TokenType::Dot | TokenType::Dec | TokenType::Inc | TokenType::Exclam => {
@@ -98,7 +100,7 @@ impl<'a> Parser<'a> {
                 self.tok.next();
                 let t = self.tok.peek();
                 let t_type = &t.kind.clone();
-                let mut postfix = PostfixExpr { postfix_id: t.clone(), node };
+                let mut postfix = PostfixExpr { postfix_id: t.clone(), node, node_data: NodeData{error: 0, unit: Unit::none()} };
                 if t_type == &TokenType::Id {
                     self.tok.next();
                     // postfix.postfix_id already set!
@@ -111,17 +113,34 @@ impl<'a> Parser<'a> {
         }
     }
 
+    // if an id is 'glued' to a primary expr, without a dot in between, it should be a unit.
+    fn parse_unit_expr(&mut self) -> Box<dyn Node> {
+        let mut expr = self.parse_primary_expr();
+        match self.tok.peek().kind {
+            TokenType::Id => {
+            //TODO: check if it's an existing var, in which case we'll ignore it as it's probably an implicit mult.
+                let id = self.tok.next();
+                let id= self.code_block.scope.globals.get_text(&id.range).to_string();
+                let it = expr.deref_mut();
+                let mut nd = &mut it.get_node_data();
+                nd.unit.id = id;
+            },
+            _ => () //TODO: perhaps not use a match statement.
+        }
+        expr
+    }
+
     fn parse_primary_expr(&mut self) -> Box<dyn Node> {
         match self.tok.peek().kind {
             TokenType::Number => self.parse_number_expr(),
-            _ => Box::new(NoneExpr { node_data: NodeData { unit: 0, error: 0}})
+            _ => Box::new(NoneExpr { node_data: NodeData { unit: Unit::none(), error: 0}})
         }
     }
 
     fn parse_number_expr(&mut self) -> Box<dyn Node> {
         //assuming type of token already checked.
         self.tok.next();
-        Box::new(ConstExpr { value: self.tok.get_number(), node_data: NodeData { error: 0, unit: 0}})
+        Box::new(ConstExpr { value: self.tok.get_number(), node_data: NodeData { error: 0, unit: Unit::none()}})
     }
 
 }
@@ -132,7 +151,7 @@ pub fn print_nodes(expr: &Box<dyn Node>, indent: usize) {
     match expr.as_any().type_id() {
         t if TypeId::of::<ConstExpr>() == t => {
             let expr = expr.as_any().downcast_ref::<ConstExpr>().unwrap();
-            println!("{0}: {1}", "ConstExpr", expr.as_any().downcast_ref::<ConstExpr>().unwrap().value.significand);
+            println!("{0}: {1}{2}", "ConstExpr", expr.as_any().downcast_ref::<ConstExpr>().unwrap().value.significand, expr.node_data.unit.id);
         },
         t if TypeId::of::<BinExpr>() == t => {
             println!("{0}: {1:?}", "BinExpr", expr.as_any().downcast_ref::<BinExpr>().unwrap().op.kind);

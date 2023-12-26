@@ -1,13 +1,15 @@
 use std::any::Any;
 use macros::{CastAny, Node};
+use crate::resolver::unit::Unit;
 use crate::tokenizer::cursor::Number;
 use crate::tokenizer::Token;
 
 pub struct NodeData {
     pub error: i32, //TODO: Rc<Error>, and store all parser errors in a vec in the Parser: less copying and all errors can be merged with Resolver in one go.
-    pub unit: i32, //TODO: struct Unit{ range, id: string!!, ...unit_tree in case of complex unit }
+    pub unit: Unit,
 }
 pub trait Node: CastAny {
+    fn get_node_data(&mut self) -> &mut NodeData;
 }
 //emulating a base class like Partial: https://docs.rs/partially/latest/partially/
 
@@ -24,16 +26,15 @@ pub struct BinExpr {
     pub expr2: Box<dyn Node>,
 }
 
-
 #[derive(CastAny, Node)]
 pub struct ConstExpr {
     pub node_data: NodeData,
     pub value: Number,
 }
 
-
 #[derive(CastAny, Node)]
 pub struct PostfixExpr {
+    pub node_data: NodeData,
     pub node: Box<dyn Node>,
     pub postfix_id: Token,
 }
