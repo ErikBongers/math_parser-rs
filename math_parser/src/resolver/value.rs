@@ -1,21 +1,19 @@
 use serde::Serialize;
 use crate::tokenizer::cursor::{Number, Range};
-
-#[derive(Clone)]
-pub struct Error {
-    pub(crate) msg: String
-}
+use crate::errors::Error;
 
 #[derive(Serialize)]
 #[repr(u8)]
 pub enum ValueType{
-    None = 0, Number = 1, Date = 2, Duration = 3, //TODO
+    None = 0, Number = 1, Date = 2, Duration = 3, List,
 }
 
+#[derive(Clone)]
 pub enum Variant {
     Number { number: Number, constant: bool },
     Date, //TODO
     Duration,
+    List,
     Comment, //echo comment
     Error //TODO
 }
@@ -25,9 +23,12 @@ pub fn variant_to_value_type(variant: &Variant) -> ValueType {
         Variant::Number{..} => ValueType::Number,
         Variant::Date => ValueType::Date,
         Variant::Duration => ValueType::Duration,
+        Variant::List => ValueType::List,
         _ => ValueType::None
     }
 }
+
+#[derive(Clone)]
 pub struct Value {
     pub id: Option<Range>,
     pub range: Option<Range>,

@@ -19,6 +19,14 @@ pub struct NoneExpr {
 }
 
 #[derive(CastAny, Node)]
+pub struct AssignExpr {
+    pub node_data: NodeData,
+    pub id: Token,
+    pub expr: Box<dyn Node>,
+}
+
+
+#[derive(CastAny, Node)]
 pub struct BinExpr {
     pub node_data: NodeData,
     pub expr1: Box<dyn Node>,
@@ -34,6 +42,12 @@ pub struct ConstExpr {
 }
 
 #[derive(CastAny, Node)]
+pub struct IdExpr {
+    pub node_data: NodeData,
+    pub id: Token,
+}
+
+#[derive(CastAny, Node)]
 pub struct PostfixExpr {
     pub node_data: NodeData,
     pub node: Box<dyn Node>,
@@ -45,5 +59,11 @@ pub struct Statement {
     pub node_data: NodeData,
     pub node: Box<dyn Node>,
     //TODO: if statement contains a codeBlock: should that just be a Node? This would allow for a codeBlock to return a last value as it's own value.
+}
+
+#[derive(CastAny, Node)]
+pub struct ListExpr {
+    pub node_data: NodeData,
+    pub nodes: Vec<Box<dyn Node>>,
 }
 

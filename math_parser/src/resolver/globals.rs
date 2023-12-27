@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::errors::{ErrorDef, ErrorId, load_error_defs};
+use crate::errors::{ErrorDef, ErrorId};
 use crate::resolver::operator::{load_operators, operator_id_from, OperatorType};
 use crate::resolver::unit::{create_defs, UnitDef, UnitsView};
 use crate::resolver::value::{Value, variant_to_value_type};
@@ -10,7 +10,7 @@ pub struct Globals<'a> {
     pub sources: Vec<&'a str>,
     pub unit_defs: HashMap<&'a str, UnitDef<'a>>,
     pub units_view: UnitsView<'a>,
-    pub errors: HashMap<ErrorId, ErrorDef<'a>>,
+    // pub errors: HashMap<ErrorId, ErrorDef<'a>>,
 }
 
 impl<'a> Globals<'a> {
@@ -20,7 +20,7 @@ impl<'a> Globals<'a> {
         let mut units_view = UnitsView::new();
         units_view.add_all_classes(&unit_defs);
 
-        let mut globals = Globals { operators: HashMap::new(), sources: Vec::new(), unit_defs, units_view, errors: load_error_defs() };
+        let mut globals = Globals { operators: HashMap::new(), sources: Vec::new(), unit_defs, units_view };
         load_operators(&mut globals);
         globals
     }

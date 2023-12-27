@@ -20,6 +20,16 @@ pub struct Range {
     pub end : usize
 }
 
+impl Range {
+    pub fn none() -> Range {
+        Range {
+            source_index: 0,
+            start: 0,
+            end: 0
+        }
+    }
+}
+
 #[derive(Clone, Serialize)]
 pub struct Number {
     pub significand: f64,

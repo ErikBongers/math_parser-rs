@@ -1,6 +1,7 @@
 use serde::{Serialize, Serializer};
 use serde::ser::{SerializeStruct, SerializeSeq};
 use crate::errors;
+use crate::errors::ERROR_MAP;
 use crate::resolver::globals::Globals;
 use crate::resolver::Resolver;
 use crate::resolver::scope::Scope;
@@ -34,7 +35,6 @@ impl<'a> Serialize for ScopedValue<'a> {
     }
 }
 
-// Force Resolver to only serialize `result`
 impl<'a> Serialize for Resolver<'a> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where
@@ -65,11 +65,12 @@ impl<'a> Serialize for ErrorContext<'a> {
         where
             S: Serializer
     {
-        let mut state = serializer.serialize_struct("error", 4)?;
+        let mut state = serializer.serialize_struct("error", 5)?;
 
         state.serialize_field("id", &self.error.id)?;
-        let error_type = &self.globals.errors.get(&self.error.id).unwrap().error_type;
+        let error_type = &ERROR_MAP.get(&self.error.id).unwrap().error_type;
         state.serialize_field("type", &error_type)?;
+        state.serialize_field("msg", &self.error.message)?;
         state.serialize_field("range", &self.error.range)?;
         state.serialize_field("stackTrace", &self.error.stack_trace)?;
         state.end()

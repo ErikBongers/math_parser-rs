@@ -4,7 +4,7 @@ use math_parser::tokenizer::peeking_tokenizer::PeekingTokenizer;
 use math_parser::parser::{CodeBlock, Parser, print_nodes};
 use math_parser::parser::nodes::{BinExpr, ConstExpr, NodeData};
 use math_parser::resolver::globals::Globals;
-use math_parser::resolver::Resolver;
+use math_parser::resolver::{resolve, Resolver};
 use math_parser::resolver::scope::Scope;
 use math_parser::resolver::unit::Unit;
 use math_parser::tokenizer::cursor::{Cursor, Number, Range};
@@ -20,17 +20,30 @@ fn main() {
 }
 
 fn test_resolver() {
-    let text = "(20+10).m-31cm";
+    // let text = "(20+10).m-31cm";
+    let text = "a=1+2; b=a;";
     let mut tok = PeekingTokenizer::new(text);
     let mut globals = Globals::new();
     globals.sources.push(&text);//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
-    let scope = Scope::new(&mut globals);
-    let mut code_block = CodeBlock::new(&scope);
-    let mut parser = Parser::new(&mut tok, &mut code_block);
+    let mut scope = Scope::new(&globals);
+    let mut code_block = CodeBlock::new(&mut scope);
+
+    //parse
+    let mut parser = Parser::new(&mut tok, code_block);
     parser.parse();
-    print_nodes(&parser.code_block.statements[0].node, 0);
-    let mut resolver = Resolver { code_block: &parser.code_block, results: Vec::new()};
-    resolver.resolve();
+    let mut code_block: CodeBlock = parser.into();
+    println!("{}", text);
+    for stmt in &code_block.statements {
+        print_nodes(&stmt.node, 0);
+    }
+
+    //resolve
+    let results = resolve(&code_block.statements, code_block.scope);
+    let resolver = Resolver {
+        code_block: &mut code_block,
+        results
+    };
+
     let json_string = serde_json::to_string_pretty(&resolver).unwrap();
     println!("{}", json_string);
 }
@@ -125,7 +138,7 @@ fn test_deref() {
 mod test {
     use math_parser::parser::{CodeBlock, Parser, print_nodes};
     use math_parser::resolver::globals::Globals;
-    use math_parser::resolver::Resolver;
+    use math_parser::resolver::{resolve, Resolver};
     use math_parser::resolver::scope::Scope;
     use math_parser::resolver::value::Variant;
     use math_parser::tokenizer::peeking_tokenizer::PeekingTokenizer;
@@ -146,12 +159,19 @@ mod test {
         let mut tok = PeekingTokenizer::new(text);
         let mut globals = Globals::new();
         globals.sources.push(&text);//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
-        let scope = Scope::new(&mut globals);
-        let mut code_block = CodeBlock::new(&scope);
-        let mut parser = Parser::new(&mut tok, &mut code_block);
+        let mut scope = Scope::new(&mut globals);
+        let mut code_block = CodeBlock::new(&mut scope);
+        let mut parser = Parser::new(&mut tok, code_block);
         parser.parse();
-        let mut resolver = Resolver { code_block: &parser.code_block, results: Vec::new()};
-        resolver.resolve();
+        let mut code_block: CodeBlock = parser.into();
+
+        //resolve
+        let results = resolve(&code_block.statements, code_block.scope);
+        let resolver = Resolver {
+            code_block: &mut code_block,
+            results
+        };
+
         let value = resolver.results.last().expect("No result found.");
         let Variant::Number { number, .. } = &value.variant else {
             panic!("Result isn't a number.");

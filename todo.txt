@@ -1,9 +1,18 @@
+* to examine TokenStream for macros:
+  > https://dev.to/dandyvica/rust-procedural-macros-step-by-step-tutorial-36n8
+
+* resolve list.
+* implement constants.
+  > implement PI
+  > test for redefine of constant.
+
+* implement blocks
+  > needed for function calls.
+
 * Errors: store per code block.
   > this allows for tracing of errors in a function body, and merge them in a 'error stack' of the function call.
 
 * Implement the exponent operators
-* Start building a test suite.
-  > at top level project, so that RustRover sees the tests!
 
 * Range: replace { start, end } with &str? It's essentially the same and it's safer.
   > byte indexes can probably still be calculated -> see cursor?

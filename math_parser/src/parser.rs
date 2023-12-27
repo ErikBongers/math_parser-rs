@@ -1,25 +1,40 @@
 use std::any::{Any, TypeId};
+use std::collections::HashSet;
 use std::ops::DerefMut;
 use macros::CastAny;
-use crate::errors::Error;
-use crate::parser::nodes::{BinExpr, ConstExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement};
+use log::error;
+use crate::errors::{Error, ERROR_MAP, ErrorId, ErrorType};
+use crate::parser::nodes::{AssignExpr, BinExpr, ConstExpr, IdExpr, ListExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement};
 use crate::tokenizer::cursor::Range;
 use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
 use crate::tokenizer::token_type::TokenType;
 use crate::resolver::scope::Scope;
 use crate::resolver::unit::Unit;
 use crate::tokenizer::Token;
+use crate::tokenizer::token_type::TokenType::{Eq, EqDiv, EqMin, EqMult, EqPlus};
 
 pub mod nodes;
 
 pub struct CodeBlock<'a> {
     pub statements: Vec<Statement>,
-    pub scope: &'a Scope<'a>,
+    /*
+        Resolver.resolve() should loop over statements (immutable) with a mutable reference to scope and errors.
+        > immutable:
+            statements.
+        > mutable :
+            scope
+            errors
+            results (in Resolver)
+
+        > so, resolve() should happen IN Codeblock instead of in Resolver.
+          > it should return a Vec<result> ?
+     */
+    pub scope: &'a mut Scope<'a>,
     pub errors: Vec<Error>,
 }
 
 impl<'a> CodeBlock<'a> {
-    pub fn new(scope: &'a Scope<'_>) -> Self {
+    pub fn new(scope: &'a mut Scope<'a>) -> Self {
         CodeBlock {
             scope,
             statements: Vec::new(),
@@ -31,11 +46,17 @@ impl<'a> CodeBlock<'a> {
 pub struct Parser<'a> {
     tok: &'a mut PeekingTokenizer<'a>,
     statement_start: Range,
-    pub code_block: &'a mut CodeBlock<'a>,
+    code_block: CodeBlock<'a>,
+}
+
+impl<'a> Into<CodeBlock<'a>> for Parser<'a> {
+    fn into(self) -> CodeBlock<'a> {
+        self.code_block
+    }
 }
 
 impl<'a> Parser<'a> {
-    pub fn new (tok: &'a mut PeekingTokenizer<'a>, code_block: &'a mut CodeBlock<'a>) -> Self {
+    pub fn new (tok: &'a mut PeekingTokenizer<'a>, code_block: CodeBlock<'a>) -> Self {
         Parser {
             tok,
             code_block,
@@ -45,19 +66,54 @@ impl<'a> Parser<'a> {
 
     pub fn parse(&mut self) {
         while self.tok.peek().kind != TokenType::Eot {
-            let stmt = self.parse_statement();
+            let stmt = self.parse_expr_statement();
             self.code_block.statements.push(stmt);
         }
     }
 
-    fn parse_statement(&mut self) -> Statement {
-        Statement {
-            node: self.parse_add_expr(),
+    fn parse_expr_statement(&mut self) -> Statement {
+        let mut stmt = Statement {
+            node: self.parse_assign_expr(),
             node_data: NodeData {
                 unit: Unit::none(),
                 has_errors: false,
             }
+        };
+        match self.tok.peek().kind {
+            TokenType::SemiColon => { self.tok.next(); },
+            TokenType::Eot => (),
+            _ => {
+                let t = self.tok.next(); //avoid dead loop!
+                self.code_block.errors.push(Error::build_1_arg(ErrorId::Expected, t.range.clone(), self.code_block.scope.globals.get_text(&t.range)));
+                stmt.node_data.has_errors = true;
+            }
+        };
+        stmt
+    }
+
+    fn parse_assign_expr(&mut self) -> Box<dyn Node> {
+        if self.tok.peek().kind != TokenType::Id {
+            return self.parse_add_expr();
         }
+        use TokenType::*;
+        let op_type = self.tok.peek_second().kind;
+        let (Eq | EqPlus | EqMin | EqMult | EqDiv | EqUnit) = op_type else {
+            return self.parse_add_expr();
+        };
+
+        let id = self.tok.next();
+        if let Eq = op_type {
+            self.tok.next(); //consume =
+            let assign_expr = AssignExpr {
+                node_data: NodeData { has_errors: false, unit: Unit::none() },
+                id,
+                expr: Parser::reduce_list(self.parse_list_expr())
+            };
+            //TODO: check EOT
+            self.code_block.scope.var_defs.insert(self.code_block.scope.globals.get_text(&assign_expr.id.range).to_string());
+            return Box::new(assign_expr);
+        }
+        unreachable!("TODO: implement else")
     }
 
     fn parse_add_expr(&mut self) -> Box<dyn Node> {
@@ -144,11 +200,20 @@ impl<'a> Parser<'a> {
     fn parse_primary_expr(&mut self) -> Box<dyn Node> {
         match self.tok.peek().kind {
             TokenType::Number => self.parse_number_expr(),
+            TokenType::Id => {
+                let t = self.tok.next();
+                Box::new(IdExpr {
+                    id: t,
+                    node_data: NodeData {  unit: Unit::none(), has_errors: false }
+                })
+            }
             TokenType::ParOpen => {
                 self.tok.next();
-                let mut expr = self.parse_add_expr();
+                let mut expr = Parser::reduce_list(self.parse_list_expr());
                 if !self.match_token(&TokenType::ParClose) {
-                    //TODO: report error.
+                    let range = Range { start: 0, end: 0, source_index: 0};
+                    let error = Error::build_1_arg(ErrorId::Expected, range, ")");
+                    self.code_block.errors.push(error);
                 }
                 if expr.as_any().type_id() == TypeId::of::<BinExpr>() {
                     let mut bin_expr = expr.as_any_mut().downcast_mut::<BinExpr>().unwrap();
@@ -166,6 +231,31 @@ impl<'a> Parser<'a> {
         Box::new(ConstExpr { value: self.tok.get_number(), node_data: NodeData { unit: Unit::none(),has_errors: false,}})
     }
 
+    //TODO: try if this works with:
+    // reduce_list(mut node: Box<dyn ListExpr>)...
+    fn reduce_list(mut node: Box<dyn Node>) -> Box<dyn Node> {
+        let mut list_expr = node.as_any_mut().downcast_mut::<ListExpr>().unwrap();
+        if list_expr.nodes.len() == 1 {
+            return list_expr.nodes.remove(0);
+        }
+        node
+    }
+
+    fn parse_list_expr(&mut self) -> Box<dyn Node> {
+        let mut list_expr = ListExpr { nodes: Vec::new(), node_data: NodeData {unit: Unit::none(), has_errors: false}};
+        loop {
+            let expr = self.parse_add_expr();
+            list_expr.nodes.push(expr);
+            if list_expr.nodes.last().unwrap().as_any().is::<NoneExpr>() {
+                break;
+            }
+            if self.tok.peek().kind != TokenType::Comma {
+                break;
+            }
+            self.tok.next();
+        }
+        Box::new(list_expr)
+    }
 }
 
 pub fn print_nodes(expr: &Box<dyn Node>, indent: usize) {
@@ -185,8 +275,23 @@ pub fn print_nodes(expr: &Box<dyn Node>, indent: usize) {
         t if TypeId::of::<NoneExpr>() == t => {
             println!("{0}", "NoneExpr");
         },
+        t if TypeId::of::<ListExpr>() == t => {
+            println!("{0}", "ListExpr");
+            let list_expr = expr.as_any().downcast_ref::<ListExpr>().unwrap();
+            for child in &list_expr.nodes {
+                print_nodes(&child, indent);
+            }
+        },
+        t if TypeId::of::<AssignExpr>() == t => {
+            println!("{0}", "AssignExpr");
+            let assign_expr = expr.as_any().downcast_ref::<AssignExpr>().unwrap();
+            print_nodes(&assign_expr.expr, indent);
+        },
         t if TypeId::of::<PostfixExpr>() == t => {
             println!("{0}", "PostfixExpr");
+        },
+        t if TypeId::of::<IdExpr>() == t => {
+            println!("{0}", "IdExpr");
         },
         _ => {
             println!("{0}", "It's a dunno...");
@@ -208,11 +313,12 @@ mod tests {
         let txt = "2 + 3 * 4";
         let mut tok = PeekingTokenizer::new(txt);
         let mut globals = Globals::new();
-        let scope = Scope::new(&mut globals);
-        let mut code_block = CodeBlock::new(&scope);
-        let mut parser = Parser::new(&mut tok, &mut code_block);
+        let mut scope = Scope::new(&mut globals);
+        let mut code_block = CodeBlock::new(&mut scope);
+        let mut parser = Parser::new(&mut tok, code_block);
         parser.parse();
-        let stmt = parser.code_block.statements.first().expect("There should be a statement here.");
+        let code_block: CodeBlock = parser.into();
+        let stmt = code_block.statements.first().expect("There should be a statement here.");
         let root = stmt.node.as_any().downcast_ref::<BinExpr>().expect("There should be a BinExpr here.");
         let expr1 = root.expr1.as_any().downcast_ref::<ConstExpr>().expect("There should be a ConstExpr here.");
         assert_eq!(root.op.kind, TokenType::Plus);
