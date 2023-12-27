@@ -1,3 +1,14 @@
+* Custom functions:
+  - CustomFunction OWNS a codeblock.
+  - function params are added as variables to the scope.
+    > this means they stay put after the 1st function call !!!
+    > probably no problem...they get overwritten on the next call.
+  - Resolver needs to get &mut Scope and a &statements
+  - Return value:
+    - 1 Value (of last statement)
+    - a list of errors
+
+
 * to examine TokenStream for macros:
   > https://dev.to/dandyvica/rust-procedural-macros-step-by-step-tutorial-36n8
 

@@ -41,9 +41,9 @@ impl<'a> Serialize for Resolver<'a> {
             S: Serializer
     {
         let mut state = serializer.serialize_struct("result", 2)?;
-        let context_results: Vec<ScopedValue> = self.results.iter().map(|value| ScopedValue { scope: &self.code_block.scope, value: &value}).collect();
+        let context_results: Vec<ScopedValue> = self.results.iter().map(|value| ScopedValue { scope: &self.scope, value: &value}).collect();
         state.serialize_field("result", &context_results)?;
-        let errors: Vec<ErrorContext> = self.code_block.errors.iter().map(|error| ErrorContext { error, globals: &self.code_block.scope.globals}).collect();
+        let errors: Vec<ErrorContext> = self.errors.iter().map(|error| ErrorContext { error, globals: &self.scope.globals}).collect();
         state.serialize_field("errors", &errors)?;
         state.end()
     }

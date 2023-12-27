@@ -33,19 +33,17 @@ pub struct Value {
     pub id: Option<Range>,
     pub range: Option<Range>,
     pub variant: Variant,
-    pub errors: Vec<Error>, //TODO: make references?
+    pub has_errors: bool,
 }
 
-impl From<Error> for Value {
-    fn from(value: Error) -> Self {
-        let mut v = Value {
+impl Value {
+    pub fn error() -> Self {
+        Value {
             id: None,
             range: None,
             variant: Variant::Error,
-            errors: Vec::new()
-        };
-        v.errors.push(value);
-        v
+            has_errors: true
+        }
     }
 }
 
@@ -55,7 +53,7 @@ impl From<Number> for Value {
             id: None,
             range: None,
             variant: Variant::Number {number: value, constant: false},
-            errors: Vec::new()
+            has_errors: false
         }
     }
 }

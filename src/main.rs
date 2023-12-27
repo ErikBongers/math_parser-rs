@@ -4,7 +4,7 @@ use math_parser::tokenizer::peeking_tokenizer::PeekingTokenizer;
 use math_parser::parser::{CodeBlock, Parser, print_nodes};
 use math_parser::parser::nodes::{BinExpr, ConstExpr, NodeData};
 use math_parser::resolver::globals::Globals;
-use math_parser::resolver::{resolve, Resolver};
+use math_parser::resolver::{Resolver};
 use math_parser::resolver::scope::Scope;
 use math_parser::resolver::unit::Unit;
 use math_parser::tokenizer::cursor::{Cursor, Number, Range};
@@ -38,11 +38,12 @@ fn test_resolver() {
     }
 
     //resolve
-    let results = resolve(&code_block.statements, code_block.scope);
-    let resolver = Resolver {
-        code_block: &mut code_block,
-        results
+    let mut resolver = Resolver {
+        scope: &mut code_block.scope,
+        results: Vec::new(),
+        errors: Vec::new(),
     };
+    let results = resolver.resolve(&code_block.statements);
 
     let json_string = serde_json::to_string_pretty(&resolver).unwrap();
     println!("{}", json_string);
@@ -138,7 +139,7 @@ fn test_deref() {
 mod test {
     use math_parser::parser::{CodeBlock, Parser, print_nodes};
     use math_parser::resolver::globals::Globals;
-    use math_parser::resolver::{resolve, Resolver};
+    use math_parser::resolver::{Resolver};
     use math_parser::resolver::scope::Scope;
     use math_parser::resolver::value::Variant;
     use math_parser::tokenizer::peeking_tokenizer::PeekingTokenizer;
@@ -166,11 +167,12 @@ mod test {
         let mut code_block: CodeBlock = parser.into();
 
         //resolve
-        let results = resolve(&code_block.statements, code_block.scope);
-        let resolver = Resolver {
-            code_block: &mut code_block,
-            results
+        let mut resolver = Resolver {
+            scope: &mut code_block.scope,
+            results: Vec::new(),
+            errors: Vec::new(),
         };
+        let results = resolver.resolve(&code_block.statements);
 
         let value = resolver.results.last().expect("No result found.");
         let Variant::Number { number, .. } = &value.variant else {
