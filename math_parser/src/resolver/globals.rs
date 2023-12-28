@@ -1,7 +1,7 @@
 use std::collections::HashMap;
-use crate::errors::{ErrorDef, ErrorId};
+use crate::functions::{create_global_function_defs, GlobalFunctionDef};
 use crate::resolver::operator::{load_operators, operator_id_from, OperatorType};
-use crate::resolver::unit::{create_defs, UnitDef, UnitsView};
+use crate::resolver::unit::{create_unit_defs, UnitDef, UnitsView};
 use crate::resolver::value::{Value, variant_to_value_type};
 use crate::tokenizer::cursor::Range;
 
@@ -10,17 +10,19 @@ pub struct Globals<'a> {
     pub sources: Vec<&'a str>,
     pub unit_defs: HashMap<&'a str, UnitDef<'a>>,
     pub units_view: UnitsView<'a>,
-    // pub errors: HashMap<ErrorId, ErrorDef<'a>>,
+    pub global_function_defs:  HashMap<&'a str, GlobalFunctionDef>,
 }
 
 impl<'a> Globals<'a> {
     pub fn new () -> Self {
-        let unit_defs = create_defs();
+        let unit_defs = create_unit_defs();
 
         let mut units_view = UnitsView::new();
         units_view.add_all_classes(&unit_defs);
 
-        let mut globals = Globals { operators: HashMap::new(), sources: Vec::new(), unit_defs, units_view };
+        let global_function_defs = create_global_function_defs();
+
+        let mut globals = Globals { operators: HashMap::new(), sources: Vec::new(), unit_defs, units_view, global_function_defs };
         load_operators(&mut globals);
         globals
     }

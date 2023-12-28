@@ -1,13 +1,14 @@
-use std::any::Any;
+use std::any::{Any, TypeId};
 use macros::{CastAny, Node};
 use crate::resolver::unit::Unit;
-use crate::tokenizer::cursor::Number;
+use crate::tokenizer::cursor::{Number, Range};
 use crate::tokenizer::Token;
 
 pub struct NodeData {
     pub unit: Unit,
     pub has_errors: bool
 }
+
 pub trait Node: CastAny {
     fn get_node_data(&mut self) -> &mut NodeData;
 }
@@ -16,6 +17,7 @@ pub trait Node: CastAny {
 #[derive(CastAny, Node)]
 pub struct NoneExpr {
     pub node_data: NodeData,
+    pub token: Token, //may be EOT
 }
 
 #[derive(CastAny, Node)]
@@ -65,5 +67,64 @@ pub struct Statement {
 pub struct ListExpr {
     pub node_data: NodeData,
     pub nodes: Vec<Box<dyn Node>>,
+}
+
+#[derive(CastAny, Node)]
+pub struct FunctionDefExpr {
+    pub node_data: NodeData,
+    pub id: String, //Not a Token because id may be a decorated name in case of polymorphism.
+    pub arg_names: Vec<String>,
+}
+
+#[derive(CastAny, Node)]
+pub struct CallExpr {
+    pub node_data: NodeData,
+    pub function_name: String, //this may not be a stream range, but a translated function name: e.g. x++ -> _inc(x)
+    pub function_name_range: Range,
+    pub arguments: Box<dyn Node>
+}
+
+pub fn print_nodes(expr: &Box<dyn Node>, indent: usize) {
+    print!("{: <1$}", "", indent);
+    let indent= indent+5;
+    match expr.as_any().type_id() {
+        t if TypeId::of::<ConstExpr>() == t => {
+            let expr = expr.as_any().downcast_ref::<ConstExpr>().unwrap();
+            println!("{0}: {1}{2}", "ConstExpr", expr.as_any().downcast_ref::<ConstExpr>().unwrap().value.significand, expr.node_data.unit.id);
+        },
+        t if TypeId::of::<BinExpr>() == t => {
+            println!("{0}: {1:?}", "BinExpr", expr.as_any().downcast_ref::<BinExpr>().unwrap().op.kind);
+            let bin_expr = expr.as_any().downcast_ref::<BinExpr>().unwrap();
+            print_nodes(&bin_expr.expr1, indent);
+            print_nodes(&bin_expr.expr2, indent);
+        },
+        t if TypeId::of::<NoneExpr>() == t => {
+            println!("{0}", "NoneExpr");
+        },
+        t if TypeId::of::<ListExpr>() == t => {
+            println!("{0}", "ListExpr");
+            let list_expr = expr.as_any().downcast_ref::<ListExpr>().unwrap();
+            for child in &list_expr.nodes {
+                print_nodes(&child, indent);
+            }
+        },
+        t if TypeId::of::<AssignExpr>() == t => {
+            println!("{0}", "AssignExpr");
+            let assign_expr = expr.as_any().downcast_ref::<AssignExpr>().unwrap();
+            print_nodes(&assign_expr.expr, indent);
+        },
+        t if TypeId::of::<PostfixExpr>() == t => {
+            println!("{0}", "PostfixExpr");
+        },
+        t if TypeId::of::<CallExpr>() == t => {
+            println!("{0}", "CallExpr");
+        },
+        t if TypeId::of::<IdExpr>() == t => {
+            println!("{0}", "IdExpr");
+        },
+        _ => {
+            println!("{0}", "It's a dunno...");
+        }
+    }
 }
 

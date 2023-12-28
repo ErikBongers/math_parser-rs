@@ -1,10 +1,10 @@
 use std::fs;
 use macros::CastAny;
 use math_parser::tokenizer::peeking_tokenizer::PeekingTokenizer;
-use math_parser::parser::{CodeBlock, Parser, print_nodes};
-use math_parser::parser::nodes::{BinExpr, ConstExpr, NodeData};
+use math_parser::parser::{CodeBlock, Parser};
+use math_parser::parser::nodes::{BinExpr, ConstExpr, NodeData, print_nodes};
 use math_parser::resolver::globals::Globals;
-use math_parser::resolver::{Resolver};
+use math_parser::resolver::Resolver;
 use math_parser::resolver::scope::Scope;
 use math_parser::resolver::unit::Unit;
 use math_parser::tokenizer::cursor::{Cursor, Number, Range};
@@ -21,12 +21,12 @@ fn main() {
 
 fn test_resolver() {
     // let text = "(20+10).m-31cm";
-    let text = "a=1+2; b=a;";
+    let text = "abs(0-123)";
     let mut tok = PeekingTokenizer::new(text);
     let mut globals = Globals::new();
     globals.sources.push(&text);//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
-    let mut scope = Scope::new(&globals);
-    let mut code_block = CodeBlock::new(&mut scope);
+    let scope = Scope::new(&globals);
+    let code_block = CodeBlock::new(scope);
 
     //parse
     let mut parser = Parser::new(&mut tok, code_block);
@@ -137,16 +137,26 @@ fn test_deref() {
 
 #[cfg(test)]
 mod test {
-    use math_parser::parser::{CodeBlock, Parser, print_nodes};
+    use math_parser::parser::{CodeBlock, Parser};
     use math_parser::resolver::globals::Globals;
-    use math_parser::resolver::{Resolver};
+    use math_parser::resolver::Resolver;
     use math_parser::resolver::scope::Scope;
     use math_parser::resolver::value::Variant;
     use math_parser::tokenizer::peeking_tokenizer::PeekingTokenizer;
 
     #[test]
-    fn test_simple_expr () {
+    fn test_simple_expr (){
         test_result("(1.3+2)*2", 6.6, "");
+    }
+
+    #[test]
+    fn test_assign_expr () {
+        test_result("a=1;b=2;c=a+b", 3.0, "");
+    }
+
+    #[test]
+    fn test_function_calls () {
+        test_result("abs(0-123)", 123.0, "");
     }
 
     #[test]
@@ -161,7 +171,9 @@ mod test {
         let mut globals = Globals::new();
         globals.sources.push(&text);//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
         let mut scope = Scope::new(&mut globals);
-        let mut code_block = CodeBlock::new(&mut scope);
+        let mut code_block = CodeBlock::new(scope);
+
+        //parse
         let mut parser = Parser::new(&mut tok, code_block);
         parser.parse();
         let mut code_block: CodeBlock = parser.into();

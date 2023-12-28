@@ -7,12 +7,11 @@ pub mod unit;
 
 use std::any::TypeId;
 use crate::errors::{Error, ErrorId};
-use crate::parser::CodeBlock;
-use crate::parser::nodes::{AssignExpr, BinExpr, ConstExpr, IdExpr, Node, PostfixExpr, Statement};
+use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, ConstExpr, IdExpr, ListExpr, Node, PostfixExpr, Statement};
 use crate::resolver::operator::OperatorType;
 use crate::resolver::scope::Scope;
 use crate::resolver::unit::Unit;
-use crate::resolver::value::{Value, Variant};
+use crate::resolver::value::Value;
 use crate::resolver::value::Variant::Number;
 use crate::tokenizer::cursor::Range;
 
@@ -23,34 +22,29 @@ pub struct Resolver<'a> {
     //date_format: DateFormat,
 }
 
-// struct Results {
-//     pub results: Vec<Value>,
-//     pub errors: Vec<Error>,
-// }
-//
-// impl Into<Results> for Resolver {
-//     fn into(self) -> Results {
-//         Results {
-//             results: self.results,
-//             errors: self.errors,
-//         }
-//     }
-// }
+pub fn add_error(errors: &mut Vec<Error>, id: ErrorId, range: Range, arg1: &str, mut value: Value) -> Value {
+    value.has_errors = true;
+    errors.push(Error::build_1_arg(id, range, arg1));
+    value
+}
+
 
 impl<'a> Resolver<'a> {
 
-    pub fn resolve(&mut self, statements: &Vec<Statement>) {
+    pub fn resolve(&mut self, statements: &Vec<Statement>) -> Option<Value> {
         for stmt in statements {
             let result = self.resolve_node(&stmt.node);
             self.results.push(result);
         };
+        let Some(result) = self.results.last() else {
+            return None
+        };
+        Some(result.clone())
     }
 
-    pub fn add_error(&mut self, id: ErrorId, range: Range, arg1: &str, mut value: Value) -> Value {
-        value.has_errors = true;
-        self.errors.push(Error::build_1_arg(id, range, arg1));
-        value
-    }
+    pub fn add_error(&mut self, id: ErrorId, range: Range, arg1: &str, value: Value) -> Value {
+        add_error(&mut self.errors, id, range,  arg1, value)
+   }
 
     pub fn resolve_node(&mut self, expr: &Box<dyn Node>) -> Value {
         match expr.as_any().type_id() {
@@ -59,8 +53,36 @@ impl<'a> Resolver<'a> {
             t if TypeId::of::<IdExpr>() == t => { self.resolve_id_expr(expr) },
             t if TypeId::of::<AssignExpr>() == t => { self.resolve_assign_expr(expr) },
             t if TypeId::of::<PostfixExpr>() == t => { self.resolve_postfix_expr(expr) },
+            t if TypeId::of::<CallExpr>() == t => { self.resolve_call_expr(expr) },
             _ => { self.add_error(ErrorId::Expected, Range::none(), "It's a dunno...", Value::error()) },
         }
+    }
+
+    fn resolve_call_expr(&mut self, expr: &Box<dyn Node>) -> Value {
+        let call_expr = expr.as_any().downcast_ref::<CallExpr>().unwrap();
+        if call_expr.node_data.has_errors {
+            return Value::error();
+        };
+        let function_def = self.scope.globals.global_function_defs.get(call_expr.function_name.as_str());
+        //TODO: local functions!
+        let Some(function_def) = function_def else {
+            return self.add_error(ErrorId::FuncNotDef, call_expr.function_name_range.clone(), &call_expr.function_name, Value::error());
+        };
+
+        let arguments = call_expr.arguments.as_any().downcast_ref::<ListExpr>().unwrap();
+        if !function_def.is_correct_arg_count(arguments.nodes.len()) {
+            return self.add_error(ErrorId::FuncArgWrong, call_expr.function_name_range.clone(), &call_expr.function_name, Value::error());
+        };
+        let mut arg_values: Vec<Value> = Vec::new();
+        for arg in &arguments.nodes {
+            let value = self.resolve_node(arg);
+            if value.has_errors {
+                return Value::error();
+            }
+            arg_values.push(value);
+        };
+        function_def.call(self.scope, &arg_values, &call_expr.function_name_range, &mut self.errors)
+        //TODO: apply units.
     }
 
     fn resolve_postfix_expr(&mut self, expr: &Box<dyn Node>) -> Value {

@@ -81,8 +81,8 @@ pub fn default_from_si(def: &UnitDef, from: f64) -> f64 {
     from / def.to_si_factor
 }
 
-pub fn create_defs() -> HashMap<&'static str, UnitDef<'static>> {
-    let mut defs: HashMap<&'static str, UnitDef<'static>> = HashMap::from( [
+pub fn create_unit_defs() -> HashMap<&'static str, UnitDef<'static>> {
+    let defs: HashMap<&'static str, UnitDef<'static>> = HashMap::from( [
         ("", UnitDef {id: "", to_si_factor: 1.0, property: UnitProperty::UNDEFINED, from_si: default_from_si, to_si: default_to_si}),
         ( "rad", UnitDef { id: "rad", to_si_factor: 1.0, property: UnitProperty::ANGLE, from_si: default_from_si, to_si: default_to_si}),
         ( "deg", UnitDef { id: "deg", to_si_factor: PI / 180.0, property: UnitProperty::ANGLE, from_si: default_from_si, to_si: default_to_si}),
@@ -155,11 +155,11 @@ pub fn create_defs() -> HashMap<&'static str, UnitDef<'static>> {
 
 #[cfg(test)]
 mod tests {
-    use crate::resolver::unit::{create_defs, UnitProperty, UnitsView};
+    use crate::resolver::unit::{create_unit_defs, UnitProperty, UnitsView};
 
     #[test]
     fn test_units() {
-        let defs = create_defs();
+        let defs = create_unit_defs();
         let mut view = UnitsView::new();
         view.add_class(&UnitProperty::ANGLE, &defs);
         assert_eq!(view.units.len(), 2);
@@ -167,7 +167,7 @@ mod tests {
 
     #[test]
     fn test_clone_units() {
-        let defs = create_defs();
+        let defs = create_unit_defs();
         let mut view = UnitsView::new();
         view.add_class(&UnitProperty::ANGLE, &defs);
         view.add_class(&UnitProperty::TEMP, &defs);

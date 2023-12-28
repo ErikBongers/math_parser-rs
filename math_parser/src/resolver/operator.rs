@@ -75,7 +75,7 @@ fn do_term(units_view: &UnitsView, v1: &Number, adding: bool, v2: &Number, range
         }
         let d1 = v1.to_si(&units_view, &globals);
         let d2 = v2.to_si(&units_view, &globals);
-        let mut result = match adding {
+        let result = match adding {
             true => d1 + d2,
             false => d1 - d2
         };
@@ -89,7 +89,7 @@ fn do_term(units_view: &UnitsView, v1: &Number, adding: bool, v2: &Number, range
         num
         //if a unit is missing, just do operation.
     } else {
-        let mut result = match adding {
+        let result = match adding {
             true => v1.to_double() + v2.to_double(), //TODO: see Number.operator+ for exponents
             false => v1.to_double() - v2.to_double()
         };

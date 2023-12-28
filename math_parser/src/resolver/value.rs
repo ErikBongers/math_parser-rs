@@ -1,6 +1,5 @@
 use serde::Serialize;
 use crate::tokenizer::cursor::{Number, Range};
-use crate::errors::Error;
 
 #[derive(Serialize)]
 #[repr(u8)]
@@ -10,7 +9,7 @@ pub enum ValueType{
 
 #[derive(Clone)]
 pub enum Variant {
-    Number { number: Number, constant: bool },
+    Number { number: Number, is_constant: bool },
     Date, //TODO
     Duration,
     List,
@@ -52,7 +51,7 @@ impl From<Number> for Value {
         Value {
             id: None,
             range: None,
-            variant: Variant::Number {number: value, constant: false},
+            variant: Variant::Number {number: value, is_constant: false},
             has_errors: false
         }
     }

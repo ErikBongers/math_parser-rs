@@ -1,10 +1,8 @@
 use std::any::{Any, TypeId};
-use std::collections::HashSet;
 use std::ops::DerefMut;
 use macros::CastAny;
-use log::error;
-use crate::errors::{Error, ERROR_MAP, ErrorId, ErrorType};
-use crate::parser::nodes::{AssignExpr, BinExpr, ConstExpr, IdExpr, ListExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement};
+use crate::errors::{Error, ErrorId};
+use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, ConstExpr, IdExpr, ListExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement};
 use crate::tokenizer::cursor::Range;
 use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
 use crate::tokenizer::token_type::TokenType;
@@ -17,24 +15,12 @@ pub mod nodes;
 
 pub struct CodeBlock<'a> {
     pub statements: Vec<Statement>,
-    /*
-        Resolver.resolve() should loop over statements (immutable) with a mutable reference to scope and errors.
-        > immutable:
-            statements.
-        > mutable :
-            scope
-            errors
-            results (in Resolver)
-
-        > so, resolve() should happen IN Codeblock instead of in Resolver.
-          > it should return a Vec<result> ?
-     */
-    pub scope: &'a mut Scope<'a>,
+    pub scope: Scope<'a>,
     pub errors: Vec<Error>,
 }
 
 impl<'a> CodeBlock<'a> {
-    pub fn new(scope: &'a mut Scope<'a>) -> Self {
+    pub fn new(scope: Scope<'a>) -> Self {
         CodeBlock {
             scope,
             statements: Vec::new(),
@@ -84,6 +70,7 @@ impl<'a> Parser<'a> {
             TokenType::Eot => (),
             _ => {
                 let t = self.tok.next(); //avoid dead loop!
+                // let txt = self.get_text(&t.range); //WHY DOESN'T THIS WORK????
                 self.code_block.errors.push(Error::build_1_arg(ErrorId::Expected, t.range.clone(), self.code_block.scope.globals.get_text(&t.range)));
                 stmt.node_data.has_errors = true;
             }
@@ -110,7 +97,8 @@ impl<'a> Parser<'a> {
                 expr: Parser::reduce_list(self.parse_list_expr())
             };
             //TODO: check EOT
-            self.code_block.scope.var_defs.insert(self.code_block.scope.globals.get_text(&assign_expr.id.range).to_string());
+            let txt = self.get_text(&assign_expr.id.range).to_string();
+            self.code_block.scope.var_defs.insert(txt);
             return Box::new(assign_expr);
         }
         unreachable!("TODO: implement else")
@@ -179,9 +167,9 @@ impl<'a> Parser<'a> {
             TokenType::Id => {
             //TODO: check if it's an existing var, in which case we'll ignore it as it's probably an implicit mult.
                 let id = self.tok.next();
-                let id= self.code_block.scope.globals.get_text(&id.range).to_string();
+                let id= self.get_text(&id.range).to_string();
                 let it = expr.deref_mut();
-                let mut nd = &mut it.get_node_data();
+                let nd = &mut it.get_node_data();
                 nd.unit.id = id;
             },
             _ => () //TODO: perhaps not use a match statement.
@@ -197,11 +185,53 @@ impl<'a> Parser<'a> {
         true
     }
 
+    fn get_text(&mut self, range: &Range) -> &str {
+        self.code_block.scope.globals.get_text(&range)
+    }
+
+    fn parse_call_expr(&mut self, function_name: Token) -> Box<dyn Node> {
+        // let func_name_str = self.get_text(&function_name.range);
+        let func_name_str = self.code_block.scope.globals.get_text(&function_name.range);
+        if TokenType::ParOpen != self.tok.peek().kind {
+            let error = Error::build_1_arg(ErrorId::FuncNoOpenPar, function_name.range.clone(), func_name_str);
+            self.code_block.errors.push(error);
+            return Box::new(NoneExpr{node_data: NodeData { unit: Unit::none(), has_errors: true}, token: function_name.clone()});
+        }
+        self.tok.next();// eat `(`
+        let args = self.parse_list_expr();
+        //first argument may be NONE, with a token EOT, which is an invalid argument list in this case.
+        let list_expr = args.as_any().downcast_ref::<ListExpr>().unwrap();
+        if list_expr.nodes.len() == 1 {
+            if let Some(none_expr) = list_expr.nodes.first().unwrap().as_any().downcast_ref::<NoneExpr>() {
+                if none_expr.token.kind == TokenType::Eot {
+                    let error = Error::build_1_arg(ErrorId::Eos, function_name.range.clone(), self.get_text(&function_name.range));
+                    self.code_block.errors.push(error);
+                    return Box::new(NoneExpr{node_data: NodeData { unit: Unit::none(), has_errors: true}, token: function_name});
+                }
+            }
+        }
+        Box::new(CallExpr {
+            node_data: NodeData { unit: Unit::none(), has_errors: false },
+            function_name: func_name_str.to_string(),
+            function_name_range: function_name.range.clone(),
+            arguments: args
+        })
+    }
+
     fn parse_primary_expr(&mut self) -> Box<dyn Node> {
         match self.tok.peek().kind {
             TokenType::Number => self.parse_number_expr(),
             TokenType::Id => {
                 let t = self.tok.next();
+                // let id = self.get_text(&t.range);
+                let id = self.code_block.scope.globals.get_text(&t.range);
+                if let Some(_) = self.code_block.scope.get_local_function(id) {
+                    return self.parse_call_expr(t);
+                } else {
+                    if self.code_block.scope.globals.global_function_defs.contains_key(id) {
+                        return self.parse_call_expr(t);
+                    }
+                }
                 Box::new(IdExpr {
                     id: t,
                     node_data: NodeData {  unit: Unit::none(), has_errors: false }
@@ -216,12 +246,12 @@ impl<'a> Parser<'a> {
                     self.code_block.errors.push(error);
                 }
                 if expr.as_any().type_id() == TypeId::of::<BinExpr>() {
-                    let mut bin_expr = expr.as_any_mut().downcast_mut::<BinExpr>().unwrap();
+                    let bin_expr = expr.as_any_mut().downcast_mut::<BinExpr>().unwrap();
                     bin_expr.implicit_mult = false;
                 }
                 expr
             },
-            _ => Box::new(NoneExpr { node_data: NodeData { unit: Unit::none(), has_errors: false,}})
+            _ => Box::new(NoneExpr { node_data: NodeData { unit: Unit::none(), has_errors: false,}, token: self.tok.peek().clone()})
         }
     }
 
@@ -234,7 +264,7 @@ impl<'a> Parser<'a> {
     //TODO: try if this works with:
     // reduce_list(mut node: Box<dyn ListExpr>)...
     fn reduce_list(mut node: Box<dyn Node>) -> Box<dyn Node> {
-        let mut list_expr = node.as_any_mut().downcast_mut::<ListExpr>().unwrap();
+        let list_expr = node.as_any_mut().downcast_mut::<ListExpr>().unwrap();
         if list_expr.nodes.len() == 1 {
             return list_expr.nodes.remove(0);
         }
@@ -258,47 +288,6 @@ impl<'a> Parser<'a> {
     }
 }
 
-pub fn print_nodes(expr: &Box<dyn Node>, indent: usize) {
-    print!("{: <1$}", "", indent);
-    let indent= indent+5;
-    match expr.as_any().type_id() {
-        t if TypeId::of::<ConstExpr>() == t => {
-            let expr = expr.as_any().downcast_ref::<ConstExpr>().unwrap();
-            println!("{0}: {1}{2}", "ConstExpr", expr.as_any().downcast_ref::<ConstExpr>().unwrap().value.significand, expr.node_data.unit.id);
-        },
-        t if TypeId::of::<BinExpr>() == t => {
-            println!("{0}: {1:?}", "BinExpr", expr.as_any().downcast_ref::<BinExpr>().unwrap().op.kind);
-            let bin_expr = expr.as_any().downcast_ref::<BinExpr>().unwrap();
-            print_nodes(&bin_expr.expr1, indent);
-            print_nodes(&bin_expr.expr2, indent);
-        },
-        t if TypeId::of::<NoneExpr>() == t => {
-            println!("{0}", "NoneExpr");
-        },
-        t if TypeId::of::<ListExpr>() == t => {
-            println!("{0}", "ListExpr");
-            let list_expr = expr.as_any().downcast_ref::<ListExpr>().unwrap();
-            for child in &list_expr.nodes {
-                print_nodes(&child, indent);
-            }
-        },
-        t if TypeId::of::<AssignExpr>() == t => {
-            println!("{0}", "AssignExpr");
-            let assign_expr = expr.as_any().downcast_ref::<AssignExpr>().unwrap();
-            print_nodes(&assign_expr.expr, indent);
-        },
-        t if TypeId::of::<PostfixExpr>() == t => {
-            println!("{0}", "PostfixExpr");
-        },
-        t if TypeId::of::<IdExpr>() == t => {
-            println!("{0}", "IdExpr");
-        },
-        _ => {
-            println!("{0}", "It's a dunno...");
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use crate::parser::{CodeBlock, Parser};
@@ -314,7 +303,7 @@ mod tests {
         let mut tok = PeekingTokenizer::new(txt);
         let mut globals = Globals::new();
         let mut scope = Scope::new(&mut globals);
-        let mut code_block = CodeBlock::new(&mut scope);
+        let mut code_block = CodeBlock::new(scope);
         let mut parser = Parser::new(&mut tok, code_block);
         parser.parse();
         let code_block: CodeBlock = parser.into();

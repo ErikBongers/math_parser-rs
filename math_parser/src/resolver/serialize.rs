@@ -13,6 +13,31 @@ struct ScopedValue<'a> {
     value: &'a Value
 }
 
+impl<'a> Resolver<'a> {
+    fn build_scoped_values(&self) -> Vec<ScopedValue> {
+        let context_results: Vec<ScopedValue> =
+            self.results.iter()
+            .map(|value|
+                ScopedValue { scope: &self.scope, value: &value})
+            .collect();
+        context_results
+    }
+}
+
+impl<'a> Serialize for Resolver<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer
+    {
+        let mut state = serializer.serialize_struct("result", 2)?;
+
+        state.serialize_field("result", &self.build_scoped_values())?;
+        let errors: Vec<ErrorContext> = self.errors.iter().map(|error| ErrorContext { error, globals: &self.scope.globals}).collect();
+        state.serialize_field("errors", &errors)?;
+        state.end()
+    }
+}
+
 impl<'a> Serialize for ScopedValue<'a> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -31,20 +56,6 @@ impl<'a> Serialize for ScopedValue<'a> {
             Number { number, .. } => state.serialize_field("number", number),
             _ => state.serialize_field("todo", "todo")
         }?;
-        state.end()
-    }
-}
-
-impl<'a> Serialize for Resolver<'a> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer
-    {
-        let mut state = serializer.serialize_struct("result", 2)?;
-        let context_results: Vec<ScopedValue> = self.results.iter().map(|value| ScopedValue { scope: &self.scope, value: &value}).collect();
-        state.serialize_field("result", &context_results)?;
-        let errors: Vec<ErrorContext> = self.errors.iter().map(|error| ErrorContext { error, globals: &self.scope.globals}).collect();
-        state.serialize_field("errors", &errors)?;
         state.end()
     }
 }

@@ -6,3 +6,4 @@ pub mod tokenizer;
 pub mod parser;
 pub mod resolver;
 pub mod errors;
+pub mod functions;
