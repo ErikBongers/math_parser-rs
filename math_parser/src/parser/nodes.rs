@@ -1,5 +1,6 @@
 use std::any::{Any, TypeId};
 use macros::{CastAny, Node};
+use crate::errors::{Error, ErrorId};
 use crate::resolver::unit::Unit;
 use crate::tokenizer::cursor::{Number, Range};
 use crate::tokenizer::Token;
@@ -63,6 +64,16 @@ pub struct Statement {
     //TODO: if statement contains a codeBlock: should that just be a Node? This would allow for a codeBlock to return a last value as it's own value.
 }
 
+impl Statement {
+    pub fn error(errors: &mut Vec<Error>, id: ErrorId, token: Token, arg1: &str) -> Statement {
+        errors.push( Error::build_1_arg(id, token.range.clone(), arg1) );
+        Statement {
+            node: Box::new(NoneExpr { token, node_data: NodeData { has_errors: true, unit: Unit::none()}}),
+            node_data: NodeData { has_errors: true, unit: Unit::none()}
+        }
+    }
+}
+
 #[derive(CastAny, Node)]
 pub struct ListExpr {
     pub node_data: NodeData,
@@ -121,6 +132,9 @@ pub fn print_nodes(expr: &Box<dyn Node>, indent: usize) {
         },
         t if TypeId::of::<IdExpr>() == t => {
             println!("{0}", "IdExpr");
+        },
+        t if TypeId::of::<FunctionDefExpr>() == t => {
+            println!("{0}", "FunctionDefExpr");
         },
         _ => {
             println!("{0}", "It's a dunno...");

@@ -81,8 +81,9 @@ pub fn default_from_si(def: &UnitDef, from: f64) -> f64 {
     from / def.to_si_factor
 }
 
-pub fn create_unit_defs() -> HashMap<&'static str, UnitDef<'static>> {
-    let defs: HashMap<&'static str, UnitDef<'static>> = HashMap::from( [
+pub fn create_unit_defs<'a>() -> HashMap<&'a str, UnitDef<'a>> {
+
+    let defs: HashMap<&str, UnitDef> = HashMap::from( [
         ("", UnitDef {id: "", to_si_factor: 1.0, property: UnitProperty::UNDEFINED, from_si: default_from_si, to_si: default_to_si}),
         ( "rad", UnitDef { id: "rad", to_si_factor: 1.0, property: UnitProperty::ANGLE, from_si: default_from_si, to_si: default_to_si}),
         ( "deg", UnitDef { id: "deg", to_si_factor: PI / 180.0, property: UnitProperty::ANGLE, from_si: default_from_si, to_si: default_to_si}),

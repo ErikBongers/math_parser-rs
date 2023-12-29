@@ -1,3 +1,8 @@
+* Resolver changes itself: use a Visitor https://rust-unofficial.github.io/patterns/patterns/behavioural/visitor.html
+  > as resolve() loops over the statements
+     - it changes the contents of Resolver.
+
+
 * Custom functions:
   - CustomFunction OWNS a codeblock.
   - function params are added as variables to the scope.
@@ -66,3 +71,7 @@
   - lookup_char_pos(BytePos0 -> Loc: https://doc.rust-lang.org/beta/nightly-rustc/src/rustc_span/source_map.rs.html#402
   - >>> lookup_file_pos() https://doc.rust-lang.org/beta/nightly-rustc/src/rustc_span/lib.rs.html#1804
   - count lines and multi byte chars: https://doc.rust-lang.org/beta/nightly-rustc/src/rustc_span/analyze_source_file.rs.html#195
+
+
+
+* functions don't check param types: Exception thrown!

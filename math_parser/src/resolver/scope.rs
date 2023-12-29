@@ -1,16 +1,17 @@
 use std::collections::{HashMap, HashSet};
-use std::rc::Rc;
-use crate::functions::{CustomFunctionDef, FunctionView};
+use crate::functions::{CustomFunctionDef, execute_custom_function, FunctionView};
+use crate::parser::CodeBlock;
+use crate::parser::nodes::FunctionDefExpr;
 use crate::resolver::globals::Globals;
 use crate::resolver::value::Value;
 
 pub struct Scope<'a> {
     pub globals: &'a Globals<'a>,
-    pub parent_scope: Option<Rc<Scope<'a>>>,
+    pub parent_scope: Option<&'a Scope<'a>>,
     pub var_defs: HashSet<String>,
     pub variables: HashMap<String, Value>,
     pub function_view: FunctionView,
-    pub local_function_defs:  HashMap<&'a str, CustomFunctionDef<'a>>,
+    pub local_function_defs:  HashMap<String, CustomFunctionDef<'a>>,
 }
 
 impl<'a> Scope<'a> {
@@ -25,17 +26,17 @@ impl<'a> Scope<'a> {
         }
     }
 
-    pub fn copy_for_block(scope: &Rc<Scope<'a>>) -> Rc<Scope<'a>> {
-        Rc::new(Scope {
+    pub fn copy_for_block(scope: &'a Scope<'a>) -> Scope<'a> {
+        Scope {
             globals: scope.globals,
-            parent_scope: Some(scope.clone()),
+            parent_scope: Some(scope),
             function_view: scope.function_view.clone(),
 
             //don't copy variables.
             local_function_defs: HashMap::new(),
             var_defs: HashSet::new(),
             variables: HashMap::new(),
-        })
+        }
     }
 
     pub fn get_local_function(&self, id: &str) -> Option<&CustomFunctionDef> {
@@ -49,5 +50,17 @@ impl<'a> Scope<'a> {
                 None
             }
         }
+    }
+
+    pub fn add_local_function(&mut self, code_block: CodeBlock<'a>, function_def_expr: &'a FunctionDefExpr) {
+        // let func = CustomFunctionDef {
+        //     code_block,
+        //     function_def_expr,
+        //     name: function_def_expr.id.clone(),
+        //     min_args: function_def_expr.arg_names.len(),
+        //     max_args: function_def_expr.arg_names.len(),
+        //     execute: execute_custom_function,
+        // };
+        // self.local_function_defs.insert(func.name.clone(), func);
     }
 }

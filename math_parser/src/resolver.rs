@@ -7,6 +7,7 @@ pub mod unit;
 
 use std::any::TypeId;
 use crate::errors::{Error, ErrorId};
+use crate::functions::FunctionDef;
 use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, ConstExpr, IdExpr, ListExpr, Node, PostfixExpr, Statement};
 use crate::resolver::operator::OperatorType;
 use crate::resolver::scope::Scope;
@@ -31,7 +32,7 @@ pub fn add_error(errors: &mut Vec<Error>, id: ErrorId, range: Range, arg1: &str,
 
 impl<'a> Resolver<'a> {
 
-    pub fn resolve(&mut self, statements: &Vec<Statement>) -> Option<Value> {
+    pub fn resolve(&mut self, statements: &Vec<Box<Statement>>) -> Option<Value> {
         for stmt in statements {
             let result = self.resolve_node(&stmt.node);
             self.results.push(result);
@@ -58,19 +59,47 @@ impl<'a> Resolver<'a> {
         }
     }
 
+    // fn get_trait_func(&mut self, name: &str) -> Option<impl &FunctionDef> {
+    //     let global_function_def = self.scope.globals.global_function_defs.get(name);
+    //     let local_function_def = self.scope.local_function_defs.get(name);
+    //     if let Some(f) = global_function_def {
+    //         Some(f)
+    //     } else {
+    //         if let Some(f) = local_function_def {
+    //             Some(f)
+    //         } else {
+    //             None
+    //         }
+    //     }
+    // }
+
     fn resolve_call_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let call_expr = expr.as_any().downcast_ref::<CallExpr>().unwrap();
         if call_expr.node_data.has_errors {
             return Value::error();
         };
-        let function_def = self.scope.globals.global_function_defs.get(call_expr.function_name.as_str());
-        //TODO: local functions!
-        let Some(function_def) = function_def else {
+        let global_function_def = self.scope.globals.global_function_defs.get(call_expr.function_name.as_str());
+        let local_function_def = self.scope.local_function_defs.get(call_expr.function_name.as_str());
+        if let (None, None) = (global_function_def, local_function_def) {
             return self.add_error(ErrorId::FuncNotDef, call_expr.function_name_range.clone(), &call_expr.function_name, Value::error());
         };
 
         let arguments = call_expr.arguments.as_any().downcast_ref::<ListExpr>().unwrap();
-        if !function_def.is_correct_arg_count(arguments.nodes.len()) {
+
+        //TODO: try trait objects. (trait references, actually)
+        let mut arg_count_wrong = false;
+        if let Some(f) = global_function_def {
+            if !f.is_correct_arg_count(arguments.nodes.len()) {
+                arg_count_wrong = true;
+            }
+        }
+        if let Some(f) = local_function_def {
+            if !f.is_correct_arg_count(arguments.nodes.len()) {
+                arg_count_wrong = true;
+            }
+        }
+
+        if arg_count_wrong {
             return self.add_error(ErrorId::FuncArgWrong, call_expr.function_name_range.clone(), &call_expr.function_name, Value::error());
         };
         let mut arg_values: Vec<Value> = Vec::new();
@@ -81,7 +110,24 @@ impl<'a> Resolver<'a> {
             }
             arg_values.push(value);
         };
-        function_def.call(self.scope, &arg_values, &call_expr.function_name_range, &mut self.errors)
+
+        //getting the function defs again because resolve_node() could have changed them, says the borrow checker.
+        let global_function_def = self.scope.globals.global_function_defs.get(call_expr.function_name.as_str());
+
+        if let Some(function) = global_function_def {
+            return function.call(self.scope, &arg_values, &call_expr.function_name_range, &mut self.errors);
+        } else {
+            //getting the function defs again because resolve_node() could have changed them, says the borrow checker.
+            let mut local_function_def = self.scope.local_function_defs.get(call_expr.function_name.as_str());
+            if let Some(ref mut function) = local_function_def {
+                //TEST
+                let mut new_scope = Scope::copy_for_block(&self.scope);
+                //TEST
+                return function.call(&mut new_scope, &arg_values, &call_expr.function_name_range, &mut self.errors);
+            } else {
+                panic!("TODO");
+            }
+        }
         //TODO: apply units.
     }
 

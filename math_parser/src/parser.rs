@@ -1,8 +1,10 @@
 use std::any::{Any, TypeId};
 use std::ops::DerefMut;
+use std::rc::Rc;
 use macros::CastAny;
 use crate::errors::{Error, ErrorId};
-use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, ConstExpr, IdExpr, ListExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement};
+use crate::functions::CustomFunctionDef;
+use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, ConstExpr, FunctionDefExpr, IdExpr, ListExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement};
 use crate::tokenizer::cursor::Range;
 use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
 use crate::tokenizer::token_type::TokenType;
@@ -14,7 +16,7 @@ use crate::tokenizer::token_type::TokenType::{Eq, EqDiv, EqMin, EqMult, EqPlus};
 pub mod nodes;
 
 pub struct CodeBlock<'a> {
-    pub statements: Vec<Statement>,
+    pub statements: Vec<Box<Statement>>,
     pub scope: Scope<'a>,
     pub errors: Vec<Error>,
 }
@@ -50,11 +52,82 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn parse(&mut self) {
+    pub fn parse(&mut self, for_block: bool) {
         while self.tok.peek().kind != TokenType::Eot {
-            let stmt = self.parse_expr_statement();
-            self.code_block.statements.push(stmt);
+            let stmt = self.parse_statement();
+            self.code_block.statements.push(Box::new(stmt));
+            if for_block && self.tok.peek().kind == TokenType::CurlClose {
+                return;
+            }
         }
+    }
+
+    fn parse_statement(&mut self) -> Statement {
+        if let Some(stmt) = self.parse_function_def() {
+            return stmt;
+        }
+        self.parse_expr_statement()
+    }
+
+    fn parse_function_def(&mut self) -> Option<Statement> {
+        if !self.match_token(&TokenType::Function) {
+            return None;
+        };
+        if self.tok.peek().kind != TokenType::Id {
+            return Some(Statement::error(&mut self.code_block.errors, ErrorId::ExpectedId, self.tok.peek().clone(), ""));
+        };
+        let id = self.tok.next();
+
+        if self.tok.peek().kind != TokenType::ParOpen {
+            return Some(Statement::error(&mut self.code_block.errors, ErrorId::Expected, self.tok.peek().clone(), "("));
+        };
+
+        let mut param_defs: Vec<String> = Vec::new();
+        while(self.tok.peek().kind == TokenType::Id) {
+            let txt = self.code_block.scope.globals.get_text(&self.tok.next().range).to_string();
+            param_defs.push(txt);
+            if self.match_token(&TokenType::Comma) {
+                continue;
+            }
+            if self.tok.peek().kind != TokenType::ParClose {
+                break;
+            }
+            return Some(Statement::error(&mut self.code_block.errors, ErrorId::Expected, self.tok.peek().clone(), ",` or `)"));
+        };
+        if self.match_token(&TokenType::ParClose) {
+            return Some(Statement::error(&mut self.code_block.errors, ErrorId::Expected, self.tok.peek().clone(), ")"));
+        };
+        if self.match_token(&TokenType::CurlOpen) {
+            return Some(Statement::error(&mut self.code_block.errors, ErrorId::Expected, self.tok.peek().clone(), "{"));
+        };
+        let new_code_block = self.parse_block();
+        if self.match_token(&TokenType::CurlClose) {
+            return Some(Statement::error(&mut self.code_block.errors, ErrorId::Expected, self.tok.peek().clone(), "}"));
+        };
+
+        let mut fun_def_expr = FunctionDefExpr {
+            id: self.get_text(&id.range).to_string(),
+            arg_names: param_defs,
+            node_data: NodeData { unit: Unit::none(), has_errors: false }
+        };
+        //TODO add range
+        if(self.code_block.scope.local_function_defs.contains_key(&fun_def_expr.id)) {
+            fun_def_expr.node_data.has_errors = true;
+            self.code_block.errors.push(Error::build_1_arg(ErrorId::WFunctionOverride,id.range.clone(), self.get_text(&id.range)));
+        };
+        Some(Statement {
+            node: Box::new(fun_def_expr),
+            node_data: NodeData { unit: Unit::none(), has_errors: false }
+        })
+    }
+
+    fn parse_block(&mut self) -> CodeBlock {
+        let new_scope = Scope::copy_for_block(&self.code_block.scope);
+        let code_block = CodeBlock::new(new_scope);
+        // let mut parser = Parser::new(self.tok, code_block);
+        // parser.parse(true);
+        // parser.into()
+        code_block
     }
 
     fn parse_expr_statement(&mut self) -> Statement {
@@ -97,7 +170,7 @@ impl<'a> Parser<'a> {
                 expr: Parser::reduce_list(self.parse_list_expr())
             };
             //TODO: check EOT
-            let txt = self.get_text(&assign_expr.id.range).to_string();
+            let txt = self.code_block.scope.globals.get_text(&assign_expr.id.range).to_string();
             self.code_block.scope.var_defs.insert(txt);
             return Box::new(assign_expr);
         }
@@ -185,7 +258,8 @@ impl<'a> Parser<'a> {
         true
     }
 
-    fn get_text(&mut self, range: &Range) -> &str {
+    #[inline]
+    fn get_text(&self, range: &Range) -> &str {
         self.code_block.scope.globals.get_text(&range)
     }
 
@@ -305,7 +379,7 @@ mod tests {
         let mut scope = Scope::new(&mut globals);
         let mut code_block = CodeBlock::new(scope);
         let mut parser = Parser::new(&mut tok, code_block);
-        parser.parse();
+        parser.parse(false);
         let code_block: CodeBlock = parser.into();
         let stmt = code_block.statements.first().expect("There should be a statement here.");
         let root = stmt.node.as_any().downcast_ref::<BinExpr>().expect("There should be a BinExpr here.");

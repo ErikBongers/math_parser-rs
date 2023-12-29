@@ -30,7 +30,7 @@ fn test_resolver() {
 
     //parse
     let mut parser = Parser::new(&mut tok, code_block);
-    parser.parse();
+    parser.parse(false);
     let mut code_block: CodeBlock = parser.into();
     println!("{}", text);
     for stmt in &code_block.statements {
@@ -175,7 +175,7 @@ mod test {
 
         //parse
         let mut parser = Parser::new(&mut tok, code_block);
-        parser.parse();
+        parser.parse(false);
         let mut code_block: CodeBlock = parser.into();
 
         //resolve
