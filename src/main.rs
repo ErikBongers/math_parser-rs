@@ -1,4 +1,6 @@
+use std::cell::RefCell;
 use std::fs;
+use std::rc::Rc;
 use macros::CastAny;
 use math_parser::tokenizer::peeking_tokenizer::PeekingTokenizer;
 use math_parser::parser::{CodeBlock, Parser};
@@ -24,8 +26,8 @@ fn test_resolver() {
     let text = "abs(0-123)";
     let mut tok = PeekingTokenizer::new(text);
     let mut globals = Globals::new();
-    globals.sources.push(&text);//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
-    let scope = Scope::new(&globals);
+    globals.sources.push(text.to_string());//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
+    let scope = RefCell::new(Scope::new(Rc::new(globals)));
     let code_block = CodeBlock::new(scope);
 
     //parse
@@ -39,7 +41,7 @@ fn test_resolver() {
 
     //resolve
     let mut resolver = Resolver {
-        scope: &mut code_block.scope,
+        scope: code_block.scope.clone(),
         results: Vec::new(),
         errors: Vec::new(),
     };
@@ -137,6 +139,8 @@ fn test_deref() {
 
 #[cfg(test)]
 mod test {
+    use std::cell::RefCell;
+    use std::rc::Rc;
     use math_parser::parser::{CodeBlock, Parser};
     use math_parser::resolver::globals::Globals;
     use math_parser::resolver::Resolver;
@@ -169,9 +173,9 @@ mod test {
     fn test_result(text: &str, expected_result: f64, unit: &str) {
         let mut tok = PeekingTokenizer::new(text);
         let mut globals = Globals::new();
-        globals.sources.push(&text);//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
-        let mut scope = Scope::new(&mut globals);
-        let mut code_block = CodeBlock::new(scope);
+        globals.sources.push(text.to_string());//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
+        let mut scope = Scope::new(Rc::new(globals));
+        let mut code_block = CodeBlock::new(RefCell::new(scope));
 
         //parse
         let mut parser = Parser::new(&mut tok, code_block);
@@ -180,7 +184,7 @@ mod test {
 
         //resolve
         let mut resolver = Resolver {
-            scope: &mut code_block.scope,
+            scope: code_block.scope.clone(),
             results: Vec::new(),
             errors: Vec::new(),
         };

@@ -5,6 +5,7 @@ use crate::resolver::unit::Unit;
 use crate::tokenizer::cursor::{Number, Range};
 use crate::tokenizer::Token;
 
+#[derive(Clone)]
 pub struct NodeData {
     pub unit: Unit,
     pub has_errors: bool
@@ -80,7 +81,7 @@ pub struct ListExpr {
     pub nodes: Vec<Box<dyn Node>>,
 }
 
-#[derive(CastAny, Node)]
+#[derive(CastAny, Node, Clone)]
 pub struct FunctionDefExpr {
     pub node_data: NodeData,
     pub id: String, //Not a Token because id may be a decorated name in case of polymorphism.

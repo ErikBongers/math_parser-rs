@@ -5,15 +5,15 @@ use crate::resolver::unit::{create_unit_defs, UnitDef, UnitsView};
 use crate::resolver::value::{Value, variant_to_value_type};
 use crate::tokenizer::cursor::Range;
 
-pub struct Globals<'a> {
+pub struct Globals {
     pub operators: HashMap<u32, fn(&Globals, &Vec<Value>, &Range)-> Value>,
-    pub sources: Vec<&'a str>,
-    pub unit_defs: HashMap<&'a str, UnitDef<'a>>,
-    pub units_view: UnitsView<'a>,
-    pub global_function_defs:  HashMap<&'a str, GlobalFunctionDef>,
+    pub sources: Vec<String>,
+    pub unit_defs: HashMap<String, UnitDef>,
+    pub units_view: UnitsView,
+    pub global_function_defs:  HashMap<String, GlobalFunctionDef>,
 }
 
-impl<'a> Globals<'a> {
+impl<'a> Globals {
     pub fn new () -> Self {
         let unit_defs = create_unit_defs();
 
@@ -27,9 +27,12 @@ impl<'a> Globals<'a> {
         globals
     }
 
-    pub fn get_operator(&self, value1: &Value, operator_type: OperatorType, value2: &Value) -> Option<&fn(&Globals, &Vec<Value>, &Range)-> Value> {
-        let op_id = operator_id_from(variant_to_value_type(&value1.variant), operator_type, variant_to_value_type(&value2.variant));
+    pub fn get_operator(&self, op_id: u32) -> Option<&fn(&Globals, &Vec<Value>, &Range)-> Value> {
         self.operators.get(&op_id)
+    }
+
+    pub fn exists_operator(&self, op_id: u32) -> bool {
+        self.operators.contains_key(&op_id)
     }
 
     pub fn get_text(&self, range: &Range) -> &str {

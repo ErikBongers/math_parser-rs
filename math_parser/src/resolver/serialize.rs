@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use serde::{Serialize, Serializer};
 use serde::ser::{SerializeStruct, SerializeSeq};
 use crate::errors;
@@ -9,22 +11,22 @@ use crate::resolver::unit::Unit;
 use crate::resolver::value::{Value, Variant::*, variant_to_value_type};
 
 struct ScopedValue<'a> {
-    scope: &'a Scope<'a>,
+    scope: Rc<RefCell<Scope>>,
     value: &'a Value
 }
 
-impl<'a> Resolver<'a> {
+impl Resolver {
     fn build_scoped_values(&self) -> Vec<ScopedValue> {
         let context_results: Vec<ScopedValue> =
             self.results.iter()
             .map(|value|
-                ScopedValue { scope: &self.scope, value: &value})
+                ScopedValue { scope: self.scope.clone(), value: &value})
             .collect();
         context_results
     }
 }
 
-impl<'a> Serialize for Resolver<'a> {
+impl Serialize for Resolver {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where
             S: Serializer
@@ -32,7 +34,7 @@ impl<'a> Serialize for Resolver<'a> {
         let mut state = serializer.serialize_struct("result", 2)?;
 
         state.serialize_field("result", &self.build_scoped_values())?;
-        let errors: Vec<ErrorContext> = self.errors.iter().map(|error| ErrorContext { error, globals: &self.scope.globals}).collect();
+        let errors: Vec<ErrorContext> = self.errors.iter().map(|error| ErrorContext { error, globals: self.scope.borrow().globals.clone()}).collect();
         state.serialize_field("errors", &errors)?;
         state.end()
     }
@@ -46,7 +48,7 @@ impl<'a> Serialize for ScopedValue<'a> {
         let mut state = serializer.serialize_struct("Value", 3)?;
 
         if let Some(id) = &self.value.id {
-            state.serialize_field("id", &self.scope.globals.sources[id.source_index as usize][id.start..id.end])?;
+            state.serialize_field("id", &self.scope.borrow().globals.sources[id.source_index as usize][id.start..id.end])?;
         } else {
             state.serialize_field("id", "_")?; //TODO: replace with None? This will be output as `null`
         }
@@ -68,7 +70,7 @@ impl Serialize for Unit {
 
 struct ErrorContext<'a> {
     error: &'a errors::Error,
-    globals: &'a Globals<'a>,
+    globals: Rc<Globals>,
 }
 
 impl<'a> Serialize for ErrorContext<'a> {

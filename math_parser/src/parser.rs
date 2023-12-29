@@ -1,4 +1,5 @@
 use std::any::{Any, TypeId};
+use std::cell::RefCell;
 use std::ops::DerefMut;
 use std::rc::Rc;
 use macros::CastAny;
@@ -15,16 +16,16 @@ use crate::tokenizer::token_type::TokenType::{Eq, EqDiv, EqMin, EqMult, EqPlus};
 
 pub mod nodes;
 
-pub struct CodeBlock<'a> {
+pub struct CodeBlock {
     pub statements: Vec<Box<Statement>>,
-    pub scope: Scope<'a>,
+    pub scope: Rc<RefCell<Scope>>,
     pub errors: Vec<Error>,
 }
 
-impl<'a> CodeBlock<'a> {
-    pub fn new(scope: Scope<'a>) -> Self {
+impl<'a> CodeBlock {
+    pub fn new(scope: RefCell<Scope>) -> Self {
         CodeBlock {
-            scope,
+            scope: Rc::new(scope),
             statements: Vec::new(),
             errors: Vec::new(),
         }
@@ -34,17 +35,17 @@ impl<'a> CodeBlock<'a> {
 pub struct Parser<'a> {
     tok: &'a mut PeekingTokenizer<'a>,
     statement_start: Range,
-    code_block: CodeBlock<'a>,
+    code_block: CodeBlock,
 }
 
-impl<'a> Into<CodeBlock<'a>> for Parser<'a> {
-    fn into(self) -> CodeBlock<'a> {
+impl<'a> Into<CodeBlock> for Parser<'a> {
+    fn into(self) -> CodeBlock {
         self.code_block
     }
 }
 
 impl<'a> Parser<'a> {
-    pub fn new (tok: &'a mut PeekingTokenizer<'a>, code_block: CodeBlock<'a>) -> Self {
+    pub fn new (tok: &'a mut PeekingTokenizer<'a>, code_block: CodeBlock) -> Self {
         Parser {
             tok,
             code_block,
@@ -83,8 +84,9 @@ impl<'a> Parser<'a> {
         };
 
         let mut param_defs: Vec<String> = Vec::new();
-        while(self.tok.peek().kind == TokenType::Id) {
-            let txt = self.code_block.scope.globals.get_text(&self.tok.next().range).to_string();
+
+        while (self.tok.peek().kind == TokenType::Id) {
+            let txt = self.code_block.scope.borrow().globals.get_text(&self.tok.next().range).to_string();
             param_defs.push(txt);
             if self.match_token(&TokenType::Comma) {
                 continue;
@@ -94,6 +96,7 @@ impl<'a> Parser<'a> {
             }
             return Some(Statement::error(&mut self.code_block.errors, ErrorId::Expected, self.tok.peek().clone(), ",` or `)"));
         };
+
         if self.match_token(&TokenType::ParClose) {
             return Some(Statement::error(&mut self.code_block.errors, ErrorId::Expected, self.tok.peek().clone(), ")"));
         };
@@ -111,9 +114,9 @@ impl<'a> Parser<'a> {
             node_data: NodeData { unit: Unit::none(), has_errors: false }
         };
         //TODO add range
-        if(self.code_block.scope.local_function_defs.contains_key(&fun_def_expr.id)) {
+        if(self.code_block.scope.borrow().local_function_defs.contains_key(&fun_def_expr.id)) {
             fun_def_expr.node_data.has_errors = true;
-            self.code_block.errors.push(Error::build_1_arg(ErrorId::WFunctionOverride,id.range.clone(), self.get_text(&id.range)));
+            self.code_block.errors.push(Error::build_1_arg(ErrorId::WFunctionOverride,id.range.clone(), &self.get_text(&id.range)));
         };
         Some(Statement {
             node: Box::new(fun_def_expr),
@@ -123,11 +126,11 @@ impl<'a> Parser<'a> {
 
     fn parse_block(&mut self) -> CodeBlock {
         let new_scope = Scope::copy_for_block(&self.code_block.scope);
-        let code_block = CodeBlock::new(new_scope);
-        // let mut parser = Parser::new(self.tok, code_block);
+        let new_code_block = CodeBlock::new(new_scope);
+        // let mut parser = Parser::new(self.tok, new_code_block);
         // parser.parse(true);
         // parser.into()
-        code_block
+        new_code_block
     }
 
     fn parse_expr_statement(&mut self) -> Statement {
@@ -144,7 +147,7 @@ impl<'a> Parser<'a> {
             _ => {
                 let t = self.tok.next(); //avoid dead loop!
                 // let txt = self.get_text(&t.range); //WHY DOESN'T THIS WORK????
-                self.code_block.errors.push(Error::build_1_arg(ErrorId::Expected, t.range.clone(), self.code_block.scope.globals.get_text(&t.range)));
+                self.code_block.errors.push(Error::build_1_arg(ErrorId::Expected, t.range.clone(), self.code_block.scope.borrow().globals.get_text(&t.range)));
                 stmt.node_data.has_errors = true;
             }
         };
@@ -170,8 +173,8 @@ impl<'a> Parser<'a> {
                 expr: Parser::reduce_list(self.parse_list_expr())
             };
             //TODO: check EOT
-            let txt = self.code_block.scope.globals.get_text(&assign_expr.id.range).to_string();
-            self.code_block.scope.var_defs.insert(txt);
+            let txt = self.code_block.scope.borrow().globals.get_text(&assign_expr.id.range).to_string();
+            self.code_block.scope.borrow_mut().var_defs.insert(txt);
             return Box::new(assign_expr);
         }
         unreachable!("TODO: implement else")
@@ -259,15 +262,14 @@ impl<'a> Parser<'a> {
     }
 
     #[inline]
-    fn get_text(&self, range: &Range) -> &str {
-        self.code_block.scope.globals.get_text(&range)
+    fn get_text(&self, range: &Range) -> String {
+        self.code_block.scope.borrow().globals.get_text(&range).to_string()
     }
 
     fn parse_call_expr(&mut self, function_name: Token) -> Box<dyn Node> {
-        // let func_name_str = self.get_text(&function_name.range);
-        let func_name_str = self.code_block.scope.globals.get_text(&function_name.range);
+        let func_name_str = self.get_text(&function_name.range);
         if TokenType::ParOpen != self.tok.peek().kind {
-            let error = Error::build_1_arg(ErrorId::FuncNoOpenPar, function_name.range.clone(), func_name_str);
+            let error = Error::build_1_arg(ErrorId::FuncNoOpenPar, function_name.range.clone(), &func_name_str);
             self.code_block.errors.push(error);
             return Box::new(NoneExpr{node_data: NodeData { unit: Unit::none(), has_errors: true}, token: function_name.clone()});
         }
@@ -278,7 +280,7 @@ impl<'a> Parser<'a> {
         if list_expr.nodes.len() == 1 {
             if let Some(none_expr) = list_expr.nodes.first().unwrap().as_any().downcast_ref::<NoneExpr>() {
                 if none_expr.token.kind == TokenType::Eot {
-                    let error = Error::build_1_arg(ErrorId::Eos, function_name.range.clone(), self.get_text(&function_name.range));
+                    let error = Error::build_1_arg(ErrorId::Eos, function_name.range.clone(), &self.get_text(&function_name.range));
                     self.code_block.errors.push(error);
                     return Box::new(NoneExpr{node_data: NodeData { unit: Unit::none(), has_errors: true}, token: function_name});
                 }
@@ -298,14 +300,14 @@ impl<'a> Parser<'a> {
             TokenType::Id => {
                 let t = self.tok.next();
                 // let id = self.get_text(&t.range);
-                let id = self.code_block.scope.globals.get_text(&t.range);
-                if let Some(_) = self.code_block.scope.get_local_function(id) {
-                    return self.parse_call_expr(t);
-                } else {
-                    if self.code_block.scope.globals.global_function_defs.contains_key(id) {
+                let id = self.get_text(&t.range);
+                // if let Some(_) = self.code_block.scope.borrow().get_local_function(id) {
+                //     return self.parse_call_expr(t);
+                // } else {
+                    if self.code_block.scope.borrow().globals.global_function_defs.contains_key(&id) {
                         return self.parse_call_expr(t);
                     }
-                }
+                // }
                 Box::new(IdExpr {
                     id: t,
                     node_data: NodeData {  unit: Unit::none(), has_errors: false }
@@ -364,6 +366,8 @@ impl<'a> Parser<'a> {
 
 #[cfg(test)]
 mod tests {
+    use std::cell::RefCell;
+    use std::rc::Rc;
     use crate::parser::{CodeBlock, Parser};
     use crate::parser::nodes::{BinExpr, ConstExpr};
     use crate::resolver::globals::Globals;
@@ -376,7 +380,7 @@ mod tests {
         let txt = "2 + 3 * 4";
         let mut tok = PeekingTokenizer::new(txt);
         let mut globals = Globals::new();
-        let mut scope = Scope::new(&mut globals);
+        let mut scope = RefCell::new(Scope::new(Rc::new(globals)));
         let mut code_block = CodeBlock::new(scope);
         let mut parser = Parser::new(&mut tok, code_block);
         parser.parse(false);

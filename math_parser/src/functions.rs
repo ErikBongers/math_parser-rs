@@ -1,11 +1,12 @@
+use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
+use std::rc::Rc;
 use crate::resolver::scope::Scope;
 use crate::errors::{Error, ErrorId};
 use crate::parser::CodeBlock;
 use crate::parser::nodes::{FunctionDefExpr};
 use crate::resolver::{add_error, Resolver};
 use crate::resolver::globals::Globals;
-use crate::resolver::unit::{Unit};
 use crate::resolver::value::Value;
 use crate::resolver::value::Variant;
 use crate::tokenizer::cursor::{Number, Range};
@@ -18,21 +19,20 @@ pub struct GlobalFunctionDef {
     pub name: String,
     pub min_args: usize,
     pub max_args: usize,
-    execute: fn(global_function_def: Option<&GlobalFunctionDef>, local_function_def: Option<&CustomFunctionDef>, scope: &mut Scope, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>) -> Value,
-    pub function_def_expr: Option<FunctionDefExpr>,
+    execute: fn(global_function_def: Option<&GlobalFunctionDef>, local_function_def: Option<&CustomFunctionDef>, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>) -> Value,
 }
 
-pub struct CustomFunctionDef<'a> {
+pub struct CustomFunctionDef {
     pub name: String,
     pub min_args: usize,
     pub max_args: usize,
-    pub execute: fn(global_function_def: Option<&GlobalFunctionDef>, local_function_def: Option<&CustomFunctionDef>, scope: &mut Scope, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>) -> Value,
-    pub code_block: CodeBlock<'a>,
-    pub function_def_expr: &'a FunctionDefExpr,
+    pub execute: fn(global_function_def: Option<&GlobalFunctionDef>, local_function_def: Option<&CustomFunctionDef>, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>) -> Value,
+    pub code_block: CodeBlock,
+    pub function_def_expr: FunctionDefExpr,
 }
 
 impl GlobalFunctionDef {
-    pub fn call(&self, scope: &mut Scope, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>) -> Value {
+    pub fn call(&self, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>) -> Value {
         if self.is_correct_arg_count(args.len()) {
             (self.execute)(Some(&self), None, scope, args, range, errors)
         } else {
@@ -47,18 +47,18 @@ impl FunctionDef for GlobalFunctionDef {
     }
 }
 
-impl<'a> FunctionDef for CustomFunctionDef<'a> {
+impl FunctionDef for CustomFunctionDef {
     fn is_correct_arg_count(&self, cnt: usize) -> bool {
         self.min_args <= cnt && cnt <= self.max_args //TODO: add inline hint
     }
 }
 
-impl<'a> CustomFunctionDef<'a> {
+impl CustomFunctionDef {
     pub fn is_correct_arg_count(&self, cnt: usize) -> bool {
         self.min_args <= cnt && cnt <= self.max_args //TODO: add inline hint
     }
 
-    pub fn call(&self, scope: &mut Scope, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>) -> Value {
+    pub fn call(&self, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>) -> Value {
         if self.is_correct_arg_count(args.len()) {
             (self.execute)(None, Some(&self), scope, args, range, errors)
         } else {
@@ -87,15 +87,15 @@ impl FunctionView {
 
 //TODO: add global functions.
 
-pub fn create_global_function_defs() -> HashMap<&'static str, GlobalFunctionDef> {
-    let defs: HashMap<&'static str, GlobalFunctionDef> = HashMap::from( [
-        ("abs", GlobalFunctionDef { name: "abs".to_string(), min_args: 1, max_args: 1, execute: abs, function_def_expr: None})
+pub fn create_global_function_defs() -> HashMap<String, GlobalFunctionDef> {
+    let defs: HashMap<String, GlobalFunctionDef> = HashMap::from( [
+        ("abs".to_string(), GlobalFunctionDef { name: "abs".to_string(), min_args: 1, max_args: 1, execute: abs})
     ]);
     defs
 }
 
 
-fn abs(global_function_def: Option<&GlobalFunctionDef>, local_function_def: Option<&CustomFunctionDef>, scope: &mut Scope, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>) -> Value {
+fn abs(global_function_def: Option<&GlobalFunctionDef>, local_function_def: Option<&CustomFunctionDef>, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>) -> Value {
     let function_def = global_function_def.unwrap();
     let Variant::Number { number, .. } = &args[0].variant else {
         add_error(errors, ErrorId::FuncArgWrongType, range.clone(), &function_def.name, Value::error());
@@ -108,7 +108,7 @@ fn abs(global_function_def: Option<&GlobalFunctionDef>, local_function_def: Opti
     Value::from(Number {significand: sig, exponent: number.exponent, unit: number.unit.clone() })
 }
 
-pub fn execute_custom_function<'a>(global_function_def: Option<&GlobalFunctionDef>, local_function_def: Option<&CustomFunctionDef>, scope: &'a mut Scope<'a>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>) -> Value {
+pub fn execute_custom_function(global_function_def: Option<&GlobalFunctionDef>, local_function_def: Option<&CustomFunctionDef>, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>) -> Value {
     let function_def = local_function_def.unwrap();
     let mut param_variables = HashMap::<String, Value>::new();
 
@@ -116,8 +116,8 @@ pub fn execute_custom_function<'a>(global_function_def: Option<&GlobalFunctionDe
     for (i, arg) in args.iter().enumerate() {
         param_variables.insert(function_def.function_def_expr.arg_names[i].clone(), arg.clone()); //TODO: clone or move?
     }
-    scope.variables.extend(param_variables);
-    let mut resolver = Resolver { scope, results: Vec::new(), errors: Vec::new()};
+    scope.borrow_mut().variables.extend(param_variables);
+    let mut resolver = Resolver { scope: scope.clone(), results: Vec::new(), errors: Vec::new()};
     let result = resolver.resolve(&function_def.code_block.statements);
     let Some(result) = result else {
         add_error(errors, ErrorId::FuncNoBody, range.clone(),&function_def.name, Value::error());
