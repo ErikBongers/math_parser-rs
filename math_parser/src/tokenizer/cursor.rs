@@ -6,14 +6,14 @@ use crate::resolver::unit::{Unit, UnitsView};
 #[derive(Clone)]
 pub struct Cursor<'a> {
     pub text: &'a str,
-    chars: Chars<'a>,
-    len_text: usize,
+    pub chars: Chars<'a>,
+    pub len_text: usize,
     pub newline_found: bool,
     pub number: Number,
     pub is_beginning_of_text: bool,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)] //TODO: make Copy instead of Clone?
 pub struct Range {
     pub source_index: u8,
     pub start :usize,
@@ -85,6 +85,15 @@ impl<'a> Cursor<'a> {
             number: Number::new(0.0, 0),
             is_beginning_of_text: true,
         }
+    }
+
+    pub fn copy_from(&mut self, cursor: &Cursor<'a>) {
+        self.text = cursor.text;
+        self.chars = cursor.chars.clone();
+        self.len_text = cursor.len_text;
+        self.newline_found = cursor.newline_found;
+        self.number = cursor.number.clone();
+        self.is_beginning_of_text = cursor.is_beginning_of_text;
     }
 
     pub fn peek(&self) -> char {

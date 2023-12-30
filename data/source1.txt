@@ -1,13 +1,6 @@
-a=3 + b;
-木構造=123; //tweede lijn.
-function functionid(x, y);
-!//木構造 ik weet niet wat dit wil zegge.
-444^2;
-/*
-#define
-*/
-#undef
-#zever
+function test ( a )
+{
+  1+1;
+}
 
-x;
-//date='12/12/12';
+test(5);

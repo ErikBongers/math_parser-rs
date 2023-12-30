@@ -11,10 +11,12 @@ pub mod peeking_tokenizer;
 pub struct Token {
     pub kind: TokenType,
     pub range :Range,
+    //TODO: just for testing,
+    pub text: String,
 }
 impl Token {
-    fn new(kind: TokenType, source_index :u8, start: usize, end :usize) -> Token {
-        Token { kind, range: Range { source_index, start, end } }
+    fn new(kind: TokenType, source_index :u8, start: usize, end :usize, text: String) -> Token {
+        Token { kind, range: Range { source_index, start, end }, text }
     }
 }
 
@@ -24,7 +26,7 @@ impl Cursor<'_> {
         let start_pos = self.get_pos();
         self.is_beginning_of_text = false; // clear this once per next_token instead of once per next(), for performance.
         let first_char = match self.next() {
-            None => return Token::new(Eot, 0, 0, 0),
+            None => return Token::new(Eot, 0, 0, 0, "".to_string()),
             Some(c) => c
         };
         let token_type = match first_char {
@@ -156,7 +158,7 @@ impl Cursor<'_> {
 
             _ => Unknown
         };
-        let res = Token::new(token_type, 0, start_pos, self.get_pos());
+        let res = Token::new(token_type, 0, start_pos, self.get_pos(), self.text[start_pos..self.get_pos()].to_string());
         res
     }
 }

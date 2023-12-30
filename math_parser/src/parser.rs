@@ -32,20 +32,20 @@ impl<'a> CodeBlock {
     }
 }
 
-pub struct Parser<'a> {
-    tok: &'a mut PeekingTokenizer<'a>,
+pub struct Parser<'a, 't> {
+    tok: &'a mut PeekingTokenizer<'t>,
     statement_start: Range,
     code_block: CodeBlock,
 }
 
-impl<'a> Into<CodeBlock> for Parser<'a> {
+impl<'a, 't> Into<(CodeBlock)> for Parser<'a, 't> {
     fn into(self) -> CodeBlock {
         self.code_block
     }
 }
 
-impl<'a> Parser<'a> {
-    pub fn new (tok: &'a mut PeekingTokenizer<'a>, code_block: CodeBlock) -> Self {
+impl<'a, 't> Parser<'a, 't> {
+    pub fn new (tok: &'a mut PeekingTokenizer<'t>, code_block: CodeBlock) -> Self {
         Parser {
             tok,
             code_block,
@@ -79,7 +79,7 @@ impl<'a> Parser<'a> {
         };
         let id = self.tok.next();
 
-        if self.tok.peek().kind != TokenType::ParOpen {
+        if !self.match_token(&TokenType::ParOpen) {
             return Some(Statement::error(&mut self.code_block.errors, ErrorId::Expected, self.tok.peek().clone(), "("));
         };
 
@@ -91,25 +91,29 @@ impl<'a> Parser<'a> {
             if self.match_token(&TokenType::Comma) {
                 continue;
             }
-            if self.tok.peek().kind != TokenType::ParClose {
+            if self.tok.peek().kind == TokenType::ParClose {
                 break;
             }
             return Some(Statement::error(&mut self.code_block.errors, ErrorId::Expected, self.tok.peek().clone(), ",` or `)"));
         };
 
-        if self.match_token(&TokenType::ParClose) {
+        if !self.match_token(&TokenType::ParClose) {
             return Some(Statement::error(&mut self.code_block.errors, ErrorId::Expected, self.tok.peek().clone(), ")"));
         };
-        if self.match_token(&TokenType::CurlOpen) {
+        if !self.match_token(&TokenType::CurlOpen) {
             return Some(Statement::error(&mut self.code_block.errors, ErrorId::Expected, self.tok.peek().clone(), "{"));
         };
         let new_code_block = self.parse_block();
-        if self.match_token(&TokenType::CurlClose) {
+        let chars_left = self.tok.cur.chars.as_str().len();
+        println!("chars after: {chars_left}");
+
+        if !self.match_token(&TokenType::CurlClose) {
             return Some(Statement::error(&mut self.code_block.errors, ErrorId::Expected, self.tok.peek().clone(), "}"));
         };
 
         let mut fun_def_expr = FunctionDefExpr {
             id: self.get_text(&id.range).to_string(),
+            id_range: id.range.clone(),
             arg_names: param_defs,
             node_data: NodeData { unit: Unit::none(), has_errors: false }
         };
@@ -118,6 +122,8 @@ impl<'a> Parser<'a> {
             fun_def_expr.node_data.has_errors = true;
             self.code_block.errors.push(Error::build_1_arg(ErrorId::WFunctionOverride,id.range.clone(), &self.get_text(&id.range)));
         };
+
+        self.code_block.scope.borrow_mut().add_local_function(new_code_block, &fun_def_expr);
         Some(Statement {
             node: Box::new(fun_def_expr),
             node_data: NodeData { unit: Unit::none(), has_errors: false }
@@ -127,10 +133,11 @@ impl<'a> Parser<'a> {
     fn parse_block(&mut self) -> CodeBlock {
         let new_scope = Scope::copy_for_block(&self.code_block.scope);
         let new_code_block = CodeBlock::new(new_scope);
-        // let mut parser = Parser::new(self.tok, new_code_block);
-        // parser.parse(true);
-        // parser.into()
-        new_code_block
+        let chars_left = self.tok.cur.chars.as_str().len();
+        println!("chars before: {chars_left}");
+        let mut parser = Parser::new(&mut self.tok, new_code_block);
+        parser.parse(true);
+        parser.into()
     }
 
     fn parse_expr_statement(&mut self) -> Statement {
@@ -228,7 +235,7 @@ impl<'a> Parser<'a> {
                     self.tok.next();
                     // postfix.postfix_id already set!
                 } else {
-                    postfix.postfix_id = Token { kind: TokenType::Nullptr, range : Range { start: 0, end: 0, source_index: 0}} //TODO: since range can be empty: use Option?
+                    postfix.postfix_id = Token { kind: TokenType::Nullptr, range : Range { start: 0, end: 0, source_index: 0}, text: "".to_string()} //TODO: since range can be empty: use Option?
                 }
                 Box::new(postfix)
             },
@@ -276,6 +283,7 @@ impl<'a> Parser<'a> {
         self.tok.next();// eat `(`
         let args = self.parse_list_expr();
         //first argument may be NONE, with a token EOT, which is an invalid argument list in this case.
+        //TODO: a function call with no parameters.
         let list_expr = args.as_any().downcast_ref::<ListExpr>().unwrap();
         if list_expr.nodes.len() == 1 {
             if let Some(none_expr) = list_expr.nodes.first().unwrap().as_any().downcast_ref::<NoneExpr>() {
@@ -301,13 +309,13 @@ impl<'a> Parser<'a> {
                 let t = self.tok.next();
                 // let id = self.get_text(&t.range);
                 let id = self.get_text(&t.range);
-                // if let Some(_) = self.code_block.scope.borrow().get_local_function(id) {
-                //     return self.parse_call_expr(t);
-                // } else {
+                if self.code_block.scope.borrow().local_function_defs.contains_key(&id) {
+                    return self.parse_call_expr(t);
+                } else {
                     if self.code_block.scope.borrow().globals.global_function_defs.contains_key(&id) {
                         return self.parse_call_expr(t);
                     }
-                // }
+                }
                 Box::new(IdExpr {
                     id: t,
                     node_data: NodeData {  unit: Unit::none(), has_errors: false }

@@ -24,6 +24,16 @@ fn main() {
 fn test_resolver() {
     // let text = "(20+10).m-31cm";
     let text = "abs(0-123)";
+    let file_path = r"data/source1.txt";
+    let result = fs::read_to_string(file_path);
+    let Ok(text) = result
+        else {
+            println!("File ni gevonne...");
+            return;
+        };
+    println!("{0}", text);
+    let text = text.as_str();
+
     let mut tok = PeekingTokenizer::new(text);
     let mut globals = Globals::new();
     globals.sources.push(text.to_string());//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
@@ -33,7 +43,7 @@ fn test_resolver() {
     //parse
     let mut parser = Parser::new(&mut tok, code_block);
     parser.parse(false);
-    let mut code_block: CodeBlock = parser.into();
+    let code_block: CodeBlock = parser.into();
     println!("{}", text);
     for stmt in &code_block.statements {
         print_nodes(&stmt.node, 0);
@@ -108,34 +118,10 @@ fn parse() {
 }
 
 
-
 // unstable as of 12/2023
 // const T_CONST_EXPR: TypeId = TypeId::of::<ConstExpr>();
 // const T_BIN_EXPR: TypeId = TypeId::of::<BinExpr>();
 
-fn test_deref() {
-    let nod1 = BinExpr {
-        expr1: Box::new(ConstExpr { value: Number{ significand: 12.0, exponent: 0, unit : Unit { range: None, id: "".to_string() }}, node_data: NodeData { has_errors: false, unit: Unit::none()} }),
-        op: Token { kind: TokenType::Plus, range: Range { source_index: 0, start: 0, end: 0}},
-        expr2: Box::new(ConstExpr { value: Number{ significand: 34.0, exponent: 0, unit : Unit { range: None, id: "".to_string() }} , node_data: NodeData { has_errors: false, unit: Unit::none()}}),
-        node_data: NodeData { has_errors: false, unit : Unit::none()},
-        implicit_mult: false
-    };
-
-    let mut nod1 = BinExpr {
-        expr1: Box::new(nod1),
-        op: Token { kind: TokenType::Plus, range: Range { source_index: 0, start: 0, end: 0 } },
-        expr2: Box::new(ConstExpr { value: Number { significand: 56.0, exponent: 0 , unit : Unit { range: None, id: "".to_string() }}, node_data: NodeData { has_errors: false, unit: Unit::none() } }),
-        node_data: NodeData { has_errors: false, unit: Unit::none() },
-        implicit_mult: false
-    };
-
-    let nod1 = nod1.as_any_mut().downcast_mut::<BinExpr>().unwrap();
-
-    // resolve_node(&mut nod1.expr1);
-    // resolve_node(&mut nod1.expr2);
-    println!("{0}", nod1.expr2.as_any().downcast_ref::<ConstExpr>().unwrap().value.significand);
-}
 
 #[cfg(test)]
 mod test {

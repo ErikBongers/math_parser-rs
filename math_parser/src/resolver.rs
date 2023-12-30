@@ -10,11 +10,11 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use crate::errors::{Error, ErrorId};
 use crate::functions::FunctionDef;
-use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, ConstExpr, IdExpr, ListExpr, Node, PostfixExpr, Statement};
+use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, ConstExpr, FunctionDefExpr, IdExpr, ListExpr, Node, PostfixExpr, Statement};
 use crate::resolver::operator::{operator_id_from, OperatorType};
 use crate::resolver::scope::Scope;
 use crate::resolver::unit::Unit;
-use crate::resolver::value::{Value, variant_to_value_type};
+use crate::resolver::value::{Value, Variant, variant_to_value_type};
 use crate::resolver::value::Variant::Number;
 use crate::tokenizer::cursor::Range;
 
@@ -57,6 +57,7 @@ impl Resolver {
             t if TypeId::of::<AssignExpr>() == t => { self.resolve_assign_expr(expr) },
             t if TypeId::of::<PostfixExpr>() == t => { self.resolve_postfix_expr(expr) },
             t if TypeId::of::<CallExpr>() == t => { self.resolve_call_expr(expr) },
+            t if TypeId::of::<FunctionDefExpr>() == t => { self.resolve_func_def_expr(expr) },
             _ => { self.add_error(ErrorId::Expected, Range::none(), "It's a dunno...", Value::error()) },
         }
     }
@@ -74,6 +75,15 @@ impl Resolver {
     //         }
     //     }
     // }
+    fn resolve_func_def_expr(&mut self, expr: &Box<dyn Node>) -> Value {
+        let func_expr = expr.as_any().downcast_ref::<FunctionDefExpr>().unwrap();
+        Value { //TODO: add id and full range of function.
+            id: Some(func_expr.id_range.clone()),
+            has_errors: false,
+            range: None,
+            variant: Variant::FunctionDef
+        }
+    }
 
     fn resolve_call_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let call_expr = expr.as_any().downcast_ref::<CallExpr>().unwrap();

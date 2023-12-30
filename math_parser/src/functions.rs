@@ -109,14 +109,15 @@ fn abs(global_function_def: Option<&GlobalFunctionDef>, local_function_def: Opti
 }
 
 pub fn execute_custom_function(global_function_def: Option<&GlobalFunctionDef>, local_function_def: Option<&CustomFunctionDef>, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>) -> Value {
-    let function_def = local_function_def.unwrap();
+    let mut function_def = local_function_def.unwrap();
     let mut param_variables = HashMap::<String, Value>::new();
 
     //Note that number of args has already been checked in call()
     for (i, arg) in args.iter().enumerate() {
         param_variables.insert(function_def.function_def_expr.arg_names[i].clone(), arg.clone()); //TODO: clone or move?
     }
-    scope.borrow_mut().variables.extend(param_variables);
+
+    function_def.code_block.scope.borrow_mut().variables.extend(param_variables);
     let mut resolver = Resolver { scope: scope.clone(), results: Vec::new(), errors: Vec::new()};
     let result = resolver.resolve(&function_def.code_block.statements);
     let Some(result) = result else {

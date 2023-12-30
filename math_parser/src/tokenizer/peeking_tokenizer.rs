@@ -1,9 +1,10 @@
 use crate::tokenizer::cursor::{Cursor, Number};
 use crate::tokenizer::Token;
 
+#[derive(Clone)]
 pub struct PeekingTokenizer<'a> {
-    cur: Cursor<'a>,
-    peeked_token: Token
+    pub cur: Cursor<'a>,
+    pub peeked_token: Token
 }
 
 impl<'a> PeekingTokenizer<'a> {
@@ -14,6 +15,12 @@ impl<'a> PeekingTokenizer<'a> {
             cur,
             peeked_token: token
         }
+    }
+
+    //TODO: probably the Copy trait would work...
+    pub fn copy_from(&mut self, tok: &PeekingTokenizer<'a>) {
+        self.cur.copy_from(&tok.cur);
+        self.peeked_token = tok.peeked_token.clone();
     }
 
     pub fn peek(&self) -> &Token {

@@ -85,6 +85,7 @@ pub struct ListExpr {
 pub struct FunctionDefExpr {
     pub node_data: NodeData,
     pub id: String, //Not a Token because id may be a decorated name in case of polymorphism.
+    pub id_range: Range, //the undecorated functionname
     pub arg_names: Vec<String>,
 }
 

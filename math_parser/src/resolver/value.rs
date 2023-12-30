@@ -13,6 +13,7 @@ pub enum Variant {
     Date, //TODO
     Duration,
     List,
+    FunctionDef,
     Comment, //echo comment
     Error //TODO
 }

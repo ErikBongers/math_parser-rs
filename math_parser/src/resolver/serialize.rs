@@ -9,6 +9,7 @@ use crate::resolver::Resolver;
 use crate::resolver::scope::Scope;
 use crate::resolver::unit::Unit;
 use crate::resolver::value::{Value, Variant::*, variant_to_value_type};
+use crate::tokenizer::cursor::Range;
 
 struct ScopedValue<'a> {
     scope: Rc<RefCell<Scope>>,
@@ -56,7 +57,14 @@ impl<'a> Serialize for ScopedValue<'a> {
         state.serialize_field("type", &variant_to_value_type(&self.value.variant))?;
         match &self.value.variant {
             Number { number, .. } => state.serialize_field("number", number),
-            _ => state.serialize_field("todo", "todo")
+            FunctionDef => {
+                let mut function_name = "".to_string();
+                if let Some(range) = &self.value.range {
+                    function_name =  self.scope.borrow().globals.sources[range.source_index as usize][range.start..range.end].to_string();
+                }
+                state.serialize_field("function", &function_name)
+            }
+            _ => state.serialize_field("todo", "No serialization for this Value.Variant.")
         }?;
         state.end()
     }
