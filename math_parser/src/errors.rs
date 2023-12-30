@@ -68,7 +68,7 @@ pub struct ErrorDef<'a> {
 pub struct Error {
     pub id: ErrorId,
     pub message: String, //fully expanded message with params
-    pub range: Range,
+    pub range: Range, //don't make Option: source_index is needed to filter in GUI.
     pub stack_trace: Option<Vec<Error>>,
 }
 

@@ -133,7 +133,7 @@ mod test {
     use math_parser::resolver::globals::Globals;
     use math_parser::resolver::Resolver;
     use math_parser::resolver::scope::Scope;
-    use math_parser::resolver::value::Variant;
+    use math_parser::resolver::value::{Value, Variant};
     use math_parser::tokenizer::peeking_tokenizer::PeekingTokenizer;
 
     #[test]
@@ -158,7 +158,25 @@ mod test {
         test_result("1L+100ml", 1.1, "L");
     }
 
+    #[test]
+    fn test_nonsense () {
+        //just test if it doesn't crash.
+        get_results("", 0.0, "");
+        get_results(";", 0.0, "");
+        get_results("-", 0.0, "");
+    }
+
     fn test_result(text: &str, expected_result: f64, unit: &str) {
+        let results = get_results(text, expected_result, unit);
+        let value = results.last().expect("No result found.");
+        let Variant::Number { number, .. } = &value.variant else {
+            panic!("Result isn't a number.");
+        };
+        assert_eq!(number.to_double(), expected_result);
+        assert_eq!(number.unit.id, unit);
+    }
+
+    fn get_results(text: &str, expected_result: f64, unit: &str) -> Vec<Value> {
         let mut tok = PeekingTokenizer::new(text);
         let mut globals = Globals::new();
         globals.sources.push(text.to_string());//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
@@ -176,13 +194,7 @@ mod test {
             results: Vec::new(),
             errors: &mut errors,
         };
-        let results = resolver.resolve(&code_block.statements);
-
-        let value = resolver.results.last().expect("No result found.");
-        let Variant::Number { number, .. } = &value.variant else {
-            panic!("Result isn't a number.");
-        };
-        assert_eq!(number.to_double(), expected_result);
-        assert_eq!(number.unit.id, unit);
+        resolver.resolve(&code_block.statements);
+        resolver.results
     }
 }

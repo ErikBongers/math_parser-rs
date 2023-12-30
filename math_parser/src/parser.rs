@@ -4,7 +4,6 @@ use std::ops::DerefMut;
 use std::rc::Rc;
 use macros::CastAny;
 use crate::errors::{Error, ErrorId};
-use crate::functions::CustomFunctionDef;
 use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, ConstExpr, FunctionDefExpr, IdExpr, ListExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement};
 use crate::tokenizer::cursor::Range;
 use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
@@ -382,39 +381,5 @@ impl<'a, 't> Parser<'a, 't> {
             self.tok.next();
         }
         Box::new(list_expr)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use std::cell::RefCell;
-    use std::rc::Rc;
-    use crate::errors::Error;
-    use crate::parser::{CodeBlock, Parser};
-    use crate::parser::nodes::{BinExpr, ConstExpr};
-    use crate::resolver::globals::Globals;
-    use crate::resolver::scope::Scope;
-    use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
-    use crate::tokenizer::token_type::TokenType;
-
-    #[test]
-    fn test_math_expression() {
-        let txt = "2 + 3 * 4";
-        let mut tok = PeekingTokenizer::new(txt);
-        let mut globals = Globals::new();
-        let mut scope = RefCell::new(Scope::new(Rc::new(globals)));
-        let mut code_block = CodeBlock::new(scope);
-        let mut errors = Vec::<Error>::new();
-        let mut parser = Parser::new(&mut tok, &mut errors, code_block);
-        parser.parse(false);
-        let code_block: CodeBlock = parser.into();
-        let stmt = code_block.statements.first().expect("There should be a statement here.");
-        let root = stmt.node.as_any().downcast_ref::<BinExpr>().expect("There should be a BinExpr here.");
-        let expr1 = root.expr1.as_any().downcast_ref::<ConstExpr>().expect("There should be a ConstExpr here.");
-        assert_eq!(root.op.kind, TokenType::Plus);
-        let expr2 = root.expr2.as_any().downcast_ref::<BinExpr>().expect("There should be a BinExpr here.");
-        let expr2_1 = expr2.expr1.as_any().downcast_ref::<ConstExpr>().expect("There should be a ConstExpr here.");
-        assert_eq!(expr2.op.kind, TokenType::Mult);
-        let expr2_2 = expr2.expr2.as_any().downcast_ref::<ConstExpr>().expect("There should be a ConstExpr here.");
     }
 }

@@ -185,8 +185,17 @@ impl<'a> Resolver<'a> {
 
     fn resolve_bin_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let expr = expr.as_any().downcast_ref::<BinExpr>().unwrap();
+
+        let error_cnt_before = self.errors.len();
         let expr1 = self.resolve_node(&expr.expr1);
         let expr2 = self.resolve_node(&expr.expr2);
+        if error_cnt_before != self.errors.len() {
+            for error in &self.errors[error_cnt_before..] {
+                if error.id != ErrorId::None { //TODO: should be check if the error is a 'real' error and not a warning.
+                    return Value::error();
+                }
+            }
+        }
 
         let operator_type = OperatorType::from(&expr.op.kind);
         let op_id = operator_id_from(variant_to_value_type(&expr1.variant), operator_type, variant_to_value_type(&expr2.variant));
