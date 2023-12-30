@@ -3,4 +3,4 @@ function test ( a )
   1+1;
 }
 
-test(5);
+test(5;

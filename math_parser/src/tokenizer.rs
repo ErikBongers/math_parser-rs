@@ -11,12 +11,15 @@ pub mod peeking_tokenizer;
 pub struct Token {
     pub kind: TokenType,
     pub range :Range,
-    //TODO: just for testing,
+    #[cfg(debug_assertions)]
     pub text: String,
 }
 impl Token {
     fn new(kind: TokenType, source_index :u8, start: usize, end :usize, text: String) -> Token {
-        Token { kind, range: Range { source_index, start, end }, text }
+        Token { kind, range: Range { source_index, start, end },
+            #[cfg(debug_assertions)]
+            text
+        }
     }
 }
 

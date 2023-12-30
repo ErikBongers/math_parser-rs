@@ -44,7 +44,6 @@ fn test_resolver() {
     let mut parser = Parser::new(&mut tok, code_block);
     parser.parse(false);
     let code_block: CodeBlock = parser.into();
-    println!("{}", text);
     for stmt in &code_block.statements {
         print_nodes(&stmt.node, 0);
     }

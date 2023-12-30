@@ -149,7 +149,9 @@ impl<'a, 't> Parser<'a, 't> {
             }
         };
         match self.tok.peek().kind {
-            TokenType::SemiColon => { self.tok.next(); },
+            TokenType::SemiColon => {
+                self.tok.next();
+            },
             TokenType::Eot => (),
             _ => {
                 let t = self.tok.next(); //avoid dead loop!
@@ -235,7 +237,10 @@ impl<'a, 't> Parser<'a, 't> {
                     self.tok.next();
                     // postfix.postfix_id already set!
                 } else {
-                    postfix.postfix_id = Token { kind: TokenType::Nullptr, range : Range { start: 0, end: 0, source_index: 0}, text: "".to_string()} //TODO: since range can be empty: use Option?
+                    postfix.postfix_id = Token { kind: TokenType::Nullptr, range : Range { start: 0, end: 0, source_index: 0},
+                        #[cfg(debug_assertions)]
+                        text: "".to_string()
+                    } //TODO: since range can be empty: use Option?
                 }
                 Box::new(postfix)
             },
@@ -294,12 +299,20 @@ impl<'a, 't> Parser<'a, 't> {
                 }
             }
         }
+        if !self.match_token(&TokenType::ParClose) {
+            self.add_error(ErrorId::Expected, self.tok.peek().range.clone(), ")");
+        }
         Box::new(CallExpr {
             node_data: NodeData { unit: Unit::none(), has_errors: false },
             function_name: func_name_str.to_string(),
             function_name_range: function_name.range.clone(),
             arguments: args
         })
+    }
+
+    fn add_error(&mut self, id: ErrorId, range: Range, arg1: &str) {
+        let error = Error::build_1_arg(id, range, arg1);
+        self.code_block.errors.push(error);
     }
 
     fn parse_primary_expr(&mut self) -> Box<dyn Node> {
