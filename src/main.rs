@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::fs;
 use std::rc::Rc;
 use macros::CastAny;
+use math_parser::errors::Error;
 use math_parser::tokenizer::peeking_tokenizer::PeekingTokenizer;
 use math_parser::parser::{CodeBlock, Parser};
 use math_parser::parser::nodes::{BinExpr, ConstExpr, NodeData, print_nodes};
@@ -36,12 +37,13 @@ fn test_resolver() {
 
     let mut tok = PeekingTokenizer::new(text);
     let mut globals = Globals::new();
+    let mut errors = Vec::<Error>::new();
     globals.sources.push(text.to_string());//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
     let scope = RefCell::new(Scope::new(Rc::new(globals)));
     let code_block = CodeBlock::new(scope);
 
     //parse
-    let mut parser = Parser::new(&mut tok, code_block);
+    let mut parser = Parser::new(&mut tok, &mut errors, code_block);
     parser.parse(false);
     let code_block: CodeBlock = parser.into();
     for stmt in &code_block.statements {
@@ -52,7 +54,7 @@ fn test_resolver() {
     let mut resolver = Resolver {
         scope: code_block.scope.clone(),
         results: Vec::new(),
-        errors: Vec::new(),
+        errors: &mut errors, //TODO: make reference
     };
     let results = resolver.resolve(&code_block.statements);
 
@@ -126,6 +128,7 @@ fn parse() {
 mod test {
     use std::cell::RefCell;
     use std::rc::Rc;
+    use math_parser::errors::Error;
     use math_parser::parser::{CodeBlock, Parser};
     use math_parser::resolver::globals::Globals;
     use math_parser::resolver::Resolver;
@@ -161,9 +164,9 @@ mod test {
         globals.sources.push(text.to_string());//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
         let mut scope = Scope::new(Rc::new(globals));
         let mut code_block = CodeBlock::new(RefCell::new(scope));
-
+        let mut errors: Vec<Error> = Vec::new();
         //parse
-        let mut parser = Parser::new(&mut tok, code_block);
+        let mut parser = Parser::new(&mut tok, &mut errors, code_block);
         parser.parse(false);
         let mut code_block: CodeBlock = parser.into();
 
@@ -171,7 +174,7 @@ mod test {
         let mut resolver = Resolver {
             scope: code_block.scope.clone(),
             results: Vec::new(),
-            errors: Vec::new(),
+            errors: &mut errors,
         };
         let results = resolver.resolve(&code_block.statements);
 

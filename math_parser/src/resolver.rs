@@ -18,10 +18,10 @@ use crate::resolver::value::{Value, Variant, variant_to_value_type};
 use crate::resolver::value::Variant::Number;
 use crate::tokenizer::cursor::Range;
 
-pub struct Resolver {
+pub struct Resolver<'a> {
     pub scope: Rc<RefCell<Scope>>,
     pub results: Vec<Value>,
-    pub errors: Vec<Error>,
+    pub errors: &'a mut Vec<Error>,
     //date_format: DateFormat,
 }
 
@@ -32,7 +32,7 @@ pub fn add_error(errors: &mut Vec<Error>, id: ErrorId, range: Range, arg1: &str,
 }
 
 
-impl Resolver {
+impl<'a> Resolver<'a> {
 
     pub fn resolve(&mut self, statements: &Vec<Box<Statement>>) -> Option<Value> {
         for stmt in statements {
@@ -45,8 +45,10 @@ impl Resolver {
         Some(result.clone())
     }
 
-    pub fn add_error(&mut self, id: ErrorId, range: Range, arg1: &str, value: Value) -> Value {
-        add_error(&mut self.errors, id, range,  arg1, value)
+    pub fn add_error(&mut self, id: ErrorId, range: Range, arg1: &str, mut value: Value) -> Value {
+        value.has_errors = true;
+        self.errors.push(Error::build_1_arg(id, range, arg1));
+        value
    }
 
     pub fn resolve_node(&mut self, expr: &Box<dyn Node>) -> Value {

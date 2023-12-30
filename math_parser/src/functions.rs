@@ -118,7 +118,7 @@ pub fn execute_custom_function(global_function_def: Option<&GlobalFunctionDef>, 
     }
 
     function_def.code_block.scope.borrow_mut().variables.extend(param_variables);
-    let mut resolver = Resolver { scope: scope.clone(), results: Vec::new(), errors: Vec::new()};
+    let mut resolver = Resolver { scope: scope.clone(), results: Vec::new(), errors};
     let result = resolver.resolve(&function_def.code_block.statements);
     let Some(result) = result else {
         add_error(errors, ErrorId::FuncNoBody, range.clone(),&function_def.name, Value::error());

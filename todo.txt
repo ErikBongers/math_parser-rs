@@ -1,18 +1,12 @@
+* merge all the errors in Resolver.
+  > parser errors are in code_block, but this is not passed to the Resover.
+  > What about nested parsed code_blocks?
+  > errors from function calls are in a nested Resover.
+  >> Use one error list and pass it around?
+
 * Resolver changes itself: use a Visitor https://rust-unofficial.github.io/patterns/patterns/behavioural/visitor.html
   > as resolve() loops over the statements
      - it changes the contents of Resolver.
-
-
-* Custom functions:
-  - CustomFunction OWNS a codeblock.
-  - function params are added as variables to the scope.
-    > this means they stay put after the 1st function call !!!
-    > probably no problem...they get overwritten on the next call.
-  - Resolver needs to get &mut Scope and a &statements
-  - Return value:
-    - 1 Value (of last statement)
-    - a list of errors
-
 
 * to examine TokenStream for macros:
   > https://github.com/dtolnay/proc-macro-workshop

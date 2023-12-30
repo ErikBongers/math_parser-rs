@@ -16,7 +16,7 @@ struct ScopedValue<'a> {
     value: &'a Value
 }
 
-impl Resolver {
+impl<'a> Resolver<'a> {
     fn build_scoped_values(&self) -> Vec<ScopedValue> {
         let context_results: Vec<ScopedValue> =
             self.results.iter()
@@ -27,7 +27,7 @@ impl Resolver {
     }
 }
 
-impl Serialize for Resolver {
+impl<'a> Serialize for Resolver<'a> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where
             S: Serializer

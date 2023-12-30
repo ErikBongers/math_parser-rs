@@ -19,7 +19,6 @@ pub mod nodes;
 pub struct CodeBlock {
     pub statements: Vec<Box<Statement>>,
     pub scope: Rc<RefCell<Scope>>,
-    pub errors: Vec<Error>,
 }
 
 impl<'a> CodeBlock {
@@ -27,13 +26,13 @@ impl<'a> CodeBlock {
         CodeBlock {
             scope: Rc::new(scope),
             statements: Vec::new(),
-            errors: Vec::new(),
         }
     }
 }
 
 pub struct Parser<'a, 't> {
     tok: &'a mut PeekingTokenizer<'t>,
+    errors: &'a mut Vec<Error>,
     statement_start: Range,
     code_block: CodeBlock,
 }
@@ -45,9 +44,10 @@ impl<'a, 't> Into<(CodeBlock)> for Parser<'a, 't> {
 }
 
 impl<'a, 't> Parser<'a, 't> {
-    pub fn new (tok: &'a mut PeekingTokenizer<'t>, code_block: CodeBlock) -> Self {
+    pub fn new (tok: &'a mut PeekingTokenizer<'t>, errors: &'a mut Vec<Error>, code_block: CodeBlock) -> Self {
         Parser {
             tok,
+            errors,
             code_block,
             statement_start: Range { start: 0, end: 0, source_index: 0}
         }
@@ -75,12 +75,12 @@ impl<'a, 't> Parser<'a, 't> {
             return None;
         };
         if self.tok.peek().kind != TokenType::Id {
-            return Some(Statement::error(&mut self.code_block.errors, ErrorId::ExpectedId, self.tok.peek().clone(), ""));
+            return Some(Statement::error(&mut self.errors, ErrorId::ExpectedId, self.tok.peek().clone(), ""));
         };
         let id = self.tok.next();
 
         if !self.match_token(&TokenType::ParOpen) {
-            return Some(Statement::error(&mut self.code_block.errors, ErrorId::Expected, self.tok.peek().clone(), "("));
+            return Some(Statement::error(&mut self.errors, ErrorId::Expected, self.tok.peek().clone(), "("));
         };
 
         let mut param_defs: Vec<String> = Vec::new();
@@ -94,21 +94,21 @@ impl<'a, 't> Parser<'a, 't> {
             if self.tok.peek().kind == TokenType::ParClose {
                 break;
             }
-            return Some(Statement::error(&mut self.code_block.errors, ErrorId::Expected, self.tok.peek().clone(), ",` or `)"));
+            return Some(Statement::error(&mut self.errors, ErrorId::Expected, self.tok.peek().clone(), ",` or `)"));
         };
 
         if !self.match_token(&TokenType::ParClose) {
-            return Some(Statement::error(&mut self.code_block.errors, ErrorId::Expected, self.tok.peek().clone(), ")"));
+            return Some(Statement::error(&mut self.errors, ErrorId::Expected, self.tok.peek().clone(), ")"));
         };
         if !self.match_token(&TokenType::CurlOpen) {
-            return Some(Statement::error(&mut self.code_block.errors, ErrorId::Expected, self.tok.peek().clone(), "{"));
+            return Some(Statement::error(&mut self.errors, ErrorId::Expected, self.tok.peek().clone(), "{"));
         };
         let new_code_block = self.parse_block();
         let chars_left = self.tok.cur.chars.as_str().len();
         println!("chars after: {chars_left}");
 
         if !self.match_token(&TokenType::CurlClose) {
-            return Some(Statement::error(&mut self.code_block.errors, ErrorId::Expected, self.tok.peek().clone(), "}"));
+            return Some(Statement::error(&mut self.errors, ErrorId::Expected, self.tok.peek().clone(), "}"));
         };
 
         let mut fun_def_expr = FunctionDefExpr {
@@ -120,7 +120,7 @@ impl<'a, 't> Parser<'a, 't> {
         //TODO add range
         if(self.code_block.scope.borrow().local_function_defs.contains_key(&fun_def_expr.id)) {
             fun_def_expr.node_data.has_errors = true;
-            self.code_block.errors.push(Error::build_1_arg(ErrorId::WFunctionOverride,id.range.clone(), &self.get_text(&id.range)));
+            self.errors.push(Error::build_1_arg(ErrorId::WFunctionOverride,id.range.clone(), &self.get_text(&id.range)));
         };
 
         self.code_block.scope.borrow_mut().add_local_function(new_code_block, &fun_def_expr);
@@ -135,7 +135,7 @@ impl<'a, 't> Parser<'a, 't> {
         let new_code_block = CodeBlock::new(new_scope);
         let chars_left = self.tok.cur.chars.as_str().len();
         println!("chars before: {chars_left}");
-        let mut parser = Parser::new(&mut self.tok, new_code_block);
+        let mut parser = Parser::new(&mut self.tok, &mut self.errors, new_code_block);
         parser.parse(true);
         parser.into()
     }
@@ -156,7 +156,7 @@ impl<'a, 't> Parser<'a, 't> {
             _ => {
                 let t = self.tok.next(); //avoid dead loop!
                 // let txt = self.get_text(&t.range); //WHY DOESN'T THIS WORK????
-                self.code_block.errors.push(Error::build_1_arg(ErrorId::Expected, t.range.clone(), self.code_block.scope.borrow().globals.get_text(&t.range)));
+                self.errors.push(Error::build_1_arg(ErrorId::Expected, t.range.clone(), self.code_block.scope.borrow().globals.get_text(&t.range)));
                 stmt.node_data.has_errors = true;
             }
         };
@@ -282,7 +282,7 @@ impl<'a, 't> Parser<'a, 't> {
         let func_name_str = self.get_text(&function_name.range);
         if TokenType::ParOpen != self.tok.peek().kind {
             let error = Error::build_1_arg(ErrorId::FuncNoOpenPar, function_name.range.clone(), &func_name_str);
-            self.code_block.errors.push(error);
+            self.errors.push(error);
             return Box::new(NoneExpr{node_data: NodeData { unit: Unit::none(), has_errors: true}, token: function_name.clone()});
         }
         self.tok.next();// eat `(`
@@ -294,7 +294,7 @@ impl<'a, 't> Parser<'a, 't> {
             if let Some(none_expr) = list_expr.nodes.first().unwrap().as_any().downcast_ref::<NoneExpr>() {
                 if none_expr.token.kind == TokenType::Eot {
                     let error = Error::build_1_arg(ErrorId::Eos, function_name.range.clone(), &self.get_text(&function_name.range));
-                    self.code_block.errors.push(error);
+                    self.errors.push(error);
                     return Box::new(NoneExpr{node_data: NodeData { unit: Unit::none(), has_errors: true}, token: function_name});
                 }
             }
@@ -312,7 +312,7 @@ impl<'a, 't> Parser<'a, 't> {
 
     fn add_error(&mut self, id: ErrorId, range: Range, arg1: &str) {
         let error = Error::build_1_arg(id, range, arg1);
-        self.code_block.errors.push(error);
+        self.errors.push(error);
     }
 
     fn parse_primary_expr(&mut self) -> Box<dyn Node> {
@@ -340,7 +340,7 @@ impl<'a, 't> Parser<'a, 't> {
                 if !self.match_token(&TokenType::ParClose) {
                     let range = Range { start: 0, end: 0, source_index: 0};
                     let error = Error::build_1_arg(ErrorId::Expected, range, ")");
-                    self.code_block.errors.push(error);
+                    self.errors.push(error);
                 }
                 if expr.as_any().type_id() == TypeId::of::<BinExpr>() {
                     let bin_expr = expr.as_any_mut().downcast_mut::<BinExpr>().unwrap();
@@ -389,6 +389,7 @@ impl<'a, 't> Parser<'a, 't> {
 mod tests {
     use std::cell::RefCell;
     use std::rc::Rc;
+    use crate::errors::Error;
     use crate::parser::{CodeBlock, Parser};
     use crate::parser::nodes::{BinExpr, ConstExpr};
     use crate::resolver::globals::Globals;
@@ -403,7 +404,8 @@ mod tests {
         let mut globals = Globals::new();
         let mut scope = RefCell::new(Scope::new(Rc::new(globals)));
         let mut code_block = CodeBlock::new(scope);
-        let mut parser = Parser::new(&mut tok, code_block);
+        let mut errors = Vec::<Error>::new();
+        let mut parser = Parser::new(&mut tok, &mut errors, code_block);
         parser.parse(false);
         let code_block: CodeBlock = parser.into();
         let stmt = code_block.statements.first().expect("There should be a statement here.");
