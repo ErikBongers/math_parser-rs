@@ -1,7 +1,10 @@
+use std::cmp::{max, min};
+use std::ops;
 use std::str::Chars;
 use serde::Serialize;
 use crate::resolver::globals::Globals;
 use crate::resolver::unit::{Unit, UnitsView};
+use crate::resolver::value::NumberFormat;
 
 #[derive(Clone)]
 pub struct Cursor<'a> {
@@ -30,12 +33,37 @@ impl Range {
     }
 }
 
+impl ops::AddAssign for Range {
+    fn add_assign(&mut self, rhs: Self) {
+        self.start = min(self.start, rhs.start);
+        self.end = max(self.end, rhs.end);
+        assert_eq!(self.source_index, rhs.source_index);
+    }
+}
+
+impl ops::Add for &Range {
+    type Output = Range;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        assert_eq!(self.source_index, rhs.source_index);
+        Range {
+            source_index: self.source_index,
+            start: min(self.start, rhs.start),
+            end: max(self.end, rhs.end),
+        }
+    }
+}
+
+
 #[derive(Clone, Serialize)]
 pub struct Number {
+    #[serde(rename = "sig")]
     pub significand: f64,
+    #[serde(rename = "exp")]
     pub exponent: i32,
+    #[serde(rename = "u")]
     pub unit: Unit,
-    // NumFormat numFormat = NumFormat::DEC;
+    pub fmt: NumberFormat
     // Range range;
 }
 
@@ -44,7 +72,8 @@ impl Number {
         Number {
             significand,
             exponent,
-            unit : Unit { range: None, id: "".to_string() }
+            unit : Unit { range: None, id: "".to_string() },
+            fmt: NumberFormat::Dec
         }
     }
 
@@ -52,7 +81,8 @@ impl Number {
         Number {
             significand: n,
             exponent: 0,
-            unit: Unit::none()
+            unit: Unit::none(),
+            fmt: NumberFormat::Dec
         }
     }
 

@@ -7,9 +7,14 @@ pub enum ValueType{
     None = 0, Number = 1, Date = 2, Duration = 3, List,
 }
 
+#[derive(Clone, Serialize)]
+pub enum NumberFormat {
+    Dec, Hex, Oct, Bin, Exp
+}
+
 #[derive(Clone)]
 pub enum Variant {
-    Number { number: Number, is_constant: bool },
+    Number { number: Number, is_constant: bool, fmt: NumberFormat },
     Date, //TODO
     Duration,
     List,
@@ -31,7 +36,7 @@ pub fn variant_to_value_type(variant: &Variant) -> ValueType {
 #[derive(Clone)]
 pub struct Value {
     pub id: Option<Range>,
-    pub range: Range,
+    pub stmt_range: Range,
     pub variant: Variant,
     pub has_errors: bool,
 }
@@ -40,7 +45,7 @@ impl Value {
     pub fn error(range: &Range) -> Self {
         Value {
             id: None,
-            range: range.clone(),
+            stmt_range: range.clone(),
             variant: Variant::Error,
             has_errors: true
         }
@@ -49,8 +54,8 @@ impl Value {
     pub fn from_number(value: Number, range: &Range) -> Self {
         Value {
             id: None,
-            range: range.clone(),
-            variant: Variant::Number {number: value, is_constant: false},
+            stmt_range: range.clone(),
+            variant: Variant::Number {number: value, is_constant: false, fmt: NumberFormat::Dec},
             has_errors: false
         }
     }

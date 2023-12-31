@@ -107,14 +107,13 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         };
         let new_code_block = self.parse_block();
         let chars_left = self.tok.cur.chars.as_str().len();
-        println!("chars after: {chars_left}");
 
         if !self.match_token(&TokenType::CurlClose) {
             return Some(Statement::error(&mut self.errors, ErrorId::Expected, self.tok.peek().clone(), "}"));
         };
 
         let mut fun_def_expr = FunctionDefExpr {
-            id: self.get_text(&id.range).to_string(),
+            id: self.globals.get_text(&id.range).to_string(),
             id_range: id.range.clone(),
             arg_names: param_defs,
             node_data: NodeData { unit: Unit::none(), has_errors: false }
@@ -122,7 +121,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         //TODO add range
         if(self.code_block.scope.borrow().local_function_defs.contains_key(&fun_def_expr.id)) {
             fun_def_expr.node_data.has_errors = true;
-            self.errors.push(Error::build_1_arg(ErrorId::WFunctionOverride,id.range.clone(), &self.get_text(&id.range)));
+            self.errors.push(Error::build_1_arg(ErrorId::WFunctionOverride,id.range.clone(), &self.globals.get_text(&id.range)));
         };
 
         self.code_block.scope.borrow_mut().add_local_function(new_code_block, &fun_def_expr);
@@ -136,7 +135,6 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         let new_scope = Scope::copy_for_block(&self.code_block.scope);
         let new_code_block = CodeBlock::new(new_scope);
         let chars_left = self.tok.cur.chars.as_str().len();
-        println!("chars before: {chars_left}");
         let mut parser = Parser::new(&self.globals, &mut self.tok, &mut self.errors, new_code_block);
         parser.parse(true);
         parser.into()
@@ -257,7 +255,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             TokenType::Id => {
             //TODO: check if it's an existing var, in which case we'll ignore it as it's probably an implicit mult.
                 let id = self.tok.next();
-                let id= self.get_text(&id.range).to_string();
+                let id= self.globals.get_text(&id.range).to_string();
                 let it = expr.deref_mut();
                 let nd = &mut it.get_node_data();
                 nd.unit.id = id;
@@ -275,13 +273,8 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         true
     }
 
-    #[inline]
-    fn get_text(&self, range: &Range) -> String {
-        self.globals.get_text(&range).to_string()
-    }
-
     fn parse_call_expr(&mut self, function_name: Token) -> Box<dyn Node> {
-        let func_name_str = self.get_text(&function_name.range);
+        let func_name_str = self.globals.get_text(&function_name.range);
         if TokenType::ParOpen != self.tok.peek().kind {
             let error = Error::build_1_arg(ErrorId::FuncNoOpenPar, function_name.range.clone(), &func_name_str);
             self.errors.push(error);
@@ -295,7 +288,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         if list_expr.nodes.len() == 1 {
             if let Some(none_expr) = list_expr.nodes.first().unwrap().as_any().downcast_ref::<NoneExpr>() {
                 if none_expr.token.kind == TokenType::Eot {
-                    let error = Error::build_1_arg(ErrorId::Eos, function_name.range.clone(), &self.get_text(&function_name.range));
+                    let error = Error::build_1_arg(ErrorId::Eos, function_name.range.clone(), &self.globals.get_text(&function_name.range));
                     self.errors.push(error);
                     return Box::new(NoneExpr{node_data: NodeData { unit: Unit::none(), has_errors: true}, token: function_name});
                 }
@@ -322,12 +315,11 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             TokenType::Number => self.parse_number_expr(),
             TokenType::Id => {
                 let t = self.tok.next();
-                // let id = self.get_text(&t.range);
-                let id = self.get_text(&t.range);
-                if self.code_block.scope.borrow().local_function_defs.contains_key(&id) {
+                let id = self.globals.get_text(&t.range);
+                if self.code_block.scope.borrow().local_function_defs.contains_key(id) {
                     return self.parse_call_expr(t);
                 } else {
-                    if self.globals.global_function_defs.contains_key(&id) {
+                    if self.globals.global_function_defs.contains_key(id) {
                         return self.parse_call_expr(t);
                     }
                 }
@@ -356,8 +348,8 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
 
     fn parse_number_expr(&mut self) -> Box<dyn Node> {
         //assuming type of token already checked.
-        self.tok.next();
-        Box::new(ConstExpr { value: self.tok.get_number(), node_data: NodeData { unit: Unit::none(),has_errors: false,}})
+        let token = self.tok.next();
+        Box::new(ConstExpr { value: self.tok.get_number(), node_data: NodeData { unit: Unit::none(),has_errors: false,}, range: token.range.clone()})
     }
 
     //TODO: try if this works with:

@@ -7,7 +7,7 @@ use crate::parser::CodeBlock;
 use crate::parser::nodes::{FunctionDefExpr};
 use crate::resolver::{add_error, Resolver};
 use crate::resolver::globals::Globals;
-use crate::resolver::value::Value;
+use crate::resolver::value::{NumberFormat, Value};
 use crate::resolver::value::Variant;
 use crate::tokenizer::cursor::{Number, Range};
 
@@ -105,7 +105,7 @@ fn abs(global_function_def: Option<&GlobalFunctionDef>, local_function_def: Opti
     if sig < 0.0 {
         sig = -sig;
     }
-    Value::from_number(Number {significand: sig, exponent: number.exponent, unit: number.unit.clone() }, range)
+    Value::from_number(Number {significand: sig, exponent: number.exponent, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
 }
 
 pub fn execute_custom_function(global_function_def: Option<&GlobalFunctionDef>, local_function_def: Option<&CustomFunctionDef>, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {

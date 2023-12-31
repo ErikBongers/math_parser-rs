@@ -8,6 +8,7 @@ pub mod unit;
 use std::any::TypeId;
 use std::cell::RefCell;
 use std::rc::Rc;
+use macros::CastAny;
 use crate::errors::{Error, ErrorId};
 use crate::functions::FunctionDef;
 use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, ConstExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, PostfixExpr, Statement};
@@ -38,7 +39,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
 
     pub fn resolve(&mut self, statements: &Vec<Box<Statement>>) -> Option<Value> {
         for stmt in statements {
-            let result = self.resolve_node(&stmt.node);
+            let result = self.resolve_statement(stmt);
             self.results.push(result);
         };
         let Some(result) = self.results.last() else {
@@ -66,25 +67,19 @@ impl<'g, 'a> Resolver<'g, 'a> {
         }
     }
 
-    // fn get_trait_func(&mut self, name: &str) -> Option<impl &FunctionDef> {
-    //     let global_function_def = self.scope.globals.global_function_defs.get(name);
-    //     let local_function_def = self.scope.local_function_defs.get(name);
-    //     if let Some(f) = global_function_def {
-    //         Some(f)
-    //     } else {
-    //         if let Some(f) = local_function_def {
-    //             Some(f)
-    //         } else {
-    //             None
-    //         }
-    //     }
-    // }
+    fn resolve_statement(&mut self, expr: &Box<Statement>) -> Value {
+        let stmt = expr.as_any().downcast_ref::<Statement>().unwrap();
+        let mut result = self.resolve_node(&stmt.node);
+        result.stmt_range = stmt.get_range();
+        result
+    }
+
     fn resolve_func_def_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let func_expr = expr.as_any().downcast_ref::<FunctionDefExpr>().unwrap();
         Value { //TODO: add id and full range of function.
             id: Some(func_expr.id_range.clone()),
             has_errors: false,
-            range: func_expr.get_range(),
+            stmt_range: func_expr.get_range(),
             variant: Variant::FunctionDef
         }
     }
@@ -123,7 +118,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
         for arg in &arguments.nodes {
             let value = self.resolve_node(arg);
             if value.has_errors {
-                return Value::error(&value.range);
+                return Value::error(&value.stmt_range);
             }
             arg_values.push(value);
         };

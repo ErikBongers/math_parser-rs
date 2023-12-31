@@ -4,7 +4,7 @@ use crate::tokenizer::token_type::TokenType::*;
 
 pub mod token_type;
 pub mod cursor;
-pub mod indexing;
+pub mod sources;
 pub mod peeking_tokenizer;
 
 #[derive(Debug, Clone)]

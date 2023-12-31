@@ -7,6 +7,7 @@ use crate::resolver::globals::Globals;
 use crate::resolver::Resolver;
 use crate::resolver::scope::Scope;
 use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
+use crate::tokenizer::sources::Source;
 
 mod tokenizer;
 mod parser;
@@ -32,12 +33,11 @@ pub fn get_math_version() -> String {
 }
 
 fn _parse_and_print_nodes (text: String, print: bool) -> String {
-    let text = text.as_str();
-
-    let mut tok = PeekingTokenizer::new(text);
+    let source = Source::new(text);
     let mut globals = Globals::new();
+    globals.sources.push(source);//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
+    let mut tok = PeekingTokenizer::new(globals.sources[0].text.as_str());
     let mut errors = Vec::<Error>::new();
-    globals.sources.push(text.to_string());//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
     let scope = RefCell::new(Scope::new());
     let code_block = CodeBlock::new(scope);
 
@@ -74,6 +74,7 @@ mod test {
     use crate::resolver::scope::Scope;
     use crate::resolver::value::{Value, Variant};
     use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
+    use crate::tokenizer::sources::Source;
 
     #[test]
     fn test_simple_expr (){
@@ -116,9 +117,10 @@ mod test {
     }
 
     fn get_results(text: &str, expected_result: f64, unit: &str) -> Vec<Value> {
+        let source = Source::new(text.to_string());
         let mut tok = PeekingTokenizer::new(text);
         let mut globals = Globals::new();
-        globals.sources.push(text.to_string());//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
+        globals.sources.push(source);//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
         let mut scope = Scope::new();
         let mut code_block = CodeBlock::new(RefCell::new(scope));
         let mut errors: Vec<Error> = Vec::new();

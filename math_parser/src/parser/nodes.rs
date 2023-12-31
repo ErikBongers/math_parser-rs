@@ -41,7 +41,7 @@ pub struct AssignExpr {
 
 impl HasRange for AssignExpr {
     fn get_range(&self) -> Range {
-        Range::none() //TODO!
+        &self.id.range + &self.expr.get_range()
     }
 }
 
@@ -55,7 +55,7 @@ pub struct BinExpr {
 }
 impl HasRange for BinExpr {
     fn get_range(&self) -> Range {
-        Range::none() //TODO!
+         &self.expr1.get_range() + &self.expr2.get_range()
     }
 }
 
@@ -63,11 +63,12 @@ impl HasRange for BinExpr {
 pub struct ConstExpr {
     pub node_data: NodeData,
     pub value: Number,
+    pub range: Range,
 }
 
 impl HasRange for ConstExpr {
     fn get_range(&self) -> Range {
-        Range::none() //TODO!
+        self.range.clone()
     }
 }
 
@@ -79,7 +80,7 @@ pub struct IdExpr {
 
 impl HasRange for IdExpr {
     fn get_range(&self) -> Range {
-        Range::none() //TODO!
+        self.id.range.clone()
     }
 }
 
@@ -92,7 +93,7 @@ pub struct PostfixExpr {
 
 impl HasRange for PostfixExpr {
     fn get_range(&self) -> Range {
-        Range::none() //TODO!
+        &self.node.get_range() + &self.postfix_id.range.clone()
     }
 }
 
@@ -100,12 +101,11 @@ impl HasRange for PostfixExpr {
 pub struct Statement {
     pub node_data: NodeData,
     pub node: Box<dyn Node>,
-    //TODO: if statement contains a codeBlock: should that just be a Node? This would allow for a codeBlock to return a last value as it's own value.
 }
 
 impl HasRange for Statement {
     fn get_range(&self) -> Range {
-        Range::none() //TODO!
+        self.node.get_range()
     }
 }
 
@@ -127,7 +127,10 @@ pub struct ListExpr {
 
 impl HasRange for ListExpr {
     fn get_range(&self) -> Range {
-        Range::none() //TODO!
+        self.nodes
+            .iter()
+            .map(|node| node.get_range())
+            .reduce(|r1, r2| &r1 + &r2).unwrap() //TODO: check if list can be empty or this will panic.
     }
 }
 
@@ -141,7 +144,7 @@ pub struct FunctionDefExpr {
 
 impl HasRange for FunctionDefExpr {
     fn get_range(&self) -> Range {
-        Range::none() //TODO!
+        self.id_range.clone() //TODO: the function def should have the full range of the definition.
     }
 }
 
@@ -155,7 +158,7 @@ pub struct CallExpr {
 
 impl HasRange for CallExpr {
     fn get_range(&self) -> Range {
-        Range::none() //TODO!
+        &self.function_name_range + &self.arguments.get_range()
     }
 }
 

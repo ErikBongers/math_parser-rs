@@ -1,6 +1,6 @@
 use crate::resolver::globals::Globals;
 use crate::resolver::unit::{Unit, UnitsView};
-use crate::resolver::value::{Value, ValueType, Variant};
+use crate::resolver::value::{NumberFormat, Value, ValueType, Variant};
 use crate::tokenizer::cursor::{Number, Range};
 use crate::tokenizer::token_type::TokenType;
 
@@ -54,7 +54,7 @@ pub fn op_num_mult_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> 
     let Variant::Number{number: ref n1, ..} = val1.variant else { unreachable!("has been checked."); };
     let Variant::Number{number: ref n2, ..} = val2.variant else { unreachable!("has been checked."); };
     let mut _result = val1;
-    Value::from_number(Number { significand: n1.significand * n2.significand, exponent: 0, unit : Unit { range: None, id: "".to_string() } }, range)
+    Value::from_number(Number { significand: n1.significand * n2.significand, exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range)
 }
 
 pub fn load_operators(globals: &mut Globals) {

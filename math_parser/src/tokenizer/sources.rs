@@ -7,20 +7,21 @@ pub struct MultiByteChar {
     pub pos: usize,
     pub bytes: u8,
 }
-pub struct FileIndex {
+pub struct Source {
+    pub text: String,
     pub lines: Vec<usize>,
     pub multi_byte_chars: Vec<MultiByteChar>,
 }
-impl FileIndex {
-    pub fn new(src: &str) -> Self {
-        let mut file_index = FileIndex {lines: vec![], multi_byte_chars: vec![]};
-        file_index.index_lines_and_multibytechars(src);
+impl Source {
+    pub fn new(text: String) -> Self {
+        let mut file_index = Source {text, lines: vec![], multi_byte_chars: vec![]};
+        file_index.index_lines_and_multibytechars();
         file_index
     }
-    fn index_lines_and_multibytechars(&mut self, src: &str) {
-        let scan_len = src.len();
+    fn index_lines_and_multibytechars(&mut self) {
+        let scan_len = self.text.len();
         let mut i = 0;
-        let src_bytes = src.as_bytes();
+        let src_bytes = self.text.as_bytes();
 
         while i < scan_len {
             let byte = unsafe { *src_bytes.get_unchecked(i) };
@@ -33,7 +34,7 @@ impl FileIndex {
                     self.lines.push(pos + 1);
                 }
             } else if byte >= 127 {
-                let c = src[i..].chars().next().unwrap();
+                let c = self.text[i..].chars().next().unwrap();
                 char_len = c.len_utf8();
 
                 let pos = i;
