@@ -9,7 +9,7 @@ pub struct Globals {
     pub operators: HashMap<u32, fn(&Globals, &Vec<Value>, &Range)-> Value>,
     pub sources: Vec<String>,
     pub unit_defs: HashMap<String, UnitDef>,
-    pub units_view: UnitsView,
+    pub units_view: UnitsView,//TODO: remove this here? This is a mutable thing, so should be done in Scope.
     pub global_function_defs:  HashMap<String, GlobalFunctionDef>,
 }
 

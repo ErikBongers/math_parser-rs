@@ -8,7 +8,6 @@ use crate::resolver::globals::Globals;
 use crate::resolver::value::Value;
 
 pub struct Scope {
-    pub globals: Rc<Globals>,
     pub parent_scope: Option<Rc<RefCell<Scope>>>,
     pub var_defs: HashSet<String>,
     pub variables: HashMap<String, Value>,
@@ -17,9 +16,8 @@ pub struct Scope {
 }
 
 impl Scope {
-    pub fn new (globals: Rc<Globals>) -> Self {
+    pub fn new () -> Self {
         Scope {
-            globals,
             parent_scope: None,
             var_defs: HashSet::new(),
             variables: HashMap::new(),
@@ -32,7 +30,6 @@ impl Scope {
         let rc_scope = scope.clone();
         let scope = scope.borrow();
         RefCell::new(Scope {
-            globals: scope.globals.clone(),
             parent_scope: Some(rc_scope),
             function_view: scope.function_view.clone(),
 
@@ -63,7 +60,7 @@ impl Scope {
             name: function_def_expr.id.clone(),
             min_args: function_def_expr.arg_names.len(),
             max_args: function_def_expr.arg_names.len(),
-            execute: execute_custom_function,
+            execute: execute_custom_function
         };
         self.local_function_defs.insert(func.name.clone(), func);
     }

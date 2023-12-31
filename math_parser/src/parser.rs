@@ -5,6 +5,7 @@ use std::rc::Rc;
 use macros::CastAny;
 use crate::errors::{Error, ErrorId};
 use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, ConstExpr, FunctionDefExpr, IdExpr, ListExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement};
+use crate::resolver::globals::Globals;
 use crate::tokenizer::cursor::Range;
 use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
 use crate::tokenizer::token_type::TokenType;
@@ -29,22 +30,24 @@ impl<'a> CodeBlock {
     }
 }
 
-pub struct Parser<'a, 't> {
+pub struct Parser<'g, 'a, 't> {
+    globals: &'g Globals,
     tok: &'a mut PeekingTokenizer<'t>,
     errors: &'a mut Vec<Error>,
     statement_start: Range,
     code_block: CodeBlock,
 }
 
-impl<'a, 't> Into<(CodeBlock)> for Parser<'a, 't> {
+impl<'g, 'a, 't> Into<(CodeBlock)> for Parser<'g, 'a, 't> {
     fn into(self) -> CodeBlock {
         self.code_block
     }
 }
 
-impl<'a, 't> Parser<'a, 't> {
-    pub fn new (tok: &'a mut PeekingTokenizer<'t>, errors: &'a mut Vec<Error>, code_block: CodeBlock) -> Self {
+impl<'g, 'a, 't> Parser<'g, 'a, 't> {
+    pub fn new (globals: &'g Globals, tok: &'a mut PeekingTokenizer<'t>, errors: &'a mut Vec<Error>, code_block: CodeBlock) -> Self {
         Parser {
+            globals,
             tok,
             errors,
             code_block,
@@ -85,7 +88,7 @@ impl<'a, 't> Parser<'a, 't> {
         let mut param_defs: Vec<String> = Vec::new();
 
         while (self.tok.peek().kind == TokenType::Id) {
-            let txt = self.code_block.scope.borrow().globals.get_text(&self.tok.next().range).to_string();
+            let txt = self.globals.get_text(&self.tok.next().range).to_string();
             param_defs.push(txt);
             if self.match_token(&TokenType::Comma) {
                 continue;
@@ -134,7 +137,7 @@ impl<'a, 't> Parser<'a, 't> {
         let new_code_block = CodeBlock::new(new_scope);
         let chars_left = self.tok.cur.chars.as_str().len();
         println!("chars before: {chars_left}");
-        let mut parser = Parser::new(&mut self.tok, &mut self.errors, new_code_block);
+        let mut parser = Parser::new(&self.globals, &mut self.tok, &mut self.errors, new_code_block);
         parser.parse(true);
         parser.into()
     }
@@ -155,7 +158,7 @@ impl<'a, 't> Parser<'a, 't> {
             _ => {
                 let t = self.tok.next(); //avoid dead loop!
                 // let txt = self.get_text(&t.range); //WHY DOESN'T THIS WORK????
-                self.errors.push(Error::build_1_arg(ErrorId::Expected, t.range.clone(), self.code_block.scope.borrow().globals.get_text(&t.range)));
+                self.errors.push(Error::build_1_arg(ErrorId::Expected, t.range.clone(), self.globals.get_text(&t.range)));
                 stmt.node_data.has_errors = true;
             }
         };
@@ -181,7 +184,7 @@ impl<'a, 't> Parser<'a, 't> {
                 expr: Parser::reduce_list(self.parse_list_expr())
             };
             //TODO: check EOT
-            let txt = self.code_block.scope.borrow().globals.get_text(&assign_expr.id.range).to_string();
+            let txt = self.globals.get_text(&assign_expr.id.range).to_string();
             self.code_block.scope.borrow_mut().var_defs.insert(txt);
             return Box::new(assign_expr);
         }
@@ -274,7 +277,7 @@ impl<'a, 't> Parser<'a, 't> {
 
     #[inline]
     fn get_text(&self, range: &Range) -> String {
-        self.code_block.scope.borrow().globals.get_text(&range).to_string()
+        self.globals.get_text(&range).to_string()
     }
 
     fn parse_call_expr(&mut self, function_name: Token) -> Box<dyn Node> {
@@ -324,7 +327,7 @@ impl<'a, 't> Parser<'a, 't> {
                 if self.code_block.scope.borrow().local_function_defs.contains_key(&id) {
                     return self.parse_call_expr(t);
                 } else {
-                    if self.code_block.scope.borrow().globals.global_function_defs.contains_key(&id) {
+                    if self.globals.global_function_defs.contains_key(&id) {
                         return self.parse_call_expr(t);
                     }
                 }

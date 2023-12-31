@@ -38,11 +38,11 @@ fn _parse_and_print_nodes (text: String, print: bool) -> String {
     let mut globals = Globals::new();
     let mut errors = Vec::<Error>::new();
     globals.sources.push(text.to_string());//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
-    let scope = RefCell::new(Scope::new(Rc::new(globals)));
+    let scope = RefCell::new(Scope::new());
     let code_block = CodeBlock::new(scope);
 
     //parse
-    let mut parser = Parser::new(&mut tok, &mut errors, code_block);
+    let mut parser = Parser::new(&globals, &mut tok, &mut errors, code_block);
     parser.parse(false);
     let code_block: CodeBlock = parser.into();
     if(print) {
@@ -56,6 +56,7 @@ fn _parse_and_print_nodes (text: String, print: bool) -> String {
         scope: code_block.scope.clone(),
         results: Vec::new(),
         errors: &mut errors, //TODO: make reference
+        globals: &globals,
     };
     resolver.resolve(&code_block.statements);
 
@@ -118,11 +119,11 @@ mod test {
         let mut tok = PeekingTokenizer::new(text);
         let mut globals = Globals::new();
         globals.sources.push(text.to_string());//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
-        let mut scope = Scope::new(Rc::new(globals));
+        let mut scope = Scope::new();
         let mut code_block = CodeBlock::new(RefCell::new(scope));
         let mut errors: Vec<Error> = Vec::new();
         //parse
-        let mut parser = Parser::new(&mut tok, &mut errors, code_block);
+        let mut parser = Parser::new(&globals, &mut tok, &mut errors, code_block);
         parser.parse(false);
         let mut code_block: CodeBlock = parser.into();
 
@@ -131,6 +132,7 @@ mod test {
             scope: code_block.scope.clone(),
             results: Vec::new(),
             errors: &mut errors,
+            globals: &globals,
         };
         resolver.resolve(&code_block.statements);
         resolver.results

@@ -11,6 +11,7 @@ use std::rc::Rc;
 use crate::errors::{Error, ErrorId};
 use crate::functions::FunctionDef;
 use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, ConstExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, PostfixExpr, Statement};
+use crate::resolver::globals::Globals;
 use crate::resolver::operator::{operator_id_from, OperatorType};
 use crate::resolver::scope::Scope;
 use crate::resolver::unit::Unit;
@@ -18,7 +19,8 @@ use crate::resolver::value::{Value, Variant, variant_to_value_type};
 use crate::resolver::value::Variant::Number;
 use crate::tokenizer::cursor::Range;
 
-pub struct Resolver<'a> {
+pub struct Resolver<'g, 'a> {
+    pub globals: &'g Globals,
     pub scope: Rc<RefCell<Scope>>,
     pub results: Vec<Value>,
     pub errors: &'a mut Vec<Error>,
@@ -32,7 +34,7 @@ pub fn add_error(errors: &mut Vec<Error>, id: ErrorId, range: Range, arg1: &str,
 }
 
 
-impl<'a> Resolver<'a> {
+impl<'g, 'a> Resolver<'g, 'a> {
 
     pub fn resolve(&mut self, statements: &Vec<Box<Statement>>) -> Option<Value> {
         for stmt in statements {
@@ -92,7 +94,7 @@ impl<'a> Resolver<'a> {
         if call_expr.node_data.has_errors {
             return Value::error(&call_expr.get_range());
         };
-        let global_function_def = self.scope.borrow().globals.global_function_defs.contains_key(call_expr.function_name.as_str());
+        let global_function_def = self.globals.global_function_defs.contains_key(call_expr.function_name.as_str());
         let local_function_def = self.scope.borrow().local_function_defs.contains_key(call_expr.function_name.as_str()); //TODO: replace with a recursove function over parent scopes.
         if !global_function_def && !local_function_def {
             return self.add_error(ErrorId::FuncNotDef, call_expr.function_name_range.clone(), &call_expr.function_name, Value::error(&call_expr.function_name_range));
@@ -103,7 +105,7 @@ impl<'a> Resolver<'a> {
         //TODO: try trait objects. (trait references, actually)
         let mut arg_count_wrong = false;
         if global_function_def {
-            if !self.scope.borrow().globals.global_function_defs.get(call_expr.function_name.as_str()).unwrap().is_correct_arg_count(arguments.nodes.len()) {
+            if !self.globals.global_function_defs.get(call_expr.function_name.as_str()).unwrap().is_correct_arg_count(arguments.nodes.len()) {
                 arg_count_wrong = true;
             }
         }
@@ -127,12 +129,12 @@ impl<'a> Resolver<'a> {
         };
 
         if global_function_def {
-            return self.scope.borrow().globals.global_function_defs.get(call_expr.function_name.as_str()).unwrap()
-                .call(&self.scope, &arg_values, &call_expr.function_name_range, &mut self.errors);
+            return self.globals.global_function_defs.get(call_expr.function_name.as_str()).unwrap()
+                .call(&self.scope, &arg_values, &call_expr.function_name_range, &mut self.errors, self.globals);
         } else {
             if local_function_def {
                 return self.scope.borrow().local_function_defs.get(call_expr.function_name.as_str()).unwrap()
-                    .call(&self.scope, &arg_values, &call_expr.function_name_range, &mut self.errors);
+                    .call(&self.scope, &arg_values, &call_expr.function_name_range, &mut self.errors, self.globals);
             } else {
                 panic!("TODO");
             }
@@ -145,7 +147,7 @@ impl<'a> Resolver<'a> {
         let mut result = self.resolve_node(&expr.node);
         match &mut result.variant {
             Number { number, .. } => {
-                let id = self.scope.borrow().globals.get_text(&expr.postfix_id.range).to_string();
+                let id = self.globals.get_text(&expr.postfix_id.range).to_string();
                 number.unit = Unit { id: id, range: None }
             },
             _ => panic!("TODO in resolve_postfix_expr")
@@ -156,7 +158,7 @@ impl<'a> Resolver<'a> {
     fn resolve_assign_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let expr = expr.as_any().downcast_ref::<AssignExpr>().unwrap();
         let mut value = self.resolve_node(&expr.expr);
-        let id_str = self.scope.borrow().globals.get_text(&expr.id.range).to_string();
+        let id_str = self.globals.get_text(&expr.id.range).to_string();
         if !self.scope.borrow().variables.contains_key(&id_str) {
             //TODO: test if id  is unit or function or redef of constant.
             self.scope.borrow_mut().variables.insert(id_str, value.clone());
@@ -167,7 +169,7 @@ impl<'a> Resolver<'a> {
 
     fn resolve_id_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let expr = expr.as_any().downcast_ref::<IdExpr>().unwrap();
-        let id = self.scope.borrow().globals.get_text(&expr.id.range).to_string();
+        let id = self.globals.get_text(&expr.id.range).to_string();
         let var_exists = self.scope.borrow().variables.contains_key(&id);
         if var_exists  {
             self.scope.borrow().variables.get(&id).unwrap().clone()
@@ -199,12 +201,12 @@ impl<'a> Resolver<'a> {
 
         let operator_type = OperatorType::from(&expr.op.kind);
         let op_id = operator_id_from(variant_to_value_type(&expr1.variant), operator_type, variant_to_value_type(&expr2.variant));
-        let exists_operator = self.scope.borrow().globals.exists_operator(op_id);
+        let exists_operator = self.globals.exists_operator(op_id);
 
         let args = vec![expr1, expr2];
         let range = Range { source_index: 0, start: 0, end: 0};
 
-        let result = (self.scope.borrow().globals.get_operator(op_id).unwrap())(&self.scope.borrow().globals, &args, &range);
+        let result = (self.globals.get_operator(op_id).unwrap())(&self.globals, &args, &range);
         result //TODO: add errors
     }
 }
