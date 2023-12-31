@@ -26,7 +26,7 @@ impl Token {
 impl Cursor<'_> {
     pub fn next_token(&mut self) -> Token {
         self.eat_whitespace();
-        let start_pos = self.get_pos();
+        let mut start_pos = self.get_pos();
         self.is_beginning_of_text = false; // clear this once per next_token instead of once per next(), for performance.
         let first_char = match self.next() {
             None => return Token::new(Eot, 0, 0, 0, "".to_string()),
@@ -58,6 +58,7 @@ impl Cursor<'_> {
                         self.next();
                         self.next();
                         self.get_to_eol();
+                        start_pos += 3; //remove the "!//" from the string.
                         EchoCommentLine
                     },
                     _ => Exclam

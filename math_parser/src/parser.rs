@@ -4,7 +4,7 @@ use std::ops::DerefMut;
 use std::rc::Rc;
 use macros::CastAny;
 use crate::errors::{Error, ErrorId};
-use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, ConstExpr, FunctionDefExpr, IdExpr, ListExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement};
+use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CommentExpr, ConstExpr, FunctionDefExpr, IdExpr, ListExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement};
 use crate::resolver::globals::Globals;
 use crate::tokenizer::cursor::Range;
 use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
@@ -66,10 +66,24 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     }
 
     fn parse_statement(&mut self) -> Statement {
+        if let Some(stmt) = self.parse_echo_comment() {
+            return stmt;
+        }
         if let Some(stmt) = self.parse_function_def() {
             return stmt;
         }
         self.parse_expr_statement()
+    }
+
+    fn parse_echo_comment(&mut self) -> Option<Statement> {
+        let token = self.tok.peek();
+        if token.kind != TokenType::EchoCommentLine {
+            return None;
+        };
+        Some( Statement {
+            node_data: NodeData { unit: Unit::none(), has_errors: false },
+            node: Box::new(CommentExpr { node_data: NodeData { unit: Unit::none(), has_errors: false }, token: self.tok.next() }),
+        })
     }
 
     fn parse_function_def(&mut self) -> Option<Statement> {
@@ -155,7 +169,6 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             TokenType::Eot => (),
             _ => {
                 let t = self.tok.next(); //avoid dead loop!
-                // let txt = self.get_text(&t.range); //WHY DOESN'T THIS WORK????
                 self.errors.push(Error::build_1_arg(ErrorId::Expected, t.range.clone(), self.globals.get_text(&t.range)));
                 stmt.node_data.has_errors = true;
             }
@@ -342,7 +355,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 }
                 expr
             },
-            _ => Box::new(NoneExpr { node_data: NodeData { unit: Unit::none(), has_errors: false,}, token: self.tok.peek().clone()})
+            _ => Box::new(NoneExpr { node_data: NodeData { unit: Unit::none(), has_errors: false,}, token: self.tok.next().clone()})
         }
     }
 

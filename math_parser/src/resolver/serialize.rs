@@ -60,9 +60,10 @@ impl<'a> Serialize for ScopedValue<'a> {
 
         match &self.value.variant {
             Number { number, .. } => state.serialize_field("number", number),
+            Comment  => state.serialize_field("comment", &source.text[self.value.stmt_range.start..self.value.stmt_range.end]),
             FunctionDef => {
                 let mut function_name = "".to_string();
-                function_name =  self.globals.sources[self.value.stmt_range.source_index as usize].text[self.value.stmt_range.start..self.value.stmt_range.end].to_string();
+                function_name =  source.text[self.value.stmt_range.start..self.value.stmt_range.end].to_string();
                 state.serialize_field("function", &function_name)
             }
             _ => state.serialize_field("todo", "No serialization for this Value.Variant.")

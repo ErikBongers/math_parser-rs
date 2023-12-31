@@ -11,7 +11,7 @@ use std::rc::Rc;
 use macros::CastAny;
 use crate::errors::{Error, ErrorId};
 use crate::functions::FunctionDef;
-use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, ConstExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, PostfixExpr, Statement};
+use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CommentExpr, ConstExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, PostfixExpr, Statement};
 use crate::resolver::globals::Globals;
 use crate::resolver::operator::{operator_id_from, OperatorType};
 use crate::resolver::scope::Scope;
@@ -62,6 +62,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
             t if TypeId::of::<AssignExpr>() == t => { self.resolve_assign_expr(expr) },
             t if TypeId::of::<PostfixExpr>() == t => { self.resolve_postfix_expr(expr) },
             t if TypeId::of::<CallExpr>() == t => { self.resolve_call_expr(expr) },
+            t if TypeId::of::<CommentExpr>() == t => { self.resolve_comment_expr(expr) },
             t if TypeId::of::<FunctionDefExpr>() == t => { self.resolve_func_def_expr(expr) },
             _ => { self.add_error(ErrorId::Expected, Range::none(), "It's a dunno...", Value::error(&expr.get_range())) },
         }
@@ -72,6 +73,15 @@ impl<'g, 'a> Resolver<'g, 'a> {
         let mut result = self.resolve_node(&stmt.node);
         result.stmt_range = stmt.get_range();
         result
+    }
+
+    fn resolve_comment_expr(&mut self, expr: &Box<dyn Node>) -> Value {
+        Value {
+            id: None,
+            stmt_range: expr.get_range().clone(),
+            variant: Variant::Comment,
+            has_errors: false,
+        }
     }
 
     fn resolve_func_def_expr(&mut self, expr: &Box<dyn Node>) -> Value {

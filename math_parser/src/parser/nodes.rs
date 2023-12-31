@@ -33,6 +33,18 @@ impl HasRange for NoneExpr {
 }
 
 #[derive(CastAny, Node)]
+pub struct CommentExpr {
+    pub node_data: NodeData,
+    pub token: Token,
+}
+
+impl HasRange for CommentExpr {
+    fn get_range(&self) -> Range {
+        self.token.range.clone()
+    }
+}
+
+#[derive(CastAny, Node)]
 pub struct AssignExpr {
     pub node_data: NodeData,
     pub id: Token,
@@ -193,6 +205,9 @@ pub fn print_nodes(expr: &Box<dyn Node>, indent: usize) {
         },
         t if TypeId::of::<PostfixExpr>() == t => {
             println!("{0}", "PostfixExpr");
+        },
+        t if TypeId::of::<CommentExpr>() == t => {
+            println!("{0}", "CommentExpr");
         },
         t if TypeId::of::<CallExpr>() == t => {
             println!("{0}", "CallExpr");
