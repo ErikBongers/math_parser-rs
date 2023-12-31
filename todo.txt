@@ -1,3 +1,16 @@
+* Value.range is NOT optional.
+  > it is used to determine the line that the value belongs to.
+* dealing with strings and persistent storage:
+  1. No persisten state, but pass all strings as byte arrays (see js_sys)
+    > on JS side, pre-convert UUTF-16 -> UTF8 and pass them as byte arrays
+    > for now, just pass the strings.
+  2. Use unsafe global storage for the source array at the Rust side.
+    > This does use unsafe...
+    > It's the fastes, the start script(s) are passed only once.
+    > But...it currently already works quite fast!
+      ...or is that only for the C++ version?
+
+
 * to examine TokenStream for macros:
   > https://github.com/dtolnay/proc-macro-workshop
   > https://dev.to/dandyvica/rust-procedural-macros-step-by-step-tutorial-36n8

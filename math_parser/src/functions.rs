@@ -36,7 +36,7 @@ impl GlobalFunctionDef {
         if self.is_correct_arg_count(args.len()) {
             (self.execute)(Some(&self), None, scope, args, range, errors)
         } else {
-            add_error(errors, ErrorId::FuncArgWrong, range.clone(), "", Value::error())
+            add_error(errors, ErrorId::FuncArgWrong, range.clone(), "", Value::error(range))
         }
     }
 }
@@ -62,7 +62,7 @@ impl CustomFunctionDef {
         if self.is_correct_arg_count(args.len()) {
             (self.execute)(None, Some(&self), scope, args, range, errors)
         } else {
-            add_error(errors, ErrorId::FuncArgWrong, range.clone(), "", Value::error())
+            add_error(errors, ErrorId::FuncArgWrong, range.clone(), "", Value::error(range))
         }
     }
 }
@@ -98,14 +98,14 @@ pub fn create_global_function_defs() -> HashMap<String, GlobalFunctionDef> {
 fn abs(global_function_def: Option<&GlobalFunctionDef>, local_function_def: Option<&CustomFunctionDef>, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>) -> Value {
     let function_def = global_function_def.unwrap();
     let Variant::Number { number, .. } = &args[0].variant else {
-        add_error(errors, ErrorId::FuncArgWrongType, range.clone(), &function_def.name, Value::error());
-        return Value::error();
+        add_error(errors, ErrorId::FuncArgWrongType, range.clone(), &function_def.name, Value::error(range));
+        return Value::error(range);
     };
     let mut sig = number.significand;
     if sig < 0.0 {
         sig = -sig;
     }
-    Value::from(Number {significand: sig, exponent: number.exponent, unit: number.unit.clone() })
+    Value::from_number(Number {significand: sig, exponent: number.exponent, unit: number.unit.clone() }, range)
 }
 
 pub fn execute_custom_function(global_function_def: Option<&GlobalFunctionDef>, local_function_def: Option<&CustomFunctionDef>, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>) -> Value {
@@ -121,8 +121,8 @@ pub fn execute_custom_function(global_function_def: Option<&GlobalFunctionDef>, 
     let mut resolver = Resolver { scope: scope.clone(), results: Vec::new(), errors};
     let result = resolver.resolve(&function_def.code_block.statements);
     let Some(result) = result else {
-        add_error(errors, ErrorId::FuncNoBody, range.clone(),&function_def.name, Value::error());
-        return Value::error()
+        add_error(errors, ErrorId::FuncNoBody, range.clone(),&function_def.name, Value::error(range));
+        return Value::error(range)
     };
     result
 }

@@ -15,17 +15,23 @@ use wasm_bindgen::prelude::*;
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
-extern {
-    fn alert(s: &str);
+//TODO:: implement sourcel list based parsing.
+pub fn parse(startscript_id: String, mainscript_id: String) -> String {
+    math_parser::parse("TODO".to_string())
 }
 
 #[wasm_bindgen]
-pub fn greet() {
-    alert("Hello, test_wasm!");
+pub fn parse_direct(text: String) -> String {
+    math_parser::parse(text)
 }
 
 #[wasm_bindgen]
-pub fn hello() -> String {
-    "Hello, from Erik in main project. UPDATE".into()
+pub fn upload_source(script_id: String, text: String) -> i32 {
+    math_parser::upload_source(text)
+}
+
+#[wasm_bindgen]
+pub fn get_math_version() -> String {
+    math_parser::get_math_version()
 }
 

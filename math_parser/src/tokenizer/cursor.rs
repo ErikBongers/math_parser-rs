@@ -36,7 +36,6 @@ pub struct Number {
     pub exponent: i32,
     pub unit: Unit,
     // NumFormat numFormat = NumFormat::DEC;
-    // std::vector<Error> errors;
     // Range range;
 }
 

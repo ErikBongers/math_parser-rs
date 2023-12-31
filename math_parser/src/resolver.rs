@@ -10,7 +10,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use crate::errors::{Error, ErrorId};
 use crate::functions::FunctionDef;
-use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, ConstExpr, FunctionDefExpr, IdExpr, ListExpr, Node, PostfixExpr, Statement};
+use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, ConstExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, PostfixExpr, Statement};
 use crate::resolver::operator::{operator_id_from, OperatorType};
 use crate::resolver::scope::Scope;
 use crate::resolver::unit::Unit;
@@ -60,7 +60,7 @@ impl<'a> Resolver<'a> {
             t if TypeId::of::<PostfixExpr>() == t => { self.resolve_postfix_expr(expr) },
             t if TypeId::of::<CallExpr>() == t => { self.resolve_call_expr(expr) },
             t if TypeId::of::<FunctionDefExpr>() == t => { self.resolve_func_def_expr(expr) },
-            _ => { self.add_error(ErrorId::Expected, Range::none(), "It's a dunno...", Value::error()) },
+            _ => { self.add_error(ErrorId::Expected, Range::none(), "It's a dunno...", Value::error(&expr.get_range())) },
         }
     }
 
@@ -82,7 +82,7 @@ impl<'a> Resolver<'a> {
         Value { //TODO: add id and full range of function.
             id: Some(func_expr.id_range.clone()),
             has_errors: false,
-            range: None,
+            range: func_expr.get_range(),
             variant: Variant::FunctionDef
         }
     }
@@ -90,12 +90,12 @@ impl<'a> Resolver<'a> {
     fn resolve_call_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let call_expr = expr.as_any().downcast_ref::<CallExpr>().unwrap();
         if call_expr.node_data.has_errors {
-            return Value::error();
+            return Value::error(&call_expr.get_range());
         };
         let global_function_def = self.scope.borrow().globals.global_function_defs.contains_key(call_expr.function_name.as_str());
         let local_function_def = self.scope.borrow().local_function_defs.contains_key(call_expr.function_name.as_str()); //TODO: replace with a recursove function over parent scopes.
         if !global_function_def && !local_function_def {
-            return self.add_error(ErrorId::FuncNotDef, call_expr.function_name_range.clone(), &call_expr.function_name, Value::error());
+            return self.add_error(ErrorId::FuncNotDef, call_expr.function_name_range.clone(), &call_expr.function_name, Value::error(&call_expr.function_name_range));
         };
 
         let arguments = call_expr.arguments.as_any().downcast_ref::<ListExpr>().unwrap();
@@ -115,13 +115,13 @@ impl<'a> Resolver<'a> {
         }
 
         if arg_count_wrong {
-            return self.add_error(ErrorId::FuncArgWrong, call_expr.function_name_range.clone(), &call_expr.function_name, Value::error());
+            return self.add_error(ErrorId::FuncArgWrong, call_expr.function_name_range.clone(), &call_expr.function_name, Value::error(&call_expr.function_name_range));
         };
         let mut arg_values: Vec<Value> = Vec::new();
         for arg in &arguments.nodes {
             let value = self.resolve_node(arg);
             if value.has_errors {
-                return Value::error();
+                return Value::error(&value.range);
             }
             arg_values.push(value);
         };
@@ -172,15 +172,15 @@ impl<'a> Resolver<'a> {
         if var_exists  {
             self.scope.borrow().variables.get(&id).unwrap().clone()
         } else {
-            self.add_error(ErrorId::VarNotDef, expr.id.range.clone(), &id, Value::error())
+            self.add_error(ErrorId::VarNotDef, expr.id.range.clone(), &id, Value::error(&expr.get_range()))
         }
     }
 
     fn resolve_const_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let expr = expr.as_any().downcast_ref::<ConstExpr>().unwrap();
-        let mut v = expr.value.clone();
-        v.unit = expr.node_data.unit.clone();
-        Value::from(v)
+        let mut n = expr.value.clone();
+        n.unit = expr.node_data.unit.clone();
+        Value::from_number(n, &expr.get_range())
     }
 
     fn resolve_bin_expr(&mut self, expr: &Box<dyn Node>) -> Value {
@@ -192,7 +192,7 @@ impl<'a> Resolver<'a> {
         if error_cnt_before != self.errors.len() {
             for error in &self.errors[error_cnt_before..] {
                 if error.id != ErrorId::None { //TODO: should be check if the error is a 'real' error and not a warning.
-                    return Value::error();
+                    return Value::error(&expr.get_range());
                 }
             }
         }

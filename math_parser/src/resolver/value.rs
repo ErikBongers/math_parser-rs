@@ -31,27 +31,25 @@ pub fn variant_to_value_type(variant: &Variant) -> ValueType {
 #[derive(Clone)]
 pub struct Value {
     pub id: Option<Range>,
-    pub range: Option<Range>,
+    pub range: Range,
     pub variant: Variant,
     pub has_errors: bool,
 }
 
 impl Value {
-    pub fn error() -> Self {
+    pub fn error(range: &Range) -> Self {
         Value {
             id: None,
-            range: None,
+            range: range.clone(),
             variant: Variant::Error,
             has_errors: true
         }
     }
-}
 
-impl From<Number> for Value {
-    fn from(value: Number) -> Self {
+    pub fn from_number(value: Number, range: &Range) -> Self {
         Value {
             id: None,
-            range: None,
+            range: range.clone(),
             variant: Variant::Number {number: value, is_constant: false},
             has_errors: false
         }

@@ -46,7 +46,7 @@ impl<'a> Serialize for ScopedValue<'a> {
     where
         S: Serializer
     {
-        let mut state = serializer.serialize_struct("Value", 3)?;
+        let mut state = serializer.serialize_struct("Value", 4)?;
 
         if let Some(id) = &self.value.id {
             state.serialize_field("id", &self.scope.borrow().globals.sources[id.source_index as usize][id.start..id.end])?;
@@ -55,13 +55,12 @@ impl<'a> Serialize for ScopedValue<'a> {
         }
 
         state.serialize_field("type", &variant_to_value_type(&self.value.variant))?;
+        state.serialize_field("src", &self.value.range.source_index)?; //TODO: range is optional? Then how can we guarantee the actual source?
         match &self.value.variant {
             Number { number, .. } => state.serialize_field("number", number),
             FunctionDef => {
                 let mut function_name = "".to_string();
-                if let Some(range) = &self.value.range {
-                    function_name =  self.scope.borrow().globals.sources[range.source_index as usize][range.start..range.end].to_string();
-                }
+                function_name =  self.scope.borrow().globals.sources[self.value.range.source_index as usize][self.value.range.start..self.value.range.end].to_string();
                 state.serialize_field("function", &function_name)
             }
             _ => state.serialize_field("todo", "No serialization for this Value.Variant.")

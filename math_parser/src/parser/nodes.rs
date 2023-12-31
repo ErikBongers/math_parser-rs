@@ -11,7 +11,11 @@ pub struct NodeData {
     pub has_errors: bool
 }
 
-pub trait Node: CastAny {
+pub trait HasRange{
+    fn get_range(&self) -> Range;
+}
+
+pub trait Node: CastAny + HasRange {
     fn get_node_data(&mut self) -> &mut NodeData;
 }
 //emulating a base class like Partial: https://docs.rs/partially/latest/partially/
@@ -22,6 +26,12 @@ pub struct NoneExpr {
     pub token: Token, //may be EOT
 }
 
+impl HasRange for NoneExpr {
+    fn get_range(&self) -> Range {
+        Range::none()
+    }
+}
+
 #[derive(CastAny, Node)]
 pub struct AssignExpr {
     pub node_data: NodeData,
@@ -29,6 +39,11 @@ pub struct AssignExpr {
     pub expr: Box<dyn Node>,
 }
 
+impl HasRange for AssignExpr {
+    fn get_range(&self) -> Range {
+        Range::none() //TODO!
+    }
+}
 
 #[derive(CastAny, Node)]
 pub struct BinExpr {
@@ -38,6 +53,11 @@ pub struct BinExpr {
     pub expr2: Box<dyn Node>,
     pub implicit_mult: bool,
 }
+impl HasRange for BinExpr {
+    fn get_range(&self) -> Range {
+        Range::none() //TODO!
+    }
+}
 
 #[derive(CastAny, Node)]
 pub struct ConstExpr {
@@ -45,10 +65,22 @@ pub struct ConstExpr {
     pub value: Number,
 }
 
+impl HasRange for ConstExpr {
+    fn get_range(&self) -> Range {
+        Range::none() //TODO!
+    }
+}
+
 #[derive(CastAny, Node)]
 pub struct IdExpr {
     pub node_data: NodeData,
     pub id: Token,
+}
+
+impl HasRange for IdExpr {
+    fn get_range(&self) -> Range {
+        Range::none() //TODO!
+    }
 }
 
 #[derive(CastAny, Node)]
@@ -58,11 +90,23 @@ pub struct PostfixExpr {
     pub postfix_id: Token,
 }
 
+impl HasRange for PostfixExpr {
+    fn get_range(&self) -> Range {
+        Range::none() //TODO!
+    }
+}
+
 #[derive(CastAny, Node)]
 pub struct Statement {
     pub node_data: NodeData,
     pub node: Box<dyn Node>,
     //TODO: if statement contains a codeBlock: should that just be a Node? This would allow for a codeBlock to return a last value as it's own value.
+}
+
+impl HasRange for Statement {
+    fn get_range(&self) -> Range {
+        Range::none() //TODO!
+    }
 }
 
 impl Statement {
@@ -81,6 +125,12 @@ pub struct ListExpr {
     pub nodes: Vec<Box<dyn Node>>,
 }
 
+impl HasRange for ListExpr {
+    fn get_range(&self) -> Range {
+        Range::none() //TODO!
+    }
+}
+
 #[derive(CastAny, Node, Clone)]
 pub struct FunctionDefExpr {
     pub node_data: NodeData,
@@ -89,12 +139,24 @@ pub struct FunctionDefExpr {
     pub arg_names: Vec<String>,
 }
 
+impl HasRange for FunctionDefExpr {
+    fn get_range(&self) -> Range {
+        Range::none() //TODO!
+    }
+}
+
 #[derive(CastAny, Node)]
 pub struct CallExpr {
     pub node_data: NodeData,
     pub function_name: String, //this may not be a stream range, but a translated function name: e.g. x++ -> _inc(x)
     pub function_name_range: Range,
     pub arguments: Box<dyn Node>
+}
+
+impl HasRange for CallExpr {
+    fn get_range(&self) -> Range {
+        Range::none() //TODO!
+    }
 }
 
 pub fn print_nodes(expr: &Box<dyn Node>, indent: usize) {
