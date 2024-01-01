@@ -11,7 +11,7 @@ use std::rc::Rc;
 use macros::CastAny;
 use crate::errors::{Error, ErrorId};
 use crate::functions::FunctionDef;
-use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CommentExpr, ConstExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, PostfixExpr, Statement};
+use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CommentExpr, ConstExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, PostfixExpr, Statement, UnaryExpr};
 use crate::resolver::globals::Globals;
 use crate::resolver::operator::{operator_id_from, OperatorType};
 use crate::resolver::scope::Scope;
@@ -19,6 +19,7 @@ use crate::resolver::unit::Unit;
 use crate::resolver::value::{Value, Variant, variant_to_value_type};
 use crate::resolver::value::Variant::Number;
 use crate::tokenizer::cursor::Range;
+use crate::tokenizer::token_type::TokenType;
 
 pub struct Resolver<'g, 'a> {
     pub globals: &'g Globals,
@@ -60,6 +61,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
             t if TypeId::of::<BinExpr>() == t => { self.resolve_bin_expr(expr) },
             t if TypeId::of::<IdExpr>() == t => { self.resolve_id_expr(expr) },
             t if TypeId::of::<AssignExpr>() == t => { self.resolve_assign_expr(expr) },
+            t if TypeId::of::<UnaryExpr>() == t => { self.resolve_unary_expr(expr) },
             t if TypeId::of::<PostfixExpr>() == t => { self.resolve_postfix_expr(expr) },
             t if TypeId::of::<CallExpr>() == t => { self.resolve_call_expr(expr) },
             t if TypeId::of::<CommentExpr>() == t => { self.resolve_comment_expr(expr) },
@@ -181,6 +183,17 @@ impl<'g, 'a> Resolver<'g, 'a> {
         } else {
             self.add_error(ErrorId::VarNotDef, expr.id.range.clone(), &[&id], Value::error(&expr.get_range()))
         }
+    }
+
+    fn resolve_unary_expr(&mut self, expr: &Box<dyn Node>) -> Value {
+        let expr = expr.as_any().downcast_ref::<UnaryExpr>().unwrap();
+        let mut result = self.resolve_node(&expr.expr);
+        if(expr.op.kind == TokenType::Min) {
+            if let Number {ref mut number,..} = result.variant {
+                number.significand = -number.significand
+            }
+        }
+        result
     }
 
     fn resolve_const_expr(&mut self, expr: &Box<dyn Node>) -> Value {

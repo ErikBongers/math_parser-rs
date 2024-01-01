@@ -72,6 +72,18 @@ impl HasRange for BinExpr {
 }
 
 #[derive(CastAny, Node)]
+pub struct UnaryExpr {
+    pub node_data: NodeData,
+    pub op: Token,
+    pub expr: Box<dyn Node>,
+}
+impl HasRange for UnaryExpr {
+    fn get_range(&self) -> Range {
+         &self.expr.get_range() + &self.op.range
+    }
+}
+
+#[derive(CastAny, Node)]
 pub struct ConstExpr {
     pub node_data: NodeData,
     pub value: Number,

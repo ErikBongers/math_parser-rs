@@ -4,7 +4,7 @@ use std::ops::DerefMut;
 use std::rc::Rc;
 use macros::CastAny;
 use crate::errors::{Error, ErrorId};
-use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CommentExpr, ConstExpr, FunctionDefExpr, IdExpr, ListExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement};
+use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CommentExpr, ConstExpr, FunctionDefExpr, IdExpr, ListExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement, UnaryExpr};
 use crate::resolver::globals::Globals;
 use crate::tokenizer::cursor::Range;
 use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
@@ -227,7 +227,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     }
 
     fn parse_power_expr(&mut self) -> Box<dyn Node> {
-        let mut expr1 = self.parse_postfix_expr();
+        let mut expr1 = self.parse_unary_expr();
         loop {
             match self.tok.peek().kind {
                 TokenType::Power => {
@@ -240,6 +240,18 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             }
         }
         expr1
+    }
+
+    fn parse_unary_expr(&mut self) -> Box<dyn Node> {
+        let token = self.tok.peek();
+        if token.kind == TokenType::Min {
+            return Box::new( UnaryExpr {
+                node_data: NodeData { unit: Unit::none(), has_errors: false},
+                op: self.tok.next(),
+                expr: self.parse_postfix_expr(),
+            });
+        }
+        self.parse_postfix_expr()
     }
 
     fn parse_postfix_expr(&mut self) -> Box<dyn Node> {
