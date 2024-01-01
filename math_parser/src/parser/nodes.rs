@@ -123,7 +123,7 @@ impl HasRange for Statement {
 
 impl Statement {
     pub fn error(errors: &mut Vec<Error>, id: ErrorId, token: Token, arg1: &str) -> Statement {
-        errors.push( Error::build_1_arg(id, token.range.clone(), arg1) );
+        errors.push( Error::build(id, token.range.clone(), &[arg1]) );
         Statement {
             node: Box::new(NoneExpr { token, node_data: NodeData { has_errors: true, unit: Unit::none()}}),
             node_data: NodeData { has_errors: true, unit: Unit::none()}

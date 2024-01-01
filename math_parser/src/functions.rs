@@ -36,7 +36,7 @@ impl GlobalFunctionDef {
         if self.is_correct_arg_count(args.len()) {
             (self.execute)(Some(&self), None, scope, args, range, errors, globals)
         } else {
-            add_error(errors, ErrorId::FuncArgWrong, range.clone(), "", Value::error(range))
+            add_error(errors, ErrorId::FuncArgWrong, range.clone(), &[""], Value::error(range))
         }
     }
 }
@@ -62,7 +62,7 @@ impl CustomFunctionDef {
         if self.is_correct_arg_count(args.len()) {
             (self.execute)(None, Some(&self), scope, args, range, errors, globals)
         } else {
-            add_error(errors, ErrorId::FuncArgWrong, range.clone(), "", Value::error(range))
+            add_error(errors, ErrorId::FuncArgWrong, range.clone(), &[""], Value::error(range))
         }
     }
 }
@@ -98,7 +98,7 @@ pub fn create_global_function_defs() -> HashMap<String, GlobalFunctionDef> {
 fn abs(global_function_def: Option<&GlobalFunctionDef>, local_function_def: Option<&CustomFunctionDef>, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
     let function_def = global_function_def.unwrap();
     let Variant::Number { number, .. } = &args[0].variant else {
-        add_error(errors, ErrorId::FuncArgWrongType, range.clone(), &function_def.name, Value::error(range));
+        add_error(errors, ErrorId::FuncArgWrongType, range.clone(), &[&function_def.name], Value::error(range));
         return Value::error(range);
     };
     let mut sig = number.significand;
@@ -118,10 +118,10 @@ pub fn execute_custom_function(global_function_def: Option<&GlobalFunctionDef>, 
     }
 
     function_def.code_block.scope.borrow_mut().variables.extend(param_variables);
-    let mut resolver = Resolver {globals, scope: scope.clone(), results: Vec::new(), errors};
+    let mut resolver = Resolver {globals, scope: function_def.code_block.scope.clone(), results: Vec::new(), errors};
     let result = resolver.resolve(&function_def.code_block.statements);
     let Some(result) = result else {
-        add_error(errors, ErrorId::FuncNoBody, range.clone(),&function_def.name, Value::error(range));
+        add_error(errors, ErrorId::FuncNoBody, range.clone(),&[&function_def.name], Value::error(range));
         return Value::error(range)
     };
     result

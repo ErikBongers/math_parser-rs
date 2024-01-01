@@ -121,17 +121,20 @@ pub static ERROR_MAP: Lazy<HashMap<ErrorId, ErrorDef>>  = Lazy::new(|| HashMap::
 ]));
 
 impl Error {
-    pub fn build_1_arg(id: ErrorId, range: Range, arg1: &str) -> Error {
+    pub fn build(id: ErrorId, range: Range, args: &[&str]) -> Error {
         let error_def = &ERROR_MAP[&id];
-        let message_fmt = error_def.message;
+        let mut message_fmt = error_def.message.to_string();
 
         //format the message with x arguments.
-        let message = message_fmt
-            .replace("{0}", arg1);
+        for (i, arg) in args.iter().enumerate() {
+            let pattern = format!("{{{i}}}");
+            message_fmt = message_fmt
+                .replace(&pattern, arg);
+        }
 
         Error{
             id,
-            message,
+            message: message_fmt,
             range,
             stack_trace: None
         }

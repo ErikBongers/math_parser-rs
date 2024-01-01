@@ -1,10 +1,17 @@
+use std::fmt;
 use serde::Serialize;
 use crate::tokenizer::cursor::{Number, Range};
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 #[repr(u8)]
 pub enum ValueType{
     None = 0, Number = 1, Date = 2, Duration = 3, List,
+}
+
+impl fmt::Display for ValueType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(self, f)
+    }
 }
 
 #[derive(Clone, Serialize)]

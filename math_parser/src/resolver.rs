@@ -28,9 +28,9 @@ pub struct Resolver<'g, 'a> {
     //date_format: DateFormat,
 }
 
-pub fn add_error(errors: &mut Vec<Error>, id: ErrorId, range: Range, arg1: &str, mut value: Value) -> Value {
+pub fn add_error(errors: &mut Vec<Error>, id: ErrorId, range: Range, args: &[&str], mut value: Value) -> Value {
     value.has_errors = true;
-    errors.push(Error::build_1_arg(id, range, arg1));
+    errors.push(Error::build(id, range, args));
     value
 }
 
@@ -48,9 +48,9 @@ impl<'g, 'a> Resolver<'g, 'a> {
         Some(result.clone())
     }
 
-    pub fn add_error(&mut self, id: ErrorId, range: Range, arg1: &str, mut value: Value) -> Value {
+    pub fn add_error(&mut self, id: ErrorId, range: Range, args: &[&str], mut value: Value) -> Value {
         value.has_errors = true;
-        self.errors.push(Error::build_1_arg(id, range, arg1));
+        self.errors.push(Error::build(id, range, args));
         value
    }
 
@@ -64,7 +64,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
             t if TypeId::of::<CallExpr>() == t => { self.resolve_call_expr(expr) },
             t if TypeId::of::<CommentExpr>() == t => { self.resolve_comment_expr(expr) },
             t if TypeId::of::<FunctionDefExpr>() == t => { self.resolve_func_def_expr(expr) },
-            _ => { self.add_error(ErrorId::Expected, Range::none(), "It's a dunno...", Value::error(&expr.get_range())) },
+            _ => { self.add_error(ErrorId::Expected, Range::none(), &["It's a dunno..."], Value::error(&expr.get_range())) },
         }
     }
 
@@ -102,7 +102,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
         let global_function_def = self.globals.global_function_defs.contains_key(call_expr.function_name.as_str());
         let local_function_def = self.scope.borrow().local_function_defs.contains_key(call_expr.function_name.as_str()); //TODO: replace with a recursove function over parent scopes.
         if !global_function_def && !local_function_def {
-            return self.add_error(ErrorId::FuncNotDef, call_expr.function_name_range.clone(), &call_expr.function_name, Value::error(&call_expr.function_name_range));
+            return self.add_error(ErrorId::FuncNotDef, call_expr.function_name_range.clone(), &[&call_expr.function_name], Value::error(&call_expr.function_name_range));
         };
 
         let arguments = call_expr.arguments.as_any().downcast_ref::<ListExpr>().unwrap();
@@ -122,7 +122,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
         }
 
         if arg_count_wrong {
-            return self.add_error(ErrorId::FuncArgWrong, call_expr.function_name_range.clone(), &call_expr.function_name, Value::error(&call_expr.function_name_range));
+            return self.add_error(ErrorId::FuncArgWrong, call_expr.function_name_range.clone(), &[&call_expr.function_name], Value::error(&call_expr.function_name_range));
         };
         let mut arg_values: Vec<Value> = Vec::new();
         for arg in &arguments.nodes {
@@ -179,7 +179,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
         if var_exists  {
             self.scope.borrow().variables.get(&id).unwrap().clone()
         } else {
-            self.add_error(ErrorId::VarNotDef, expr.id.range.clone(), &id, Value::error(&expr.get_range()))
+            self.add_error(ErrorId::VarNotDef, expr.id.range.clone(), &[&id], Value::error(&expr.get_range()))
         }
     }
 
@@ -206,7 +206,12 @@ impl<'g, 'a> Resolver<'g, 'a> {
 
         let operator_type = OperatorType::from(&expr.op.kind);
         let op_id = operator_id_from(variant_to_value_type(&expr1.variant), operator_type, variant_to_value_type(&expr2.variant));
-        let exists_operator = self.globals.exists_operator(op_id);
+        if !self.globals.exists_operator(op_id) {
+            let op_str = operator_type.to_string();
+            let val_type1 = variant_to_value_type(&expr1.variant).to_string();
+            let val_type2 = variant_to_value_type(&expr2.variant).to_string();
+            return self.add_error(ErrorId::NoOp, expr.get_range().clone(), &[&op_str, &val_type1, &val_type2], Value::error(&expr.get_range()));
+        }
 
         let args = vec![expr1, expr2];
         let range = Range { source_index: 0, start: 0, end: 0};

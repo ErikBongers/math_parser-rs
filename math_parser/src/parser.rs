@@ -135,7 +135,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         //TODO add range
         if(self.code_block.scope.borrow().local_function_defs.contains_key(&fun_def_expr.id)) {
             fun_def_expr.node_data.has_errors = true;
-            self.errors.push(Error::build_1_arg(ErrorId::WFunctionOverride,id.range.clone(), &self.globals.get_text(&id.range)));
+            self.errors.push(Error::build(ErrorId::WFunctionOverride, id.range.clone(), &[&self.globals.get_text(&id.range)]));
         };
 
         self.code_block.scope.borrow_mut().add_local_function(new_code_block, &fun_def_expr);
@@ -169,7 +169,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             TokenType::Eot => (),
             _ => {
                 let t = self.tok.next(); //avoid dead loop!
-                self.errors.push(Error::build_1_arg(ErrorId::Expected, t.range.clone(), self.globals.get_text(&t.range)));
+                self.errors.push(Error::build(ErrorId::Expected, t.range.clone(), &[self.globals.get_text(&t.range)]));
                 stmt.node_data.has_errors = true;
             }
         };
@@ -215,7 +215,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     }
 
     fn parse_mult_expr(&mut self) -> Box<dyn Node> {
-        let expr1 = self.parse_postfix_expr();
+        let expr1 = self.parse_power_expr();
         match self.tok.peek().kind {
             TokenType::Mult | TokenType::Div | TokenType::Percent | TokenType::Modulo => {
                 let op = self.tok.next().clone();
@@ -224,6 +224,22 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             },
             _ => expr1
         }
+    }
+
+    fn parse_power_expr(&mut self) -> Box<dyn Node> {
+        let mut expr1 = self.parse_postfix_expr();
+        loop {
+            match self.tok.peek().kind {
+                TokenType::Power => {
+                    let op = self.tok.next().clone();
+                    let expr2 = self.parse_power_expr(); //right associative!
+                    expr1 = Box::new(BinExpr { expr1, op, expr2, node_data: NodeData { unit: Unit::none(), has_errors: false }, implicit_mult: false });
+                    //TODO: check for ambiguous implicit mult.
+                }
+                _ => break
+            }
+        }
+        expr1
     }
 
     fn parse_postfix_expr(&mut self) -> Box<dyn Node> {
@@ -289,7 +305,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     fn parse_call_expr(&mut self, function_name: Token) -> Box<dyn Node> {
         let func_name_str = self.globals.get_text(&function_name.range);
         if TokenType::ParOpen != self.tok.peek().kind {
-            let error = Error::build_1_arg(ErrorId::FuncNoOpenPar, function_name.range.clone(), &func_name_str);
+            let error = Error::build(ErrorId::FuncNoOpenPar, function_name.range.clone(), &[&func_name_str]);
             self.errors.push(error);
             return Box::new(NoneExpr{node_data: NodeData { unit: Unit::none(), has_errors: true}, token: function_name.clone()});
         }
@@ -301,7 +317,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         if list_expr.nodes.len() == 1 {
             if let Some(none_expr) = list_expr.nodes.first().unwrap().as_any().downcast_ref::<NoneExpr>() {
                 if none_expr.token.kind == TokenType::Eot {
-                    let error = Error::build_1_arg(ErrorId::Eos, function_name.range.clone(), &self.globals.get_text(&function_name.range));
+                    let error = Error::build(ErrorId::Eos, function_name.range.clone(), &[&self.globals.get_text(&function_name.range)]);
                     self.errors.push(error);
                     return Box::new(NoneExpr{node_data: NodeData { unit: Unit::none(), has_errors: true}, token: function_name});
                 }
@@ -319,7 +335,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     }
 
     fn add_error(&mut self, id: ErrorId, range: Range, arg1: &str) {
-        let error = Error::build_1_arg(id, range, arg1);
+        let error = Error::build(id, range, &[arg1]);
         self.errors.push(error);
     }
 
@@ -346,7 +362,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 let mut expr = Parser::reduce_list(self.parse_list_expr());
                 if !self.match_token(&TokenType::ParClose) {
                     let range = Range { start: 0, end: 0, source_index: 0};
-                    let error = Error::build_1_arg(ErrorId::Expected, range, ")");
+                    let error = Error::build(ErrorId::Expected, range, &[")"]);
                     self.errors.push(error);
                 }
                 if expr.as_any().type_id() == TypeId::of::<BinExpr>() {
