@@ -383,8 +383,30 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 }
                 expr
             },
+            TokenType::Pipe => {
+                let t = self.tok.next().clone();
+                self.parse_abs_operator(t)
+            },
             _ => Box::new(NoneExpr { node_data: NodeData { unit: Unit::none(), has_errors: false,}, token: self.tok.next().clone()})
         }
+    }
+
+    fn parse_abs_operator(&mut self, token: Token) -> Box<dyn Node> {
+        let expr = self.parse_add_expr();
+        let list = Box::new( ListExpr {
+            node_data: NodeData {unit: Unit::none(), has_errors: false},
+            nodes: vec![expr],
+        });
+        let node = Box::new(CallExpr {
+            node_data: NodeData {unit: Unit::none(), has_errors: false}, //TODO: create a default for node_data, AFTER units have been implemented fully.
+            function_name: "abs".to_string(),
+            function_name_range: token.range.clone(),
+            arguments: list,
+        });
+        if !self.match_token(&TokenType::Pipe) {
+            self.add_error(ErrorId::Expected, self.tok.peek().range.clone(), "|");
+        }
+        node
     }
 
     fn parse_number_expr(&mut self) -> Box<dyn Node> {

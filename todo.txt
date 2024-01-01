@@ -1,5 +1,5 @@
-* Value.range is NOT optional.
-  > it is used to determine the line that the value belongs to.
+
+
 * dealing with strings and persistent storage:
   1. No persisten state, but pass all strings as byte arrays (see js_sys)
     > on JS side, pre-convert UUTF-16 -> UTF8 and pass them as byte arrays

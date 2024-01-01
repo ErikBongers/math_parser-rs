@@ -66,7 +66,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
             t if TypeId::of::<CallExpr>() == t => { self.resolve_call_expr(expr) },
             t if TypeId::of::<CommentExpr>() == t => { self.resolve_comment_expr(expr) },
             t if TypeId::of::<FunctionDefExpr>() == t => { self.resolve_func_def_expr(expr) },
-            _ => { self.add_error(ErrorId::Expected, Range::none(), &["It's a dunno..."], Value::error(&expr.get_range())) },
+            _ => { self.add_error(ErrorId::Expected, Range::none(), &["Unknown expression to reo"], Value::error(&expr.get_range())) },
         }
     }
 
