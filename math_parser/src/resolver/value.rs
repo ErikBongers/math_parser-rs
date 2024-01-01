@@ -24,7 +24,7 @@ pub enum Variant {
     Number { number: Number, is_constant: bool, fmt: NumberFormat },
     Date, //TODO
     Duration,
-    List,
+    List { values: Vec<Value> },
     FunctionDef,
     Comment, //echo comment
     Error //TODO
@@ -35,7 +35,7 @@ pub fn variant_to_value_type(variant: &Variant) -> ValueType {
         Variant::Number{..} => ValueType::Number,
         Variant::Date => ValueType::Date,
         Variant::Duration => ValueType::Duration,
-        Variant::List => ValueType::List,
+        Variant::List {..} => ValueType::List,
         _ => ValueType::None
     }
 }

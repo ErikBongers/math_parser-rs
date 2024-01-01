@@ -296,7 +296,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             },
             TokenType::Exclam => {
                 let t = self.tok.next();
-                self.create_call_for_operator("factors", node, &t.range)
+                self.create_call_for_operator("factorial", node, &t.range)
             },
             _ => node
         }

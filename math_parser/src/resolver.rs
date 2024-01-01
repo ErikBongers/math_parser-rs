@@ -64,9 +64,25 @@ impl<'g, 'a> Resolver<'g, 'a> {
             t if TypeId::of::<UnaryExpr>() == t => { self.resolve_unary_expr(expr) },
             t if TypeId::of::<PostfixExpr>() == t => { self.resolve_postfix_expr(expr) },
             t if TypeId::of::<CallExpr>() == t => { self.resolve_call_expr(expr) },
+            t if TypeId::of::<ListExpr>() == t => { self.resolve_list_expr(expr) },
             t if TypeId::of::<CommentExpr>() == t => { self.resolve_comment_expr(expr) },
             t if TypeId::of::<FunctionDefExpr>() == t => { self.resolve_func_def_expr(expr) },
             _ => { self.add_error(ErrorId::Expected, Range::none(), &["Unknown expression to reo"], Value::error(&expr.get_range())) },
+        }
+    }
+
+    fn resolve_list_expr(&mut self, expr: &Box<dyn Node>) -> Value {
+        let list_expr = expr.as_any().downcast_ref::<ListExpr>().unwrap();
+        let mut number_list = Vec::<Value>::new();
+        for item in &list_expr.nodes {
+            let value = self.resolve_node(item);
+            number_list.push(value);
+        };
+        Value {
+            id: None,
+            stmt_range: expr.get_range().clone(),
+            variant: Variant::List {values: number_list},
+            has_errors: false,
         }
     }
 

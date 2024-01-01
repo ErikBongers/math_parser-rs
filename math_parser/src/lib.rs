@@ -67,7 +67,7 @@ fn _parse_and_print_nodes (text: String, print: bool) -> String {
 mod test {
     use std::cell::RefCell;
     use std::rc::Rc;
-    use crate::errors::Error;
+    use crate::errors::{Error, ERROR_MAP, ErrorId};
     use crate::parser::{CodeBlock, Parser};
     use crate::resolver::globals::Globals;
     use crate::resolver::Resolver;
@@ -86,6 +86,13 @@ mod test {
         test_result("10%12", 10.0, "");
         test_result("-10%12", -10.0, "");
         test_result("-10%%12", 2.0, "");
+
+        test_result("0!", 1.0, "");
+        test_result("1!", 1.0, "");
+        test_result("2!", 2.0, "");
+        test_result("5!", 120.0, "");
+        test_error("5.3!", ErrorId::Expected);
+        test_error("(-5)!", ErrorId::Expected);
     }
 
     #[test]
@@ -115,13 +122,13 @@ mod test {
     #[test]
     fn test_nonsense () {
         //just test if it doesn't crash.
-        get_results("", 0.0, "");
-        get_results(";", 0.0, "");
-        get_results("-", 0.0, "");
+        get_results("");
+        get_results(";");
+        get_results("-");
     }
 
     fn test_result(text: &str, expected_result: f64, unit: &str) {
-        let results = get_results(text, expected_result, unit);
+        let (results, _errors) = get_results(text);
         let value = results.last().expect("No result found.");
         let Variant::Number { number, .. } = &value.variant else {
             panic!("Result isn't a number.");
@@ -130,7 +137,15 @@ mod test {
         assert_eq!(number.unit.id, unit);
     }
 
-    fn get_results(text: &str, expected_result: f64, unit: &str) -> Vec<Value> {
+    fn test_error(text: &str, error_id: ErrorId) {
+        let (_results, errors) = get_results(text);
+        // let cnt = errors.len();
+        // let cnt2 = errors.iter().count();
+        // assert_ne!(cnt, 0);
+        assert_ne!(errors.iter().filter(|&e| e.id == error_id).count(), 0);
+    }
+
+    fn get_results(text: &str) -> (Vec<Value>, Vec<Error>) {
         let source = Source::new(text.to_string());
         let mut tok = PeekingTokenizer::new(text);
         let mut globals = Globals::new();
@@ -151,6 +166,6 @@ mod test {
             globals: &globals,
         };
         resolver.resolve(&code_block.statements);
-        resolver.results
+        (resolver.results, errors)
     }
 }

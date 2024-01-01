@@ -92,7 +92,7 @@ pub fn create_global_function_defs() -> HashMap<String, GlobalFunctionDef> {
         ("abs".to_string(), GlobalFunctionDef { name: "abs".to_string(), min_args: 1, max_args: 1, execute: abs}),
         ("inc".to_string(), GlobalFunctionDef { name: "inc".to_string(), min_args: 1, max_args: 1, execute: inc}),
         ("dec".to_string(), GlobalFunctionDef { name: "dec".to_string(), min_args: 1, max_args: 1, execute: dec}),
-        // ("factors".to_string(), GlobalFunctionDef { name: "factors".to_string(), min_args: 1, max_args: 1, execute: factors}),
+        ("factorial".to_string(), GlobalFunctionDef { name: "factors".to_string(), min_args: 1, max_args: 1, execute: factorial}),
     ]);
     defs
 }
@@ -130,6 +130,24 @@ fn dec(global_function_def: Option<&GlobalFunctionDef>, local_function_def: Opti
         return Value::error(range);
     };
     Value::from_number(Number {significand: number.significand-1.0, exponent: number.exponent, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
+}
+
+fn factorial(global_function_def: Option<&GlobalFunctionDef>, local_function_def: Option<&CustomFunctionDef>, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
+    let Some(number) = match_arg_number(global_function_def, &args[0], range, errors) else {
+        return Value::error(range);
+    };
+    let size = number.significand;
+    if( size < 0.0) {
+        errors.push(Error { id: ErrorId::Expected, message: "factorial argument should be a non-negative integer".to_string(), range: range.clone(), stack_trace: None,});
+        return Value::error(range);
+    }
+    if( size !=  (size as i64) as f64) {
+        errors.push(Error { id: ErrorId::Expected, message: "factorial argument should be an integer value".to_string(), range: range.clone(), stack_trace: None,});
+        return Value::error(range);
+    }
+    let size = size as i64;
+    let val = (1..=size).reduce(|v, i| v*i).unwrap_or(1);
+    Value::from_number(Number {significand: val as f64, exponent: number.exponent, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
 }
 
 
