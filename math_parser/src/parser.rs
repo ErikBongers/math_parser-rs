@@ -285,8 +285,33 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 }
                 Box::new(postfix)
             },
+            TokenType::Inc | TokenType::Dec => {
+                let t = self.tok.next();
+                let f_name = if t.kind == TokenType::Inc {
+                    "inc"
+                } else {
+                    "dec"
+                };
+                self.create_call_for_operator(f_name, node, &t.range)
+            },
+            TokenType::Exclam => {
+                let t = self.tok.next();
+                self.create_call_for_operator("factors", node, &t.range)
+            },
             _ => node
         }
+    }
+
+    fn create_call_for_operator(&mut self, function_name: &str, arg:  Box<dyn Node>, range: &Range) -> Box<dyn Node> {
+        Box::new(CallExpr {
+            node_data: NodeData { unit: Unit::none(), has_errors: false},
+            function_name: function_name.to_string(),
+            function_name_range: range.clone(),
+            arguments: Box::new( ListExpr {
+                node_data: NodeData  { unit: Unit::none(), has_errors: false},
+                nodes: vec![arg],
+            }),
+        })
     }
 
     // if an id is 'glued' to a primary expr, without a dot in between, it should be a unit.

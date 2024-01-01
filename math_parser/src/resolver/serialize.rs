@@ -65,6 +65,9 @@ impl<'a> Serialize for ScopedValue<'a> {
                 let mut function_name = "".to_string();
                 function_name =  source.text[self.value.stmt_range.start..self.value.stmt_range.end].to_string();
                 state.serialize_field("function", &function_name)
+            },
+            List => {
+
             }
             _ => state.serialize_field("todo", "No serialization for this Value.Variant.")
         }?;

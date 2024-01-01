@@ -3,4 +3,6 @@ function test(a) {
 }
 
 |-5/2|;
+a=6;
+a++;
 test(2);

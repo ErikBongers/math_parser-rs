@@ -78,12 +78,26 @@ mod test {
 
     #[test]
     fn test_simple_expr (){
-        test_result("(1.3+2)*2", 6.6, "");
+        test_result("1+2", 3.0, "");
+        test_result("2*3", 6.0, "");
+        test_result("6/3", 2.0, "");
+        test_result("2^3", 8.0, "");
+        test_result("|-8|", 8.0, "");
+        test_result("10%12", 10.0, "");
+        test_result("-10%12", -10.0, "");
+        test_result("-10%%12", 2.0, "");
     }
 
     #[test]
     fn test_assign_expr () {
         test_result("a=1;b=2;c=a+b", 3.0, "");
+    }
+
+    #[test]
+    fn test_global_funcs () {
+        test_result("abs(-1)", 1.0, "");
+        test_result("a=1; a++", 2.0, "");
+        test_result("a=2; a--", 1.0, "");
     }
 
     #[test]
