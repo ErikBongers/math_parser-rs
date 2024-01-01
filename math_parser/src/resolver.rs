@@ -11,7 +11,7 @@ use std::rc::Rc;
 use macros::CastAny;
 use crate::errors::{Error, ErrorId};
 use crate::functions::FunctionDef;
-use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CommentExpr, ConstExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, PostfixExpr, Statement, UnaryExpr};
+use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CommentExpr, ConstExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, PostfixExpr, Statement, UnaryExpr, UnitExpr};
 use crate::resolver::globals::Globals;
 use crate::resolver::operator::{operator_id_from, OperatorType};
 use crate::resolver::scope::Scope;
@@ -64,6 +64,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
             t if TypeId::of::<AssignExpr>() == t => { self.resolve_assign_expr(expr) },
             t if TypeId::of::<UnaryExpr>() == t => { self.resolve_unary_expr(expr) },
             t if TypeId::of::<PostfixExpr>() == t => { self.resolve_postfix_expr(expr) },
+            t if TypeId::of::<UnitExpr>() == t => { self.resolve_unit_expr(expr) },
             t if TypeId::of::<CallExpr>() == t => { self.resolve_call_expr(expr) },
             t if TypeId::of::<ListExpr>() == t => { self.resolve_list_expr(expr) },
             t if TypeId::of::<CommentExpr>() == t => { self.resolve_comment_expr(expr) },
@@ -164,6 +165,16 @@ impl<'g, 'a> Resolver<'g, 'a> {
             }
         }
         //TODO: apply units.
+    }
+
+    fn resolve_unit_expr(&mut self, expr: &Box<dyn Node>) -> Value {
+        let unit_expr = expr.as_any().downcast_ref::<UnitExpr>().unwrap();
+        let mut result = self.resolve_node(&unit_expr.node);
+        if let Numeric { ref mut number, .. } = &mut result.variant {
+            //in case of (x.km)m, both postfixId (km) and unit (m) are filled.
+            Resolver::apply_unit(number, expr, &self.scope.borrow().units_view, &expr.get_range(), self.errors, self.globals);
+        }
+        result
     }
 
     fn resolve_postfix_expr(&mut self, expr: &Box<dyn Node>) -> Value {

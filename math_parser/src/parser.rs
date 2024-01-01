@@ -4,7 +4,7 @@ use std::ops::DerefMut;
 use std::rc::Rc;
 use macros::CastAny;
 use crate::errors::{Error, ErrorId};
-use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CommentExpr, ConstExpr, FunctionDefExpr, IdExpr, ListExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement, UnaryExpr};
+use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CommentExpr, ConstExpr, FunctionDefExpr, IdExpr, ListExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement, UnaryExpr, UnitExpr};
 use crate::resolver::globals::Globals;
 use crate::tokenizer::cursor::Range;
 use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
@@ -321,10 +321,17 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             TokenType::Id => {
             //TODO: check if it's an existing var, in which case we'll ignore it as it's probably an implicit mult.
                 let id = self.tok.next();
-                let id= self.globals.get_text(&id.range).to_string();
+                let id_str = self.globals.get_text(&id.range).to_string();
                 let it = expr.deref_mut();
                 let nd = &mut it.get_node_data_mut();
-                nd.unit.id = id;
+                if nd.unit.is_empty() {
+                    nd.unit.id = id_str;
+                } else { //there's a 2nd unit glued to the expr as in: `(1m)mm`, so wrap the original expr in a UnitExpr.
+                    return Box::new( UnitExpr {
+                        node_data: NodeData { unit: Unit {id: id_str, range: Some(id.range.clone())}, has_errors: false},
+                        node: expr,
+                    })
+                }
             },
             _ => () //TODO: perhaps not use a match statement.
         }

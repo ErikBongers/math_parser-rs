@@ -117,6 +117,11 @@ mod test {
         test_result("(10.3+3).m-300cm", 10.3, "m");
         test_result("1L", 1.0, "L");
         test_result("1L+100ml", 1.1, "L");
+        test_result("(1m)mm", 1000.0, "mm");
+        test_result("(1m).mm", 1000.0, "mm");
+        test_result("(1.m)mm", 1000.0, "mm");
+        test_result("1.m.mm", 1000.0, "mm");
+        test_result("1m.mm", 1000.0, "mm");
     }
 
     #[test]

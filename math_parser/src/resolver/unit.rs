@@ -167,6 +167,7 @@ mod tests {
     fn test_units() {
         let globals = Globals::new();
         let mut view = UnitsView::new(&globals);
+        view.units.clear();
         view.add_class(&UnitProperty::ANGLE, &globals);
         assert_eq!(view.units.len(), 2);
     }
@@ -175,6 +176,7 @@ mod tests {
     fn test_clone_units() {
         let globals = Globals::new();
         let mut view = UnitsView::new(&globals);
+        view.units.clear();
         view.add_class(&UnitProperty::ANGLE, &globals);
         view.add_class(&UnitProperty::TEMP, &globals);
         assert_eq!(view.units.len(), 5);

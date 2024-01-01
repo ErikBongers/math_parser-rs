@@ -32,6 +32,17 @@ impl HasRange for NoneExpr {
         Range::none()
     }
 }
+#[derive(CastAny, Node)]
+pub struct UnitExpr {
+    pub node_data: NodeData,
+    pub node: Box<dyn Node>
+}
+
+impl HasRange for UnitExpr {
+    fn get_range(&self) -> Range {
+        self.node.get_range()
+    }
+}
 
 #[derive(CastAny, Node)]
 pub struct CommentExpr {
@@ -230,6 +241,9 @@ pub fn print_nodes(expr: &Box<dyn Node>, indent: usize) {
         },
         t if TypeId::of::<FunctionDefExpr>() == t => {
             println!("{0}", "FunctionDefExpr");
+        },
+        t if TypeId::of::<UnitExpr>() == t => {
+            println!("{0}", "UnitExpr");
         },
         _ => {
             println!("{0}", "It's a dunno...");
