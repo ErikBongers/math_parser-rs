@@ -59,7 +59,7 @@ impl<'a> Serialize for ScopedValue<'a> {
         state.serialize_field("line", &line)?;
 
         match &self.value.variant {
-            Number { number, .. } => state.serialize_field("number", number),
+            Numeric { number, .. } => state.serialize_field("number", number),
             Comment  => state.serialize_field("comment", &source.text[self.value.stmt_range.start..self.value.stmt_range.end]),
             FunctionDef => {
                 let mut function_name = "".to_string();

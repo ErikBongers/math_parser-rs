@@ -38,7 +38,7 @@ fn _parse_and_print_nodes (text: String, print: bool) -> String {
     globals.sources.push(source);//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
     let mut tok = PeekingTokenizer::new(globals.sources[0].text.as_str());
     let mut errors = Vec::<Error>::new();
-    let scope = RefCell::new(Scope::new());
+    let scope = RefCell::new(Scope::new(&globals));
     let code_block = CodeBlock::new(scope);
 
     //parse
@@ -130,7 +130,7 @@ mod test {
     fn test_result(text: &str, expected_result: f64, unit: &str) {
         let (results, _errors) = get_results(text);
         let value = results.last().expect("No result found.");
-        let Variant::Number { number, .. } = &value.variant else {
+        let Variant::Numeric { number, .. } = &value.variant else {
             panic!("Result isn't a number.");
         };
         assert_eq!(number.to_double(), expected_result);
@@ -150,7 +150,7 @@ mod test {
         let mut tok = PeekingTokenizer::new(text);
         let mut globals = Globals::new();
         globals.sources.push(source);//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
-        let mut scope = Scope::new();
+        let mut scope = Scope::new(&globals);
         let mut code_block = CodeBlock::new(RefCell::new(scope));
         let mut errors: Vec<Error> = Vec::new();
         //parse

@@ -100,7 +100,7 @@ pub fn create_global_function_defs() -> HashMap<String, GlobalFunctionDef> {
 
 fn match_arg_number<'a>(global_function_def: Option<&GlobalFunctionDef>, args: &'a Value, range: &Range, errors: &mut Vec<Error>) -> Option<&'a Number> {
     let function_def = global_function_def.unwrap();
-    let Variant::Number { number, .. } = &args.variant else {
+    let Variant::Numeric { number, .. } = &args.variant else {
         add_error(errors, ErrorId::FuncArgWrongType, range.clone(), &[&function_def.name], Value::error(range));
         return None;
     };

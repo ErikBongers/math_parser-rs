@@ -5,6 +5,7 @@ use crate::functions::{CustomFunctionDef, execute_custom_function, FunctionView}
 use crate::parser::CodeBlock;
 use crate::parser::nodes::FunctionDefExpr;
 use crate::resolver::globals::Globals;
+use crate::resolver::unit::UnitsView;
 use crate::resolver::value::Value;
 
 pub struct Scope {
@@ -13,16 +14,18 @@ pub struct Scope {
     pub variables: HashMap<String, Value>,
     pub function_view: FunctionView,
     pub local_function_defs:  HashMap<String, CustomFunctionDef>,
+    pub units_view: UnitsView,
 }
 
 impl Scope {
-    pub fn new () -> Self {
+    pub fn new (globals: &Globals) -> Self {
         Scope {
             parent_scope: None,
             var_defs: HashSet::new(),
             variables: HashMap::new(),
             function_view: FunctionView { ids: HashSet::new()},
             local_function_defs: HashMap::new(),
+            units_view: UnitsView::new(globals)
         }
     }
 
@@ -32,6 +35,7 @@ impl Scope {
         RefCell::new(Scope {
             parent_scope: Some(rc_scope),
             function_view: scope.function_view.clone(),
+            units_view: scope.units_view.clone(),
 
             //don't copy variables.
             local_function_defs: HashMap::new(),

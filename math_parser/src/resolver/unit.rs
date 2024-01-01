@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::f64::consts::PI;
+use crate::resolver::globals::Globals;
 use crate::tokenizer::cursor::Range;
 
 #[derive(Clone)]
@@ -31,45 +32,48 @@ pub struct UnitDef {
     pub from_si: fn(&UnitDef, f64) -> f64,
 }
 
+#[derive(Clone)]
 pub struct UnitsView {
     pub units: HashSet<String>
 }
 
 impl UnitsView {
-    pub fn new() -> Self {
-        UnitsView {
-            units: HashSet::new()
-        }
+    pub fn new(globals: &Globals) -> Self {
+        let mut v = UnitsView {
+            units: HashSet::new(),
+        };
+        v.add_all_classes(&globals.unit_defs, globals);
+        v
     }
 
-    pub fn get_def<'b>(&self, id: &str, defs: &'b HashMap<String, UnitDef>) -> Option<&'b UnitDef> {
+    pub fn get_def<'a>(&'a self, id: &str, globals: &'a Globals) -> Option<&UnitDef> {
         if self.units.contains(id) {
-            return Some(&defs[id])
+            return Some(&globals.unit_defs[id])
         }
         None
     }
 
-    pub fn add_class(&mut self, property: &UnitProperty, defs: &HashMap<String, UnitDef>)
+    pub fn add_class(&mut self, property: &UnitProperty, globals: &Globals)
     {
-        self.units.extend(defs
+        self.units.extend(globals.unit_defs
             .values()
             .filter(|unit| &unit.property == property )
             .map(|unit| unit.id.to_string())
         );
     }
 
-    pub fn remove_class(&mut self, property: &UnitProperty, defs: &HashMap<String, UnitDef>) {
-        self.units.retain(|unit| &defs[unit].property != property);
+    pub fn remove_class(&mut self, property: &UnitProperty, globals: &Globals) {
+        self.units.retain(|unit| &globals.unit_defs[unit].property != property);
     }
 
-    pub fn add_all_classes(&mut self, defs: &HashMap<String, UnitDef>) {
-        self.add_class(&UnitProperty::UNDEFINED, defs); //needed to include the empty unit.
-        self.add_class(&UnitProperty::ANGLE, defs);
-        self.add_class(&UnitProperty::LENGTH, defs);
-        self.add_class(&UnitProperty::TEMP, defs);
-        self.add_class(&UnitProperty::MassWeight, defs);
-        self.add_class(&UnitProperty::DURATION, defs);
-        self.add_class(&UnitProperty::VOLUME, defs);
+    pub fn add_all_classes(&mut self, defs: &HashMap<String, UnitDef>, globals: &Globals) {
+        self.add_class(&UnitProperty::UNDEFINED, globals); //needed to include the empty unit.
+        self.add_class(&UnitProperty::ANGLE, globals);
+        self.add_class(&UnitProperty::LENGTH, globals);
+        self.add_class(&UnitProperty::TEMP, globals);
+        self.add_class(&UnitProperty::MassWeight, globals);
+        self.add_class(&UnitProperty::DURATION, globals);
+        self.add_class(&UnitProperty::VOLUME, globals);
         //TODO: electricity
     }
 }
@@ -156,25 +160,26 @@ pub fn create_unit_defs() -> HashMap<String, UnitDef> {
 
 #[cfg(test)]
 mod tests {
+    use crate::resolver::globals::Globals;
     use crate::resolver::unit::{create_unit_defs, UnitProperty, UnitsView};
 
     #[test]
     fn test_units() {
-        let defs = create_unit_defs();
-        let mut view = UnitsView::new();
-        view.add_class(&UnitProperty::ANGLE, &defs);
+        let globals = Globals::new();
+        let mut view = UnitsView::new(&globals);
+        view.add_class(&UnitProperty::ANGLE, &globals);
         assert_eq!(view.units.len(), 2);
     }
 
     #[test]
     fn test_clone_units() {
-        let defs = create_unit_defs();
-        let mut view = UnitsView::new();
-        view.add_class(&UnitProperty::ANGLE, &defs);
-        view.add_class(&UnitProperty::TEMP, &defs);
+        let globals = Globals::new();
+        let mut view = UnitsView::new(&globals);
+        view.add_class(&UnitProperty::ANGLE, &globals);
+        view.add_class(&UnitProperty::TEMP, &globals);
         assert_eq!(view.units.len(), 5);
 
-        view.remove_class(&UnitProperty::ANGLE, &defs);
+        view.remove_class(&UnitProperty::ANGLE, &globals);
         assert_eq!(view.units.len(), 3);
     }
 }

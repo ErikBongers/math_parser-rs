@@ -2,9 +2,11 @@ use std::cmp::{max, min};
 use std::ops;
 use std::str::Chars;
 use serde::Serialize;
+use crate::errors::{Error, ErrorId};
+use crate::resolver::add_error;
 use crate::resolver::globals::Globals;
 use crate::resolver::unit::{Unit, UnitsView};
-use crate::resolver::value::NumberFormat;
+use crate::resolver::value::{NumberFormat, Value};
 
 #[derive(Clone)]
 pub struct Cursor<'a> {
@@ -86,13 +88,40 @@ impl Number {
         }
     }
 
-    pub fn to_si(&self, units_view: &UnitsView, globals: &Globals) -> f64 {
-        if units_view.units.contains(&*self.unit.id) {
-            let to_si = units_view.get_def(&self.unit.id, &globals.unit_defs).unwrap().to_si;
+    pub fn to_si(&self, globals: &Globals) -> f64 {
+        if globals.unit_defs.contains_key(&*self.unit.id) {
+            let to_si = globals.unit_defs[&*self.unit.id].to_si;
             to_si(&globals.unit_defs[&*self.unit.id], self.to_double())
         } else {
             self.to_double()
         }
+    }
+
+    pub fn convert_to_unit(&mut self, to: &Unit, units_view: &UnitsView, range: &Range, errors: &mut Vec<Error>, globals: &Globals) {
+        if self.unit.is_empty() {
+            self.unit = to.clone();
+            if let None = units_view.get_def(&to.id, globals) {
+                add_error(errors, ErrorId::UnitNotDef, range.clone(), &[&to.id], Value::error(range));
+            }
+            return;
+        }
+        if let None = units_view.get_def(&self.unit.id, globals) {
+            return; //should already have been detected.
+        }
+        if let None = units_view.get_def(&to.id, globals) {
+            add_error(errors, ErrorId::UnitNotDef, range.clone(), &[&to.id], Value::error(range));
+            return;
+        }
+        if units_view.get_def(&self.unit.id, globals).unwrap().property != units_view.get_def(&to.id, globals).unwrap().property {
+            add_error(errors, ErrorId::UnitPropDiff, range.clone(), &[""], Value::error(range));
+            return;
+        }
+        let to_si = units_view.get_def(&self.unit.id, globals).unwrap().to_si;
+        let from_si = units_view.get_def(&to.id, globals).unwrap().from_si;
+        let si_val = to_si(&units_view.get_def(&self.unit.id, globals).unwrap(), self.significand); //TODO: call this function directly on UnitDef?
+        let val = from_si(&units_view.get_def(&to.id, globals).unwrap(), si_val);
+        self.significand = val;
+        self.unit = to.clone();
     }
 
     pub fn to_double(&self) -> f64 {

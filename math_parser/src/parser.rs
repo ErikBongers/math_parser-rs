@@ -323,7 +323,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 let id = self.tok.next();
                 let id= self.globals.get_text(&id.range).to_string();
                 let it = expr.deref_mut();
-                let nd = &mut it.get_node_data();
+                let nd = &mut it.get_node_data_mut();
                 nd.unit.id = id;
             },
             _ => () //TODO: perhaps not use a match statement.

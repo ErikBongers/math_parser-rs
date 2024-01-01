@@ -29,7 +29,10 @@ fn impl_node(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
     let gen = quote! {
         impl Node for #name {
-            fn get_node_data(&mut self) -> &mut NodeData {
+            fn get_node_data(&self) -> &NodeData {
+                &self.node_data
+            }
+            fn get_node_data_mut(&mut self) -> &mut NodeData {
                 &mut self.node_data
             }
         }

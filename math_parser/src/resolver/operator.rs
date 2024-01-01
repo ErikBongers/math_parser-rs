@@ -52,44 +52,44 @@ pub fn operator_id_from(type1: ValueType, op: OperatorType, type2: ValueType) ->
 }
 
 pub fn op_num_plus_num(globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
-    let Variant::Number{number: ref n1, ..} = args[0].variant else { unreachable!("has been checked."); };
-    let Variant::Number{number: ref n2, ..} = args[1].variant else { unreachable!("has been checked."); };
-    Value::from_number( do_term(&globals.units_view, n1, true, n2, range, &globals), &range)
+    let Variant::Numeric {number: ref n1, ..} = args[0].variant else { unreachable!("has been checked."); };
+    let Variant::Numeric {number: ref n2, ..} = args[1].variant else { unreachable!("has been checked."); };
+    Value::from_number( do_term(n1, true, n2, range, &globals), &range)
 }
 
 pub fn op_num_min_num(globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
-    let Variant::Number{number: ref n1, ..} = args[0].variant else { unreachable!("has been checked."); };
-    let Variant::Number{number: ref n2, ..} = args[1].variant else { unreachable!("has been checked."); };
-    Value::from_number( do_term(&globals.units_view, n1, false, n2, range, &globals), &range)
+    let Variant::Numeric {number: ref n1, ..} = args[0].variant else { unreachable!("has been checked."); };
+    let Variant::Numeric {number: ref n2, ..} = args[1].variant else { unreachable!("has been checked."); };
+    Value::from_number( do_term(n1, false, n2, range, &globals), &range)
 }
 
 pub fn op_num_mult_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
-    let Variant::Number{number: ref n1, ..} = &args[0].variant else { unreachable!("has been checked."); };
-    let Variant::Number{number: ref n2, ..} = &args[1].variant else { unreachable!("has been checked."); };
+    let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!("has been checked."); };
+    let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!("has been checked."); };
     Value::from_number(Number { significand: n1.significand * n2.significand, exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range)
 }
 
 pub fn op_num_div_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
-    let Variant::Number{number: ref n1, ..} = &args[0].variant else { unreachable!("has been checked."); };
-    let Variant::Number{number: ref n2, ..} = &args[1].variant else { unreachable!("has been checked."); };
+    let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!("has been checked."); };
+    let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!("has been checked."); };
     Value::from_number(Number { significand: n1.significand / n2.significand, exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range)
 }
 
 pub fn op_num_rem_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
-    let Variant::Number{number: ref n1, ..} = &args[0].variant else { unreachable!("has been checked."); };
-    let Variant::Number{number: ref n2, ..} = &args[1].variant else { unreachable!("has been checked."); };
+    let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!("has been checked."); };
+    let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!("has been checked."); };
     Value::from_number(Number { significand: n1.significand % n2.significand, exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range)
 }
 
 pub fn op_num_mod_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
-    let Variant::Number{number: ref n1, ..} = &args[0].variant else { unreachable!("has been checked."); };
-    let Variant::Number{number: ref n2, ..} = &args[1].variant else { unreachable!("has been checked."); };
+    let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!("has been checked."); };
+    let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!("has been checked."); };
     Value::from_number(Number { significand: ((n1.significand % n2.significand) + n2.significand) % n2.significand, exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range)
 }
 
 pub fn op_num_pow_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
-    let Variant::Number{number: ref n1, ..} = &args[0].variant else { unreachable!("has been checked."); };
-    let Variant::Number{number: ref n2, ..} = &args[1].variant else { unreachable!("has been checked."); };
+    let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!("has been checked."); };
+    let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!("has been checked."); };
     Value::from_number(Number { significand: n1.significand.powf(n2.significand), exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range)
 }
 
@@ -103,24 +103,23 @@ pub fn load_operators(globals: &mut Globals) {
     globals.operators.insert(operator_id_from(ValueType::Number, OperatorType::Power, ValueType::Number), op_num_pow_num);
 }
 
-fn do_term(units_view: &UnitsView, v1: &Number, adding: bool, v2: &Number, range: &Range, globals: &Globals) -> Number {
+fn do_term(v1: &Number, adding: bool, v2: &Number, range: &Range, globals: &Globals) -> Number {
     //if both values have units: convert them to SI before operation.
     if !v1.unit.is_empty() && !v2.unit.is_empty() {
-        let u1 = units_view.get_def(&v1.unit.id, &globals.unit_defs);
-        let u2 = units_view.get_def(&v2.unit.id, &globals.unit_defs);
-        if let (Some(u1), Some(u2)) = (u1, u2) {
-            if u1.property != u2.property {
-                panic!("TODO: implement errors.");
-            }
+        //TODO: don't I have to check if the ids are valid?
+        let u1 = &globals.unit_defs[&v1.unit.id];
+        let u2 = &globals.unit_defs[&v2.unit.id];
+        if u1.property != u2.property {
+            panic!("TODO: implement errors.");
         }
-        let d1 = v1.to_si(&units_view, &globals);
-        let d2 = v2.to_si(&units_view, &globals);
+        let d1 = v1.to_si(&globals);
+        let d2 = v2.to_si(&globals);
         let result = match adding {
             true => d1 + d2,
             false => d1 - d2
         };
         let mut num = Number::from(result);
-        if units_view.units.contains(&*v1.unit.id) {
+        if globals.unit_defs.contains_key(&*v1.unit.id) {
             let from_si = globals.unit_defs[&*v1.unit.id].from_si;
             num.significand = from_si(&globals.unit_defs[&*v1.unit.id], result);
             num.unit = v1.unit.clone();

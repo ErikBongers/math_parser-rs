@@ -15,10 +15,11 @@ use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CommentExpr, ConstExpr
 use crate::resolver::globals::Globals;
 use crate::resolver::operator::{operator_id_from, OperatorType};
 use crate::resolver::scope::Scope;
-use crate::resolver::unit::Unit;
+use crate::resolver::unit::{Unit, UnitsView};
 use crate::resolver::value::{Value, Variant, variant_to_value_type};
-use crate::resolver::value::Variant::Number;
-use crate::tokenizer::cursor::Range;
+use crate::resolver::value::Variant::Numeric;
+use crate::tokenizer::cursor;
+use crate::tokenizer::cursor::{Number, Range};
 use crate::tokenizer::token_type::TokenType;
 
 pub struct Resolver<'g, 'a> {
@@ -166,16 +167,26 @@ impl<'g, 'a> Resolver<'g, 'a> {
     }
 
     fn resolve_postfix_expr(&mut self, expr: &Box<dyn Node>) -> Value {
-        let expr = expr.as_any().downcast_ref::<PostfixExpr>().unwrap();
-        let mut result = self.resolve_node(&expr.node);
+        let pfix_expr = expr.as_any().downcast_ref::<PostfixExpr>().unwrap();
+        let mut result = self.resolve_node(&pfix_expr.node);
         match &mut result.variant {
-            Number { number, .. } => {
-                let id = self.globals.get_text(&expr.postfix_id.range).to_string();
-                number.unit = Unit { id: id, range: None }
+            Numeric { ref mut number, .. } => {
+                let id = self.globals.get_text(&pfix_expr.postfix_id.range).to_string();
+                number.convert_to_unit(&Unit { range: Some(pfix_expr.postfix_id.range.clone()), id }, &self.scope.borrow().units_view,&pfix_expr.postfix_id.range, self.errors, self.globals);
+                //in case of (x.km)m, both postfixId (km) and unit (m) are filled.
+                Resolver::apply_unit(number, expr, &self.scope.borrow().units_view, &expr.get_range(), self.errors, self.globals);
             },
-            _ => panic!("TODO in resolve_postfix_expr")
+            _ => return self.add_error(ErrorId::UnknownExpr, pfix_expr.postfix_id.range.clone(), &["Postfix expression not valid here."], result)
         };
+        //in case of (x.km)m, both postfixId (km) and unit (m) are filled.
+        //perhaps to do: apply_unit also for other variants than Numeric?
         result
+    }
+
+    fn apply_unit(number: &mut Number, node: &Box<dyn Node>, units_view: &UnitsView, range: &Range, errors: &mut Vec<Error>, globals: &Globals) {
+        if !node.get_node_data().unit.is_empty() {
+            number.convert_to_unit(&node.get_node_data().unit, units_view, range, errors, globals);
+        }
     }
 
     fn resolve_assign_expr(&mut self, expr: &Box<dyn Node>) -> Value {
@@ -205,7 +216,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
         let expr = expr.as_any().downcast_ref::<UnaryExpr>().unwrap();
         let mut result = self.resolve_node(&expr.expr);
         if(expr.op.kind == TokenType::Min) {
-            if let Number {ref mut number,..} = result.variant {
+            if let Numeric {ref mut number,..} = result.variant {
                 number.significand = -number.significand
             }
         }

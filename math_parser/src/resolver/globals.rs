@@ -10,7 +10,6 @@ pub struct Globals {
     pub operators: HashMap<u32, fn(&Globals, &Vec<Value>, &Range)-> Value>,
     pub sources: Vec<Source>,
     pub unit_defs: HashMap<String, UnitDef>,
-    pub units_view: UnitsView,//TODO: remove this here? This is a mutable thing, so should be done in Scope.
     pub global_function_defs:  HashMap<String, GlobalFunctionDef>,
 }
 
@@ -18,12 +17,9 @@ impl<'a> Globals {
     pub fn new () -> Self {
         let unit_defs = create_unit_defs();
 
-        let mut units_view = UnitsView::new();
-        units_view.add_all_classes(&unit_defs);
-
         let global_function_defs = create_global_function_defs();
 
-        let mut globals = Globals { operators: HashMap::new(), sources: Vec::new(), unit_defs, units_view, global_function_defs };
+        let mut globals = Globals { operators: HashMap::new(), sources: Vec::new(), unit_defs, global_function_defs };
         load_operators(&mut globals);
         globals
     }

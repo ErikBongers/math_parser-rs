@@ -16,7 +16,8 @@ pub trait HasRange{
 }
 
 pub trait Node: CastAny + HasRange {
-    fn get_node_data(&mut self) -> &mut NodeData;
+    fn get_node_data(&self) -> &NodeData;
+    fn get_node_data_mut(&mut self) -> &mut NodeData;
 }
 //emulating a base class like Partial: https://docs.rs/partially/latest/partially/
 
