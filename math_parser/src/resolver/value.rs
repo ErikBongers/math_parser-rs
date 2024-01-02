@@ -21,7 +21,7 @@ pub enum NumberFormat {
 
 #[derive(Clone)]
 pub enum Variant {
-    Numeric { number: Number, is_constant: bool, fmt: NumberFormat },
+    Numeric { number: Number, fmt: NumberFormat },
     Date, //TODO
     Duration,
     List { values: Vec<Value> },
@@ -62,7 +62,7 @@ impl Value {
         Value {
             id: None,
             stmt_range: range.clone(),
-            variant: Variant::Numeric {number: value, is_constant: false, fmt: NumberFormat::Dec},
+            variant: Variant::Numeric {number: value, fmt: NumberFormat::Dec},
             has_errors: false
         }
     }

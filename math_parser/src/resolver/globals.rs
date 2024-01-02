@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use crate::functions::{create_global_function_defs, GlobalFunctionDef};
 use crate::resolver::operator::{load_operators, operator_id_from, OperatorType};
-use crate::resolver::unit::{create_unit_defs, UnitDef, UnitsView};
-use crate::resolver::value::{Value, variant_to_value_type};
-use crate::tokenizer::cursor::Range;
+use crate::resolver::unit::{create_unit_defs, Unit, UnitDef, UnitsView};
+use crate::resolver::value::{NumberFormat, Value, Variant, variant_to_value_type};
+use crate::tokenizer::cursor::{Number, Range};
 use crate::tokenizer::sources::Source;
 
 pub struct Globals {
@@ -11,6 +11,7 @@ pub struct Globals {
     pub sources: Vec<Source>,
     pub unit_defs: HashMap<String, UnitDef>,
     pub global_function_defs:  HashMap<String, GlobalFunctionDef>,
+    pub constants: HashMap<&'static str, Value>,
 }
 
 impl<'a> Globals {
@@ -18,9 +19,10 @@ impl<'a> Globals {
         let unit_defs = create_unit_defs();
 
         let global_function_defs = create_global_function_defs();
-
-        let mut globals = Globals { operators: HashMap::new(), sources: Vec::new(), unit_defs, global_function_defs };
+        let constants = HashMap::new();
+        let mut globals = Globals { operators: HashMap::new(), sources: Vec::new(), unit_defs, global_function_defs, constants };
         load_operators(&mut globals);
+        globals.fill_constants();
         globals
     }
 
@@ -34,5 +36,22 @@ impl<'a> Globals {
 
     pub fn get_text(&self, range: &Range) -> &str {
         &self.sources[range.source_index as usize].text[range.start..range.end]
+    }
+    
+    fn fill_constants(&mut self) {
+        self.constants.insert("PI", Value {
+            id: None,
+            stmt_range: Range::none(),
+            variant: Variant::Numeric {
+                number: Number {
+                    significand: std::f64::consts::PI,
+                    exponent: 0,
+                    unit: Unit::none(),
+                    fmt: NumberFormat::Dec,
+                },
+                fmt: NumberFormat::Dec,
+            },
+            has_errors: false,
+        });
     }
 }

@@ -11,6 +11,9 @@
 
 # defines
 
+* blocks
+  > a block should have it's own scope...but the results and errors should be added to the main list, contrary to custom functions.
+
 * WASM dealing with strings and persistent storage:
   1. No persisten state, but pass all strings as byte arrays (see js_sys)
     > on JS side, pre-convert UUTF-16 -> UTF8 and pass them as byte arrays

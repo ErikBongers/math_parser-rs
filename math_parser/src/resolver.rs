@@ -210,7 +210,14 @@ impl<'g, 'a> Resolver<'g, 'a> {
         let mut value = self.resolve_node(&expr.expr);
         let id_str = self.globals.get_text(&expr.id.range).to_string();
         if !self.scope.borrow().variables.contains_key(&id_str) {
-            //TODO: test if id  is unit or function or redef of constant.
+            //TODO: test if id is unit or function
+            if self.globals.constants.contains_key(&id_str.as_str()) {
+                self.add_error(ErrorId::ConstRedef, expr.id.range.clone(), &[id_str.as_str()], Value::error(&expr.get_range()));
+            }
+            if self.globals.unit_defs.contains_key(&id_str) {
+                self.add_error(ErrorId::WVarIsUnit, expr.id.range.clone(), &[id_str.as_str()], Value::error(&expr.get_range()));
+            }
+            //TODO: disallow redefine of constant in case of `strict`
             self.scope.borrow_mut().variables.insert(id_str, value.clone());
         }
         value.id = Some(expr.id.range.clone()); //add id here to avoid adding id to the self.scope.variables.
@@ -220,9 +227,9 @@ impl<'g, 'a> Resolver<'g, 'a> {
     fn resolve_id_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let expr = expr.as_any().downcast_ref::<IdExpr>().unwrap();
         let id = self.globals.get_text(&expr.id.range).to_string();
-        let var_exists = self.scope.borrow().variables.contains_key(&id);
+        let var_exists = self.scope.borrow().var_exists(&id, self.globals);
         if var_exists  {
-            self.scope.borrow().variables.get(&id).unwrap().clone()
+            self.scope.borrow().get_var(&id, self.globals).clone()
         } else {
             self.add_error(ErrorId::VarNotDef, expr.id.range.clone(), &[&id], Value::error(&expr.get_range()))
         }
@@ -273,6 +280,14 @@ impl<'g, 'a> Resolver<'g, 'a> {
         let range = Range { source_index: 0, start: 0, end: 0};
 
         let result = (self.globals.get_operator(op_id).unwrap())(&self.globals, &args, &range);
-        result //TODO: add errors
+        if expr.is_implicit_mult() {
+            if let Some(id_expr) = expr.expr2.as_any().downcast_ref::<IdExpr>() {
+                let id_str = self.globals.get_text(&id_expr.id.range);
+                if self.scope.borrow().units_view.units.contains(id_str) {
+                    self.add_error(ErrorId::WUnitIsVar, expr.get_range().clone(), &[id_str], Value::error(&id_expr.id.range));
+                }
+            }
+        }
+        result
     }
 }
