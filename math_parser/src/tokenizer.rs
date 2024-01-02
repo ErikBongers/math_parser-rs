@@ -76,7 +76,7 @@ impl Cursor<'_> {
                       EqUnit
                   },
                   (n @'0'..='9', _) => {
-                    self.parse_number(n);
+                    self.number = self.parse_number('.');
                       Number
                   },
                   _ => Dot

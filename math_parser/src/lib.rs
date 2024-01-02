@@ -77,6 +77,13 @@ mod test {
     use crate::tokenizer::sources::Source;
 
     #[test]
+    fn test_numbers (){
+        test_result("123.456", 123.456, "");
+        test_result("0.123", 0.123, "");
+        test_result("-1", -1.0, "");
+    }
+
+    #[test]
     fn test_simple_expr (){
         test_result("1+2", 3.0, "");
         test_result("2*3", 6.0, "");
@@ -161,7 +168,11 @@ mod test {
         let Variant::Numeric { number, .. } = &value.variant else {
             panic!("Result isn't a number.");
         };
-        assert_eq!(number.to_double(), expected_result);
+        //round decimals:
+        let val = number.to_double();
+        let precision = 10000000.0;
+        let val = (val*precision).round()/precision;
+        assert_eq!(val, expected_result);
         assert_eq!(number.unit.id, unit);
     }
 
