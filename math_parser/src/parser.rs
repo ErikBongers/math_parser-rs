@@ -1,10 +1,10 @@
 use std::any::{Any, TypeId};
 use std::cell::RefCell;
-use std::ops::DerefMut;
+use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 use macros::CastAny;
 use crate::errors::{Error, ErrorId};
-use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CommentExpr, ConstExpr, FunctionDefExpr, IdExpr, ListExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement, UnaryExpr, UnitExpr};
+use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CommentExpr, ConstExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement, UnaryExpr, UnitExpr};
 use crate::resolver::globals::Globals;
 use crate::tokenizer::cursor::Range;
 use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
@@ -12,7 +12,7 @@ use crate::tokenizer::token_type::TokenType;
 use crate::resolver::scope::Scope;
 use crate::resolver::unit::Unit;
 use crate::tokenizer::Token;
-use crate::tokenizer::token_type::TokenType::{Eq, EqDiv, EqMin, EqMult, EqPlus};
+use crate::tokenizer::token_type::TokenType::{Div, Eq, EqDiv, EqMin, EqMult, EqPlus};
 
 pub mod nodes;
 
@@ -275,6 +275,11 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 TokenType::Mult | TokenType::Div | TokenType::Percent | TokenType::Modulo => {
                     let op = self.tok.next().clone();
                     let expr2 = self.parse_power_expr();
+                    if op.kind == Div {
+                        if expr2.is_implicit_mult() {
+                            self.add_error(ErrorId::WDivImplMult, expr2.get_range().clone(), "");
+                        }
+                    }
                     expr1 = Box::new(BinExpr { expr1, op, expr2, node_data: NodeData { unit: Unit::none(), has_errors: false }, implicit_mult: false })
                 }
                 _ => break
@@ -290,8 +295,12 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 TokenType::Power => {
                     let op = self.tok.next().clone();
                     let expr2 = self.parse_power_expr(); //right associative!
-                    expr1 = Box::new(BinExpr { expr1, op, expr2, node_data: NodeData { unit: Unit::none(), has_errors: false }, implicit_mult: false });
-                    //TODO: check for ambiguous implicit mult.
+                    let bin_expr = BinExpr { expr1, op, expr2, node_data: NodeData { unit: Unit::none(), has_errors: false }, implicit_mult: false };
+                    if bin_expr.expr1.deref().is_implicit_mult() || bin_expr.expr2.deref().is_implicit_mult() {
+                        self.add_error(ErrorId::WPowImplMult, bin_expr.get_range().clone(), "");
+                    }
+                    expr1 = Box::new(bin_expr);
+
                 }
                 _ => break
             }

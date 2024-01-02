@@ -27,6 +27,13 @@ pub trait HasRange{
 pub trait Node: CastAny + HasRange {
     fn get_node_data(&self) -> &NodeData;
     fn get_node_data_mut(&mut self) -> &mut NodeData;
+
+    fn is_implicit_mult(&self) -> bool {
+        match self.as_any().type_id() {
+            t if TypeId::of::<BinExpr>() == t => self.as_any().downcast_ref::<BinExpr>().unwrap().implicit_mult,
+            _ => false
+        }
+    }
 }
 //emulating a base class like Partial: https://docs.rs/partially/latest/partially/
 

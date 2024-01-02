@@ -3,7 +3,6 @@ use once_cell::sync::Lazy;
 use serde::Serialize;
 use crate::tokenizer::cursor::Range;
 
-
 #[derive(Eq, Hash, PartialEq)]
 #[derive(Clone, Serialize)]
 pub enum ErrorId
