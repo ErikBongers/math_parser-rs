@@ -127,6 +127,9 @@ mod test {
         test_result("(1.m)mm", 1000.0, "mm");
         test_result("1.m.mm", 1000.0, "mm");
         test_result("1m.mm", 1000.0, "mm");
+        test_result("sum(1mm, 2cm)", 0.021, "m");
+        test_result("sum(1mm, 2cm).mm", 21.0, "mm");
+        test_result("sum(1mm, 2cm)mm", 21.0, "mm");
     }
 
     #[test]

@@ -67,11 +67,12 @@ impl Value {
         }
     }
 
-    pub fn as_number(&mut self) -> &mut Number {
+    pub fn as_number(&mut self) -> Option<&mut Number> {
         if let Variant::Numeric { ref mut number, ..} = self.variant {
-            number
+            Some(number)
         } else {
-            panic!("as_number should only be called on a numeric value.")
+            None
         }
     }
+
 }

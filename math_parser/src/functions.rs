@@ -178,7 +178,7 @@ fn with_num_vec(function_def: &dyn FunctionDef, args: &Vec<Value>, range: &Range
         let mut val = Value::from_number(Number {significand: func(num_vec), exponent: 0, unit: Unit::none(), fmt: NumberFormat::Dec }, range);
         let Some(number) = match_arg_number(function_def, &args[0], range, errors) else { return Value::error(range) };
         let si_id = globals.unit_defs.get(&number.unit.id).unwrap().si_id;
-        val.as_number().unit.id = si_id.to_string();
+        val.as_number().unwrap().unit.id = si_id.to_string();
         val
     } else { Value::error(range) }
 }

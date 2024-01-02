@@ -153,26 +153,26 @@ impl<'g, 'a> Resolver<'g, 'a> {
             arg_values.push(value);
         };
 
-        if global_function_def {
-            return self.globals.global_function_defs.get(call_expr.function_name.as_str()).unwrap()
-                .call(&self.scope, &arg_values, &call_expr.function_name_range, &mut self.errors, self.globals);
+        let mut result = if global_function_def {
+            self.globals.global_function_defs.get(call_expr.function_name.as_str()).unwrap()
+                .call(&self.scope, &arg_values, &call_expr.function_name_range, &mut self.errors, self.globals)
         } else {
             if local_function_def {
-                return self.scope.borrow().local_function_defs.get(call_expr.function_name.as_str()).unwrap()
-                    .call(&self.scope, &arg_values, &call_expr.function_name_range, &mut self.errors, self.globals);
+                self.scope.borrow().local_function_defs.get(call_expr.function_name.as_str()).unwrap()
+                    .call(&self.scope, &arg_values, &call_expr.function_name_range, &mut self.errors, self.globals)
             } else {
                 panic!("TODO");
             }
-        }
-        //TODO: apply units.
+        };
+        Resolver::apply_unit(&mut result, expr, &self.scope.borrow().units_view, &expr.get_range(), self.errors, self.globals);
+        result
     }
 
     fn resolve_unit_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let unit_expr = expr.as_any().downcast_ref::<UnitExpr>().unwrap();
         let mut result = self.resolve_node(&unit_expr.node);
         if let Numeric { ref mut number, .. } = &mut result.variant {
-            //in case of (x.km)m, both postfixId (km) and unit (m) are filled.
-            Resolver::apply_unit(number, expr, &self.scope.borrow().units_view, &expr.get_range(), self.errors, self.globals);
+            Resolver::apply_unit(&mut result, expr, &self.scope.borrow().units_view, &expr.get_range(), self.errors, self.globals);
         }
         result
     }
@@ -184,20 +184,21 @@ impl<'g, 'a> Resolver<'g, 'a> {
             Numeric { ref mut number, .. } => {
                 let id = self.globals.get_text(&pfix_expr.postfix_id.range).to_string();
                 number.convert_to_unit(&Unit { range: Some(pfix_expr.postfix_id.range.clone()), id }, &self.scope.borrow().units_view,&pfix_expr.postfix_id.range, self.errors, self.globals);
-                //in case of (x.km)m, both postfixId (km) and unit (m) are filled.
-                Resolver::apply_unit(number, expr, &self.scope.borrow().units_view, &expr.get_range(), self.errors, self.globals);
             },
             _ => return self.add_error(ErrorId::UnknownExpr, pfix_expr.postfix_id.range.clone(), &["Postfix expression not valid here."], result)
         };
-        //in case of (x.km)m, both postfixId (km) and unit (m) are filled.
-        //perhaps to do: apply_unit also for other variants than Numeric?
+        Resolver::apply_unit(&mut result, expr, &self.scope.borrow().units_view, &expr.get_range(), self.errors, self.globals);
         result
     }
 
-    fn apply_unit(number: &mut Number, node: &Box<dyn Node>, units_view: &UnitsView, range: &Range, errors: &mut Vec<Error>, globals: &Globals) {
-        if !node.get_node_data().unit.is_empty() {
-            number.convert_to_unit(&node.get_node_data().unit, units_view, range, errors, globals);
+    //in case of (x.km)m, both postfixId (km) and unit (m) are filled.
+    fn apply_unit(value: &mut Value, node: &Box<dyn Node>, units_view: &UnitsView, range: &Range, errors: &mut Vec<Error>, globals: &Globals) {
+        if let Some(number) = value.as_number() {
+            if !node.get_node_data().unit.is_empty() {
+                number.convert_to_unit(&node.get_node_data().unit, units_view, range, errors, globals);
+            }
         }
+        //else: ignore.
     }
 
     fn resolve_assign_expr(&mut self, expr: &Box<dyn Node>) -> Value {
