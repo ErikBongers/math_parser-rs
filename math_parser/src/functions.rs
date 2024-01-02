@@ -4,7 +4,7 @@ use std::rc::Rc;
 use crate::resolver::scope::Scope;
 use crate::errors::{Error, ErrorId};
 use crate::parser::CodeBlock;
-use crate::parser::nodes::{FunctionDefExpr};
+use crate::parser::nodes::{ConstExpr, FunctionDefExpr};
 use crate::resolver::{add_error, Resolver};
 use crate::resolver::globals::Globals;
 use crate::resolver::unit::Unit;
@@ -149,25 +149,33 @@ fn sqrt(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Op
     Value::from_number(Number {significand: number.significand.sqrt(), exponent: number.exponent, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
 }
 fn sum(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
-    with_num_vec(global_function_def.unwrap(), &args, range, errors, globals, |num_vec| {
+    let mut exploded_args = Vec::new();
+    let args_ref = explode_args(args, &mut exploded_args);
+    with_num_vec(global_function_def.unwrap(), &args_ref, range, errors, globals, |num_vec| {
         num_vec.into_iter().reduce(|tot, num| tot+num).unwrap_or(0.0)
     })
 }
 
 fn max(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
-    with_num_vec(global_function_def.unwrap(), &args, range, errors, globals, |num_vec| {
+    let mut exploded_args = Vec::new();
+    let args_ref = explode_args(args, &mut exploded_args);
+    with_num_vec(global_function_def.unwrap(), &args_ref, range, errors, globals, |num_vec| {
         num_vec.into_iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(0.0)
     })
 }
 
 fn min(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
-    with_num_vec(global_function_def.unwrap(), &args, range, errors, globals, |num_vec| {
+    let mut exploded_args = Vec::new();
+    let args_ref = explode_args(args, &mut exploded_args);
+    with_num_vec(global_function_def.unwrap(), &args_ref, range, errors, globals, |num_vec| {
         num_vec.into_iter().min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(0.0)
     })
 }
 
 fn avg(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
-    with_num_vec(global_function_def.unwrap(), &args, range, errors, globals, |num_vec| {
+    let mut exploded_args = Vec::new();
+    let args_ref = explode_args(args, &mut exploded_args);
+    with_num_vec(global_function_def.unwrap(), &args_ref, range, errors, globals, |num_vec| {
         let mut val = num_vec.into_iter().reduce(|tot, num| tot + num).unwrap_or(0.0);
         val / args.len() as f64
     })
@@ -303,3 +311,15 @@ pub fn execute_custom_function(_global_function_def: Option<&GlobalFunctionDef>,
     result
 }
 
+fn explode_args<'a>(args: &'a Vec<Value>, exploded_args: &'a mut Vec<Value>) -> &'a Vec<Value> {
+    if args.len() != 1 {
+        return args;
+    }
+
+    if let Variant::List{values} = &args[0].variant {
+        exploded_args.clone_from(values);
+        exploded_args
+    } else {
+        args
+    }
+}
