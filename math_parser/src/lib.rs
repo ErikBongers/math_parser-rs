@@ -107,6 +107,9 @@ mod test {
         test_result("a=2; a--", 1.0, "");
         test_result("sum(1,2,3)", 6.0, "");
         // test_result("sum(1,2, now())", 6.0, "");
+        test_result("max(1,2,3)", 3.0, "");
+        test_result("min(1,2,3)", 1.0, "");
+        test_result("avg(1,2,3)", 2.0, "");
     }
 
     #[test]

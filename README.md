@@ -95,7 +95,7 @@ Hot.=C; //Does the same as the above line.
 * ```max(randomNumbers); // lists (arrays) can also be used as arguments```
 * `|x|` is the same as `abs(x)`
 * Dates: `now(), date(year, month, day)`
-* Lists: `sort(), reverse(), max(), min()`
+* Lists: `sort(), reverse(), max(), min(), avg()`
 
 ### Custom functions
 Statements can be grouped in functions as well.

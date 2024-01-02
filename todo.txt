@@ -1,5 +1,5 @@
 * Trig functions done, round, ... also done.
-  > Continue with other functions: list functions like sum, reverse, factors and primes
+  > Continue with other functions: list functions like sort(), first, last, reverse, factors and primes
 
 * Dec, Hex, Bin,...
     > add output for value.val and formattedNumber.
