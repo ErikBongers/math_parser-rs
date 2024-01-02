@@ -221,6 +221,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                     op: Token {
                         kind: bin_op,
                         range: eq_op.range,
+                        #[cfg(debug_assertions)]
                         text: "Eq_xxx".to_string(),
                     } ,
                     expr2: self.parse_add_expr(),
@@ -234,6 +235,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                     Token {
                         kind: TokenType::ClearUnit,
                         range: Range::none(),
+                        #[cfg(debug_assertions)]
                         text: "".to_string(),
                     }
                 };
@@ -279,7 +281,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     }
 
     fn parse_power_expr(&mut self) -> Box<dyn Node> {
-        let mut expr1 = self.parse_unary_expr();
+        let mut expr1 = self.parse_implicit_mult();
         loop {
             match self.tok.peek().kind {
                 TokenType::Power => {
@@ -292,6 +294,37 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             }
         }
         expr1
+    }
+
+    fn parse_implicit_mult(&mut self) -> Box<dyn Node> {
+        let mut n1 = self.parse_unary_expr();
+        loop {
+            let t = self.tok.peek();
+            if( t.kind != TokenType::Id && t.kind != TokenType::Number && t.kind != TokenType::ParOpen) {
+                break;
+            };
+            //don't consume the token yet...
+            let op = Token {
+                kind: TokenType::Mult,
+                range: t.range.clone(),
+                #[cfg(debug_assertions)]
+                text: "implicit mult".to_string(),
+            };
+            let n2 = if t.kind == TokenType::ParOpen {
+                Parser::reduce_list(self.parse_list_expr())
+            } else {
+                self.parse_postfix_expr()
+            };
+            let expr = BinExpr {
+                node_data: NodeData::new(),
+                expr1: n1,
+                op,
+                expr2: n2,
+                implicit_mult: true,
+            };
+            n1 = Box::new(expr);
+        };
+        n1
     }
 
     fn parse_unary_expr(&mut self) -> Box<dyn Node> {
@@ -371,9 +404,12 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         let mut expr = self.parse_primary_expr();
         match self.tok.peek().kind {
             TokenType::Id => {
-            //TODO: check if it's an existing var, in which case we'll ignore it as it's probably an implicit mult.
-                let id = self.tok.next();
+                let id = self.tok.peek();
                 let id_str = self.globals.get_text(&id.range).to_string();
+                if self.code_block.scope.borrow().var_defs.contains(&id_str) {
+                    return expr; //ignore this id - it's probably an implicit mult.
+                }
+                let id = self.tok.next();
                 let it = expr.deref_mut();
                 let nd = &mut it.get_node_data_mut();
                 if nd.unit.is_empty() {
