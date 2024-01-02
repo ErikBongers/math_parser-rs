@@ -199,7 +199,59 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             self.code_block.scope.borrow_mut().var_defs.insert(txt);
             return Box::new(assign_expr);
         }
-        unreachable!("TODO: implement else")
+        //build this expression: AssignExpr {id, BinExpr{ IdExpr, op, expr }}
+        let eq_op = self.tok.next();
+        let id_expr = IdExpr {
+            node_data: NodeData::new(),
+            id: id.clone(),
+        };
+
+        let expr : Box<dyn Node> = match op_type {
+            EqPlus | EqMin | EqMult | EqDiv => {
+                let bin_op = match op_type {
+                    EqPlus => Plus,
+                    EqMin => Min,
+                    EqMult => Min,
+                    EqDiv => Div,
+                    _ => unreachable!()
+                };
+                Box::new(BinExpr {
+                    node_data: NodeData::new(),
+                    expr1: Box::new(id_expr),
+                    op: Token {
+                        kind: bin_op,
+                        range: eq_op.range,
+                        text: "Eq_xxx".to_string(),
+                    } ,
+                    expr2: self.parse_add_expr(),
+                    implicit_mult: false,
+                })
+            },
+            EqUnit => {
+                let unit_token = if self.tok.peek().kind == TokenType::Id { //assume id = a unit
+                    self.tok.next()
+                } else {
+                    Token {
+                        kind: TokenType::ClearUnit,
+                        range: Range::none(),
+                        text: "".to_string(),
+                    }
+                };
+                Box::new(PostfixExpr {
+                    node_data: NodeData::new(),
+                    node: Box::new(id_expr),
+                    postfix_id: unit_token,
+                })
+            },
+            _ => unreachable!("expected a Eq operator.")
+        };
+
+        let assign_expr = AssignExpr {
+            node_data: NodeData::new(),
+            id,
+            expr,
+        };
+        Box::new(assign_expr)
     }
 
     fn parse_add_expr(&mut self) -> Box<dyn Node> {
@@ -278,7 +330,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                     self.tok.next();
                     // postfix.postfix_id already set!
                 } else {
-                    postfix.postfix_id = Token { kind: TokenType::Nullptr, range : Range { start: 0, end: 0, source_index: 0},
+                    postfix.postfix_id = Token { kind: TokenType::ClearUnit, range : Range { start: 0, end: 0, source_index: 0},
                         #[cfg(debug_assertions)]
                         text: "".to_string()
                     } //TODO: since range can be empty: use Option?

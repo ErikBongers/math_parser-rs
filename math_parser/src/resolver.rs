@@ -183,7 +183,11 @@ impl<'g, 'a> Resolver<'g, 'a> {
         match &mut result.variant {
             Numeric { ref mut number, .. } => {
                 let id = self.globals.get_text(&pfix_expr.postfix_id.range).to_string();
-                number.convert_to_unit(&Unit { range: Some(pfix_expr.postfix_id.range.clone()), id }, &self.scope.borrow().units_view,&pfix_expr.postfix_id.range, self.errors, self.globals);
+                if pfix_expr.postfix_id.kind == TokenType::ClearUnit {
+                    number.unit = Unit::none();
+                } else {
+                    number.convert_to_unit(&Unit { range: Some(pfix_expr.postfix_id.range.clone()), id }, &self.scope.borrow().units_view,&pfix_expr.postfix_id.range, self.errors, self.globals);
+                }
             },
             _ => return self.add_error(ErrorId::UnknownExpr, pfix_expr.postfix_id.range.clone(), &["Postfix expression not valid here."], result)
         };

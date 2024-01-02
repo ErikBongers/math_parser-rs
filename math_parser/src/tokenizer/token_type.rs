@@ -53,5 +53,5 @@ pub enum TokenType {
 
     Unknown,
     Eot,
-    Nullptr
+    ClearUnit, //dummy token used for "x=.;" where the unit is set to Unit::none
 }

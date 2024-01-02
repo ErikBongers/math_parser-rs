@@ -98,6 +98,8 @@ mod test {
     #[test]
     fn test_assign_expr () {
         test_result("a=1;b=2;c=a+b", 3.0, "");
+        test_result("a=1;a+=2", 3.0, "");
+        test_result("a=1mm;a.=", 1.0, "");
     }
 
     #[test]
@@ -130,6 +132,7 @@ mod test {
         test_result("sum(1mm, 2cm)", 0.021, "m");
         test_result("sum(1mm, 2cm).mm", 21.0, "mm");
         test_result("sum(1mm, 2cm)mm", 21.0, "mm");
+        test_result("1mm.", 1.0, "");
     }
 
     #[test]

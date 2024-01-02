@@ -11,6 +11,15 @@ pub struct NodeData {
     pub has_errors: bool
 }
 
+impl NodeData {
+    pub fn new() -> Self {
+        NodeData {
+            unit: Unit::none(),
+            has_errors: false,
+        }
+    }
+}
+
 pub trait HasRange{
     fn get_range(&self) -> Range;
 }
