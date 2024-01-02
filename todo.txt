@@ -1,4 +1,13 @@
+* Trig functions done, round, ... also done.
+  > Continue with other functions: list functions like sum, reverse, factors and primes
 
+* Dec, Hex, Bin,...
+    > add output for value.val and formattedNumber.
+    > to reduce precision: (x*precision).round()/precision
+
+* exponents
+
+* date and duration.
 
 * dealing with strings and persistent storage:
   1. No persisten state, but pass all strings as byte arrays (see js_sys)
