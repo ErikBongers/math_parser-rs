@@ -269,15 +269,18 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     }
 
     fn parse_mult_expr(&mut self) -> Box<dyn Node> {
-        let expr1 = self.parse_power_expr();
-        match self.tok.peek().kind {
-            TokenType::Mult | TokenType::Div | TokenType::Percent | TokenType::Modulo => {
-                let op = self.tok.next().clone();
-                let expr2 = self.parse_postfix_expr();
-                Box::new(BinExpr { expr1, op, expr2, node_data: NodeData { unit: Unit::none(), has_errors: false, }, implicit_mult: false })
-            },
-            _ => expr1
-        }
+        let mut expr1 = self.parse_power_expr();
+        loop {
+            match self.tok.peek().kind {
+                TokenType::Mult | TokenType::Div | TokenType::Percent | TokenType::Modulo => {
+                    let op = self.tok.next().clone();
+                    let expr2 = self.parse_power_expr();
+                    expr1 = Box::new(BinExpr { expr1, op, expr2, node_data: NodeData { unit: Unit::none(), has_errors: false }, implicit_mult: false })
+                }
+                _ => break
+            }
+        };
+        expr1
     }
 
     fn parse_power_expr(&mut self) -> Box<dyn Node> {

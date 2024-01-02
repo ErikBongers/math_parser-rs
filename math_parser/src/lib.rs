@@ -93,6 +93,18 @@ mod test {
         test_result("5!", 120.0, "");
         test_error("5.3!", ErrorId::Expected);
         test_error("(-5)!", ErrorId::Expected);
+
+        test_result("2*2*3", 12.0, "");
+        test_result("7-2*3", 1.0, "");
+        test_result("7-(2*3)", 1.0, "");
+        test_result("(7-2)*3", 15.0, "");
+    }
+
+    #[test]
+    fn test_implicit_mult () {
+        test_result("a=2;2a", 4.0, "");
+        test_result("a=2;(2)a", 4.0, "");
+        test_result("a=2;20/2a", 5.0, "");
     }
 
     #[test]
