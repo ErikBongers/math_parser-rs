@@ -66,4 +66,12 @@ impl Value {
             has_errors: false
         }
     }
+
+    pub fn as_number(&mut self) -> &mut Number {
+        if let Variant::Numeric { ref mut number, ..} = self.variant {
+            number
+        } else {
+            panic!("as_number should only be called on a numeric value.")
+        }
+    }
 }
