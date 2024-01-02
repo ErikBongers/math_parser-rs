@@ -9,7 +9,9 @@
 
 * date and duration.
 
-* dealing with strings and persistent storage:
+# defines
+
+* WASM dealing with strings and persistent storage:
   1. No persisten state, but pass all strings as byte arrays (see js_sys)
     > on JS side, pre-convert UUTF-16 -> UTF8 and pass them as byte arrays
     > for now, just pass the strings.
@@ -27,8 +29,6 @@
 * implement constants.
   > implement PI
   > test for redefine of constant.
-
-* Implement the exponent operators
 
 * Range: replace { start, end } with &str? It's essentially the same and it's safer.
   > byte indexes can probably still be calculated -> see cursor?

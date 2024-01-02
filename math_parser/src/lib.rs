@@ -105,6 +105,8 @@ mod test {
         test_result("abs(-1)", 1.0, "");
         test_result("a=1; a++", 2.0, "");
         test_result("a=2; a--", 1.0, "");
+        test_result("sum(1,2,3)", 6.0, "");
+        // test_result("sum(1,2, now())", 6.0, "");
     }
 
     #[test]

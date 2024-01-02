@@ -105,6 +105,7 @@ pub fn create_global_function_defs() -> HashMap<String, GlobalFunctionDef> {
         ("asin".to_string(), GlobalFunctionDef { name: "asin".to_string(), min_args: 1, max_args: 1, execute: asin}),
         ("acos".to_string(), GlobalFunctionDef { name: "acos".to_string(), min_args: 1, max_args: 1, execute: acos}),
         ("atan".to_string(), GlobalFunctionDef { name: "atan".to_string(), min_args: 1, max_args: 1, execute: atan}),
+        ("sum".to_string(), GlobalFunctionDef { name: "sum".to_string(), min_args: 1, max_args: 999, execute: sum}),
     ]);
     defs
 }
@@ -142,6 +143,23 @@ fn ceil(global_function_def: Option<&GlobalFunctionDef>, local_function_def: Opt
 fn sqrt(global_function_def: Option<&GlobalFunctionDef>, local_function_def: Option<&CustomFunctionDef>, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
     let Some(number) = match_arg_number(global_function_def, &args[0], range, errors) else { return Value::error(range); };
     Value::from_number(Number {significand: number.significand.sqrt(), exponent: number.exponent, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
+}
+fn sum(global_function_def: Option<&GlobalFunctionDef>, local_function_def: Option<&CustomFunctionDef>, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
+    let Some(number) = match_arg_number(global_function_def, &args[0], range, errors) else { return Value::error(range); };
+
+    let the_sum = args.iter()
+        .map(|value|
+            {
+                if let Variant::Numeric {number, ..} = &value.variant {
+                    number.significand
+                } else {
+                    add_error(errors, ErrorId::FuncArgWrongType, range.clone(), &[&local_function_def.unwrap().name], Value::error(range));
+                    0.0
+                }
+            })
+        .reduce(|tot, num| tot+num).unwrap_or(0.0);
+
+    Value::from_number(Number {significand: the_sum, exponent: number.exponent, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
 }
 
 fn inc(global_function_def: Option<&GlobalFunctionDef>, local_function_def: Option<&CustomFunctionDef>, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
