@@ -232,7 +232,7 @@ fn sin(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Opt
     if number.unit.id == "deg" {
         number.convert_to_unit(&Unit { range: None, id: "rad".to_string() }, &scope.borrow().units_view, range, errors, globals); //TODO: we don't need to make another number. Just convert units for a f64.
     }
-    Value::from_number(Number {significand: number.significand.sin(), exponent: number.exponent, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number {significand: number.significand.sin(), exponent: number.exponent, unit: Unit::none(), fmt: NumberFormat::Dec }, range)
 }
 
 fn cos(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
@@ -240,7 +240,7 @@ fn cos(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Opt
     let mut number = number.clone(); //Needed? Test it.
     if number.unit.id == "deg" {
         number.convert_to_unit(&Unit { range: None, id: "rad".to_string() }, &scope.borrow().units_view, range, errors, globals);     }
-    Value::from_number(Number {significand: number.significand.cos(), exponent: number.exponent, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number {significand: number.significand.cos(), exponent: number.exponent, unit: Unit::none(), fmt: NumberFormat::Dec }, range)
 }
 
 fn tan(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
@@ -249,7 +249,7 @@ fn tan(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Opt
     if number.unit.id == "deg" {
         number.convert_to_unit(&Unit { range: None, id: "rad".to_string() }, &scope.borrow().units_view, range, errors, globals);
     }
-    Value::from_number(Number {significand: number.significand.tan(), exponent: number.exponent, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number {significand: number.significand.tan(), exponent: number.exponent, unit: Unit::none(), fmt: NumberFormat::Dec }, range)
 }
 
 fn asin(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
