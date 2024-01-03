@@ -69,7 +69,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
             t if TypeId::of::<ListExpr>() == t => { self.resolve_list_expr(expr) },
             t if TypeId::of::<CommentExpr>() == t => { self.resolve_comment_expr(expr) },
             t if TypeId::of::<FunctionDefExpr>() == t => { self.resolve_func_def_expr(expr) },
-            _ => { self.add_error(ErrorId::Expected, Range::none(), &["Unknown expression to reo"], Value::error(&expr.get_range())) },
+            _ => { self.add_error(ErrorId::Expected, expr.get_range(), &["Unknown expression to resolve_node"], Value::error(&expr.get_range())) },
         }
     }
 
@@ -210,7 +210,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
         let mut value = self.resolve_node(&expr.expr);
         let id_str = self.globals.get_text(&expr.id.range).to_string();
         if !self.scope.borrow().variables.contains_key(&id_str) {
-            //TODO: test if id is unit or function
+            //TODO: test if id is function
             if self.globals.constants.contains_key(&id_str.as_str()) {
                 self.add_error(ErrorId::ConstRedef, expr.id.range.clone(), &[id_str.as_str()], Value::error(&expr.get_range()));
             }

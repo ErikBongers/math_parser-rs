@@ -169,7 +169,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             TokenType::Eot => (),
             _ => {
                 let t = self.tok.next(); //avoid dead loop!
-                self.errors.push(Error::build(ErrorId::Expected, t.range.clone(), &[self.globals.get_text(&t.range)]));
+                self.errors.push(Error::build(ErrorId::Expected, t.range.clone(), &[";"]));
                 stmt.node_data.has_errors = true;
             }
         };
@@ -505,8 +505,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 self.tok.next();
                 let mut expr = Parser::reduce_list(self.parse_list_expr());
                 if !self.match_token(&TokenType::ParClose) {
-                    let range = Range { start: 0, end: 0, source_index: 0};
-                    let error = Error::build(ErrorId::Expected, range, &[")"]);
+                    let error = Error::build(ErrorId::Expected, expr.get_range(), &[")"]);
                     self.errors.push(error);
                 }
                 if expr.as_any().type_id() == TypeId::of::<BinExpr>() {

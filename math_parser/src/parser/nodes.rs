@@ -45,7 +45,7 @@ pub struct NoneExpr {
 
 impl HasRange for NoneExpr {
     fn get_range(&self) -> Range {
-        Range::none()
+        self.token.range.clone()
     }
 }
 #[derive(CastAny, Node)]
