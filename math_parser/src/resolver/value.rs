@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::fmt;
 use serde::Serialize;
 use crate::tokenizer::cursor::{Number, Range};
@@ -72,6 +73,16 @@ impl Value {
             Some(number)
         } else {
             None
+        }
+    }
+
+    /// converts a Value to an f64 where NaN is replaced with 0.0
+    pub fn sortable_value(&self) -> f64 {
+        if let Variant::Numeric { ref number, ..} = self.variant {
+            if number.significand == f64::NAN { 0.0}  //TODO: use to_double()
+            else { number.significand }
+        } else {
+            todo!("no sortable value defined for this value type.")
         }
     }
 

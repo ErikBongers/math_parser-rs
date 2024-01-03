@@ -131,6 +131,10 @@ mod test {
         test_result("max(1,2,3)", 3.0, "");
         test_result("min(1,2,3)", 1.0, "");
         test_result("avg(1,2,3)", 2.0, "");
+        test_result("first(1,2,3)", 1.0, "");
+        test_result("last(1,2,3)", 3.0, "");
+        test_result("first(reverse(1,2,3))", 3.0, "");
+        test_result("first(sort(3,1, 2))", 1.0, "");
     }
 
     #[test]

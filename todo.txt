@@ -1,6 +1,4 @@
-* Trig functions done, round, ... also done.
-  > Continue with other functions: list functions like sort(), first, last, reverse, factors and primes
-
+* math_parser crate: split main.rs and lib.rs so that the lib is not compiled when the tests are compiled?
 * Dec, Hex, Bin,...
     > add output for value.val and formattedNumber.
     > to reduce precision: (x*precision).round()/precision
@@ -77,3 +75,7 @@
 
 
 * functions don't check param types: Exception thrown!
+
+* Functions
+  > round(), ... on lists?
+    > eg make a list all integers.

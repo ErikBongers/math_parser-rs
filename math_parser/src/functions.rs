@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 use crate::resolver::scope::Scope;
@@ -101,24 +102,36 @@ impl FunctionView {
 pub fn create_global_function_defs() -> HashMap<String, GlobalFunctionDef> {
     let defs: HashMap<String, GlobalFunctionDef> = HashMap::from( [
         ("abs".to_string(), GlobalFunctionDef { name: "abs".to_string(), min_args: 1, max_args: 1, execute: abs}),
+        ("inc".to_string(), GlobalFunctionDef { name: "inc".to_string(), min_args: 1, max_args: 1, execute: inc}),
+        ("dec".to_string(), GlobalFunctionDef { name: "dec".to_string(), min_args: 1, max_args: 1, execute: dec}),
+        ("sqrt".to_string(), GlobalFunctionDef { name: "sqrt".to_string(), min_args: 1, max_args: 1, execute: sqrt}),
+
         ("round".to_string(), GlobalFunctionDef { name: "round".to_string(), min_args: 1, max_args: 1, execute: round}),
         ("trunc".to_string(), GlobalFunctionDef { name: "trunc".to_string(), min_args: 1, max_args: 1, execute: trunc}),
         ("floor".to_string(), GlobalFunctionDef { name: "floor".to_string(), min_args: 1, max_args: 1, execute: floor}),
         ("ceil".to_string(), GlobalFunctionDef { name: "ceil".to_string(), min_args: 1, max_args: 1, execute: ceil}),
-        ("sqrt".to_string(), GlobalFunctionDef { name: "sqrt".to_string(), min_args: 1, max_args: 1, execute: sqrt}),
-        ("inc".to_string(), GlobalFunctionDef { name: "inc".to_string(), min_args: 1, max_args: 1, execute: inc}),
-        ("dec".to_string(), GlobalFunctionDef { name: "dec".to_string(), min_args: 1, max_args: 1, execute: dec}),
+
         ("factorial".to_string(), GlobalFunctionDef { name: "factors".to_string(), min_args: 1, max_args: 1, execute: factorial}),
+
         ("sin".to_string(), GlobalFunctionDef { name: "sin".to_string(), min_args: 1, max_args: 1, execute: sin}),
         ("cos".to_string(), GlobalFunctionDef { name: "cos".to_string(), min_args: 1, max_args: 1, execute: cos}),
         ("tan".to_string(), GlobalFunctionDef { name: "tan".to_string(), min_args: 1, max_args: 1, execute: tan}),
         ("asin".to_string(), GlobalFunctionDef { name: "asin".to_string(), min_args: 1, max_args: 1, execute: asin}),
         ("acos".to_string(), GlobalFunctionDef { name: "acos".to_string(), min_args: 1, max_args: 1, execute: acos}),
         ("atan".to_string(), GlobalFunctionDef { name: "atan".to_string(), min_args: 1, max_args: 1, execute: atan}),
+
         ("sum".to_string(), GlobalFunctionDef { name: "sum".to_string(), min_args: 1, max_args: 999, execute: sum}),
         ("avg".to_string(), GlobalFunctionDef { name: "avg".to_string(), min_args: 1, max_args: 999, execute: avg}),
         ("max".to_string(), GlobalFunctionDef { name: "max".to_string(), min_args: 1, max_args: 999, execute: max}),
         ("min".to_string(), GlobalFunctionDef { name: "min".to_string(), min_args: 1, max_args: 999, execute: min}),
+
+        ("reverse".to_string(), GlobalFunctionDef { name: "reverse".to_string(), min_args: 1, max_args: 999, execute: reverse}),
+        ("sort".to_string(), GlobalFunctionDef { name: "sort".to_string(), min_args: 1, max_args: 999, execute: sort}),
+        ("first".to_string(), GlobalFunctionDef { name: "first".to_string(), min_args: 1, max_args: 999, execute: first}),
+        ("last".to_string(), GlobalFunctionDef { name: "last".to_string(), min_args: 1, max_args: 999, execute: last}),
+
+        ("factors".to_string(), GlobalFunctionDef { name: "factors".to_string(), min_args: 1, max_args: 999, execute: factors}),
+        ("primes".to_string(), GlobalFunctionDef { name: "primes".to_string(), min_args: 1, max_args: 999, execute: primes}),
     ]);
     defs
 }
@@ -179,6 +192,126 @@ fn avg(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Opt
         let mut val = num_vec.into_iter().reduce(|tot, num| tot + num).unwrap_or(0.0);
         val / args.len() as f64
     })
+}
+
+fn reverse(_global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
+    let mut exploded_args = Vec::new();
+    let args_ref = explode_args(args, &mut exploded_args);
+    let reversed: Vec<Value> = args_ref.into_iter().rev().map(|value| {
+       value.clone()
+    }).collect();
+    Value {
+        id: None,
+        stmt_range: range.clone(),
+        variant: Variant::List { values: reversed },
+        has_errors: false,
+    }
+}
+
+fn sort(_global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
+    let mut exploded_args = Vec::new();
+    let args_ref = explode_args(args, &mut exploded_args);
+    let mut sorted: Vec<Value> = args_ref.clone();
+    sorted.sort_by(|a, b| a.sortable_value().partial_cmp(&b.sortable_value()).unwrap());
+    Value {
+        id: None,
+        stmt_range: range.clone(),
+        variant: Variant::List { values: sorted },
+        has_errors: false,
+    }
+}
+
+fn build_factors(val: f64) -> Vec<f64> { //TODO: return an iterator instead of a vec?
+    let int = val.trunc() as i32;
+    let half = (val/2.0).trunc() as i32;
+    let mut list = Vec::new();
+    for i in 2..=half {
+        if int%i == 0 {
+            list.push(i as f64);
+        }
+    }
+    list
+}
+
+fn floats_to_values(range: &Range, factors: &Vec<f64>) -> Vec<Value> {
+    let list = factors.iter()
+        .map(|i|
+            Value {
+                id: None,
+                stmt_range: range.clone(),
+                variant: Variant::Numeric {
+                    number: Number {
+                        significand: *i,
+                        exponent: 0,
+                        unit: Unit::none(),
+                        fmt: NumberFormat::Dec,
+                    },
+                    fmt: NumberFormat::Dec
+                },
+                has_errors: false,
+            }
+        )
+        .collect();
+    list
+}
+
+fn factors(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
+    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
+    let factors = build_factors(number.significand);
+    let list = floats_to_values(range, &factors);
+    Value {
+        id: None,
+        stmt_range: range.clone(),
+        variant: Variant::List { values: list },
+        has_errors: false,
+    }
+}
+
+fn primes(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
+    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
+    let factors = build_factors(number.significand);
+    let primez = factors.into_iter().filter(|&f| {
+        PRIMES.binary_search(&(f as i32)).is_ok()
+    }).collect();
+    let list = floats_to_values(range, &primez);
+    Value {
+        id: None,
+        stmt_range: range.clone(),
+        variant: Variant::List { values: list },
+        has_errors: false,
+    }
+}
+
+const PRIMES: [i32; 168] = [
+2,3,5,7,11,13,17,19,23,
+29,31,37,41,43,47,53,59,61,67,
+71,73,79,83,89,97,101,103,107,109,
+113,127,131,137,139,149,151,157,163,167,
+173,179,181,191,193,197,199,211,223,227,
+229,233,239,241,251,257,263,269,271,277,
+281,283,293,307,311,313,317,331,337,347,
+349,353,359,367,373,379,383,389,397,401,
+409,419,421,431,433,439,443,449,457,461,
+463,467,479,487,491,499,503,509,521,523,
+541,547,557,563,569,571,577,587,593,599,
+601,607,613,617,619,631,641,643,647,653,
+659,661,673,677,683,691,701,709,719,727,
+733,739,743,751,757,761,769,773,787,797,
+809,811,821,823,827,829,839,853,857,859,
+863,877,881,883,887,907,911,919,929,937,
+941,947,953,967,971,977,983,991,997
+];
+
+fn first(_global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
+    let mut exploded_args = Vec::new();
+    let args_ref = explode_args(args, &mut exploded_args);
+    args_ref.first().unwrap().clone()
+}
+
+fn last(_global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
+    let mut exploded_args = Vec::new();
+    let args_ref = explode_args(args, &mut exploded_args);
+    args_ref.last().unwrap().clone()
 }
 
 fn with_num_vec(function_def: &dyn FunctionDef, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals, func: impl Fn(Vec<f64>) -> f64) -> Value {
