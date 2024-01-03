@@ -12,8 +12,9 @@ use crate::tokenizer::sources::Source;
 mod tokenizer;
 mod parser;
 mod resolver;
-mod errors;
+pub mod errors; //ErrorId is public
 mod functions;
+
 
 pub fn parse_and_print_nodes (text: String) -> String {
     _parse_and_print_nodes(text, true)
@@ -63,110 +64,18 @@ fn _parse_and_print_nodes (text: String, print: bool) -> String {
     serde_json::to_string_pretty(&resolver).unwrap()
 }
 
-#[cfg(test)]
-mod test {
+/// Public api with test functions to use in external tests.
+/// Having the tests external speeds up rebuilding as the tests are not part of the math_parser lib crate.
+pub mod test {
     use std::cell::RefCell;
-    use std::rc::Rc;
-    use crate::errors::{Error, ERROR_MAP, ErrorId};
-    use crate::parser::{CodeBlock, Parser};
-    use crate::resolver::globals::Globals;
-    use crate::resolver::Resolver;
-    use crate::resolver::scope::Scope;
-    use crate::resolver::value::{Value, Variant};
-    use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
-    use crate::tokenizer::sources::Source;
+    use crate::{
+        errors::{ Error, ErrorId },
+        parser::{CodeBlock, Parser},
+        resolver::{ globals::Globals, Resolver, scope::Scope, value::{Value, Variant} },
+        tokenizer::{ peeking_tokenizer::PeekingTokenizer, sources::Source }
+    };
 
-    #[test]
-    fn test_numbers (){
-        test_result("123.456", 123.456, "");
-        test_result("0.123", 0.123, "");
-        test_result("-1", -1.0, "");
-    }
-
-    #[test]
-    fn test_simple_expr (){
-        test_result("1+2", 3.0, "");
-        test_result("2*3", 6.0, "");
-        test_result("6/3", 2.0, "");
-        test_result("2^3", 8.0, "");
-        test_result("|-8|", 8.0, "");
-        test_result("10%12", 10.0, "");
-        test_result("-10%12", -10.0, "");
-        test_result("-10%%12", 2.0, "");
-
-        test_result("0!", 1.0, "");
-        test_result("1!", 1.0, "");
-        test_result("2!", 2.0, "");
-        test_result("5!", 120.0, "");
-        test_error("5.3!", ErrorId::Expected);
-        test_error("(-5)!", ErrorId::Expected);
-
-        test_result("2*2*3", 12.0, "");
-        test_result("7-2*3", 1.0, "");
-        test_result("7-(2*3)", 1.0, "");
-        test_result("(7-2)*3", 15.0, "");
-    }
-
-    #[test]
-    fn test_implicit_mult () {
-        test_result("a=2;2a", 4.0, "");
-        test_result("a=2;(2)a", 4.0, "");
-        test_result("a=2;20/2a", 5.0, "");
-    }
-
-    #[test]
-    fn test_assign_expr () {
-        test_result("a=1;b=2;c=a+b", 3.0, "");
-        test_result("a=1;a+=2", 3.0, "");
-        test_result("a=1mm;a.=", 1.0, "");
-    }
-
-    #[test]
-    fn test_global_funcs () {
-        test_result("abs(-1)", 1.0, "");
-        test_result("a=1; a++", 2.0, "");
-        test_result("a=2; a--", 1.0, "");
-        test_result("sum(1,2,3)", 6.0, "");
-        // test_result("sum(1,2, now())", 6.0, "");
-        test_result("max(1,2,3)", 3.0, "");
-        test_result("min(1,2,3)", 1.0, "");
-        test_result("avg(1,2,3)", 2.0, "");
-        test_result("first(1,2,3)", 1.0, "");
-        test_result("last(1,2,3)", 3.0, "");
-        test_result("first(reverse(1,2,3))", 3.0, "");
-        test_result("first(sort(3,1, 2))", 1.0, "");
-    }
-
-    #[test]
-    fn test_function_calls () {
-        test_result("abs(0-123)", 123.0, "");
-    }
-
-    #[test]
-    fn test_units () {
-        test_result("(10.3+3).m-300cm", 10.3, "m");
-        test_result("1L", 1.0, "L");
-        test_result("1L+100ml", 1.1, "L");
-        test_result("(1m)mm", 1000.0, "mm");
-        test_result("(1m).mm", 1000.0, "mm");
-        test_result("(1.m)mm", 1000.0, "mm");
-        test_result("1.m.mm", 1000.0, "mm");
-        test_result("1m.mm", 1000.0, "mm");
-        test_result("sum(1mm, 2cm)", 0.021, "m");
-        test_result("sum(1mm, 2cm).mm", 21.0, "mm");
-        test_result("sum(1mm, 2cm)mm", 21.0, "mm");
-        test_result("1mm.", 1.0, "");
-    }
-
-    #[test]
-    fn test_nonsense () {
-        //just test if it doesn't crash.
-        get_results("");
-        get_results(";");
-        get_results("-");
-    }
-
-    fn test_result(text: &str, expected_result: f64, unit: &str) {
+    pub fn test_result(text: &str, expected_result: f64, unit: &str) {
         let (results, _errors) = get_results(text);
         let value = results.last().expect("No result found.");
         let Variant::Numeric { number, .. } = &value.variant else {
@@ -180,7 +89,7 @@ mod test {
         assert_eq!(number.unit.id, unit);
     }
 
-    fn test_error(text: &str, error_id: ErrorId) {
+    pub fn test_error(text: &str, error_id: ErrorId) {
         let (_results, errors) = get_results(text);
         // let cnt = errors.len();
         // let cnt2 = errors.iter().count();
@@ -188,7 +97,7 @@ mod test {
         assert_ne!(errors.iter().filter(|&e| e.id == error_id).count(), 0);
     }
 
-    fn get_results(text: &str) -> (Vec<Value>, Vec<Error>) {
+    pub fn get_results(text: &str) -> (Vec<Value>, Vec<Error>) {
         let source = Source::new(text.to_string());
         let mut tok = PeekingTokenizer::new(text);
         let mut globals = Globals::new();
@@ -210,5 +119,9 @@ mod test {
         };
         resolver.resolve(&code_block.statements);
         (resolver.results, errors)
+    }
+
+    pub fn test_compiles(text: &str) {
+        get_results(text);
     }
 }
