@@ -162,7 +162,7 @@ impl Serialize for date::Date {
         where
             S: Serializer
     {
-        let mut state = serializer.serialize_struct("date", 4)?;
+        let mut state = serializer.serialize_struct("Timepoint", 4)?;
         let str_day = if self.day == 0 { "??".to_string()} else { self.day.to_string()};
         let str_year = if self.year == EMPTY_YEAR { "????".to_string()} else { self.year.to_string()};
         let formatted = format!("{0}-{1:?}-{2}", &str_year, &self.month, &self.day);

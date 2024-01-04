@@ -185,7 +185,7 @@ impl HasRange for ListExpr {
         self.nodes
             .iter()
             .map(|node| node.get_range())
-            .reduce(|r1, r2| &r1 + &r2).unwrap() //TODO: check if list can be empty or this will panic.
+            .reduce(|r1, r2| &r1 + &r2).unwrap_or(Range::none())
     }
 }
 

@@ -7,7 +7,7 @@ use crate::tokenizer::cursor::{Number, Range};
 #[derive(Serialize, Debug)]
 #[repr(u8)]
 pub enum ValueType{
-    None = 0, Number = 1, Date = 2, Duration = 3, List,
+    None = 0, Number = 1, Timepoint = 2, Duration = 3, List,
 }
 
 impl fmt::Display for ValueType {
@@ -35,7 +35,7 @@ pub enum Variant {
 pub fn variant_to_value_type(variant: &Variant) -> ValueType {
     match variant {
         Variant::Numeric {..} => ValueType::Number,
-        Variant::Date {..} => ValueType::Date,
+        Variant::Date {..} => ValueType::Timepoint,
         Variant::Duration => ValueType::Duration,
         Variant::List {..} => ValueType::List,
         _ => ValueType::None

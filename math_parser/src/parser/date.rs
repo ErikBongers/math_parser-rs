@@ -54,7 +54,7 @@ pub mod date {
 }
 
 #[derive(Clone)]
-pub struct Date {
+pub struct Date { //TODO: rename to Timepoint
     pub month: Month,
     pub day: i8,
     pub year: i32,

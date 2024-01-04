@@ -1,10 +1,13 @@
+* date and duration.
+  > implement fragments.
+  > implement Duration
+  > implement operators.
 * Dec, Hex, Bin,...
     > add output for value.val and formattedNumber.
     > to reduce precision: (x*precision).round()/precision
 
 * exponents
 
-* date and duration.
 
 # defines
 

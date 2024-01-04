@@ -194,7 +194,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             let assign_expr = AssignExpr {
                 node_data: NodeData { has_errors: false, unit: Unit::none() },
                 id,
-                expr: Parser::reduce_list(self.parse_list_expr())
+                expr: Parser::reduce_list(Box::new(self.parse_list_expr()))
             };
             //TODO: check EOT
             let txt = self.globals.get_text(&assign_expr.id.range).to_string();
@@ -325,7 +325,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 text: "implicit mult".to_string(),
             };
             let n2 = if t.kind == TokenType::ParOpen {
-                Parser::reduce_list(self.parse_list_expr())
+                Parser::reduce_list(Box::new(self.parse_list_expr()))
             } else {
                 self.parse_postfix_expr()
             };
@@ -456,16 +456,17 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             return Box::new(NoneExpr{node_data: NodeData { unit: Unit::none(), has_errors: true}, token: function_name.clone()});
         }
         self.tok.next();// eat `(`
-        let args = self.parse_list_expr();
+        let mut list_expr = self.parse_list_expr();
         //first argument may be NONE, with a token EOT, which is an invalid argument list in this case.
         //TODO: a function call with no parameters.
-        let list_expr = args.as_any().downcast_ref::<ListExpr>().unwrap();
         if list_expr.nodes.len() == 1 {
             if let Some(none_expr) = list_expr.nodes.first().unwrap().as_any().downcast_ref::<NoneExpr>() {
                 if none_expr.token.kind == TokenType::Eot {
                     let error = Error::build(ErrorId::Eos, function_name.range.clone(), &[&self.globals.get_text(&function_name.range)]);
                     self.errors.push(error);
                     return Box::new(NoneExpr{node_data: NodeData { unit: Unit::none(), has_errors: true}, token: function_name});
+                } else {
+                    list_expr.nodes.clear();
                 }
             }
         }
@@ -476,7 +477,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             node_data: NodeData { unit: Unit::none(), has_errors: false },
             function_name: func_name_str.to_string(),
             function_name_range: function_name.range.clone(),
-            arguments: args
+            arguments: Box::new(list_expr)
         })
     }
 
@@ -505,7 +506,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             }
             TokenType::ParOpen => {
                 self.tok.next();
-                let mut expr = Parser::reduce_list(self.parse_list_expr());
+                let mut expr = Parser::reduce_list(Box::new(self.parse_list_expr()));
                 if !self.match_token(&TokenType::ParClose) {
                     let error = Error::build(ErrorId::Expected, expr.get_range(), &[")"]);
                     self.errors.push(error);
@@ -528,7 +529,8 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                     range: t.range,
                 })
             }
-            _ => Box::new(NoneExpr { node_data: NodeData { unit: Unit::none(), has_errors: false,}, token: self.tok.next().clone()})
+            // if nothing meaningfull found, don't report an error yet as this will be too generic : "Unexpected..."
+            _ => Box::new(NoneExpr { node_data: NodeData { unit: Unit::none(), has_errors: false,}, token: self.tok.peek().clone()})
         }
     }
 
@@ -566,7 +568,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         node
     }
 
-    fn parse_list_expr(&mut self) -> Box<dyn Node> {
+    fn parse_list_expr(&mut self) -> ListExpr {
         let mut list_expr = ListExpr { nodes: Vec::new(), node_data: NodeData {unit: Unit::none(), has_errors: false}};
         loop {
             let expr = self.parse_add_expr();
@@ -579,6 +581,6 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             }
             self.tok.next();
         }
-        Box::new(list_expr)
+        list_expr
     }
 }

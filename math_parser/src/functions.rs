@@ -1,11 +1,13 @@
 use std::cell::RefCell;
-use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
+use chrono::{Datelike, Utc};
 use crate::resolver::scope::Scope;
 use crate::errors::{Error, ErrorId};
 use crate::parser::CodeBlock;
-use crate::parser::nodes::{ConstExpr, FunctionDefExpr};
+use crate::parser::date::Date;
+use crate::parser::date::date::month_from_int;
+use crate::parser::nodes::{FunctionDefExpr};
 use crate::resolver::{add_error, Resolver};
 use crate::resolver::globals::Globals;
 use crate::resolver::unit::Unit;
@@ -132,6 +134,8 @@ pub fn create_global_function_defs() -> HashMap<String, GlobalFunctionDef> {
 
         ("factors".to_string(), GlobalFunctionDef { name: "factors".to_string(), min_args: 1, max_args: 999, execute: factors}),
         ("primes".to_string(), GlobalFunctionDef { name: "primes".to_string(), min_args: 1, max_args: 999, execute: primes}),
+
+        ("now".to_string(), GlobalFunctionDef { name: "now".to_string(), min_args: 0, max_args: 0, execute: now}),
     ]);
     defs
 }
@@ -455,4 +459,14 @@ fn explode_args<'a>(args: &'a Vec<Value>, exploded_args: &'a mut Vec<Value>) -> 
     } else {
         args
     }
+}
+
+fn now(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
+
+    let current_date = Utc::now();
+    let year = current_date.year();
+    let month = current_date.month();
+    let day = current_date.day();
+
+   Value::from_date(Date { month: month_from_int(month as i32), day: day as i8, year, range: range.clone(), errors: vec![], }, range)
 }
