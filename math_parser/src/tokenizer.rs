@@ -75,7 +75,7 @@ impl Cursor<'_> {
                       self.next();
                       EqUnit
                   },
-                  (n @'0'..='9', _) => {
+                  ('0'..='9', _) => {
                     self.number = self.parse_number('.');
                       Number
                   },

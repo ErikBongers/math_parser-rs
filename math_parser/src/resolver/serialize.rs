@@ -1,5 +1,5 @@
 use serde::{Serialize, Serializer};
-use serde::ser::{SerializeStruct, SerializeSeq};
+use serde::ser::{SerializeStruct};
 use crate::errors;
 use crate::errors::ERROR_MAP;
 use crate::parser::date;
@@ -65,8 +65,7 @@ impl<'a> Serialize for ScopedValue<'a> {
             Date { date } => state.serialize_field("date", date),
             Comment  => state.serialize_field("comment", &source.text[self.value.stmt_range.start..self.value.stmt_range.end]),
             FunctionDef => {
-                let mut function_name = "".to_string();
-                function_name =  source.text[self.value.stmt_range.start..self.value.stmt_range.end].to_string();
+                let function_name =  source.text[self.value.stmt_range.start..self.value.stmt_range.end].to_string();
                 state.serialize_field("function", &function_name)
             },
             List { values }=> {
@@ -167,7 +166,7 @@ impl Serialize for date::Date {
         let str_year = if self.year == EMPTY_YEAR { "????".to_string()} else { self.year.to_string()};
         let formatted = format!("{0}-{1:?}-{2}", &str_year, &self.month, &self.day);
         state.serialize_field("formatted", &formatted)?;
-        state.serialize_field("day", &self.day)?;
+        state.serialize_field("day", &str_day)?;
         state.serialize_field("month", &self.month)?;
         state.serialize_field("year", &str_year)?;
 

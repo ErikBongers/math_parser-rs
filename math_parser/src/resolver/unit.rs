@@ -50,7 +50,7 @@ impl UnitsView {
         let mut v = UnitsView {
             units: HashSet::new(),
         };
-        v.add_all_classes(&globals.unit_defs, globals);
+        v.add_all_classes(globals);
         v
     }
 
@@ -74,7 +74,7 @@ impl UnitsView {
         self.units.retain(|unit| &globals.unit_defs[unit].property != property);
     }
 
-    pub fn add_all_classes(&mut self, defs: &HashMap<String, UnitDef>, globals: &Globals) {
+    pub fn add_all_classes(&mut self, globals: &Globals) {
         self.add_class(&UnitProperty::UNDEFINED, globals); //needed to include the empty unit.
         self.add_class(&UnitProperty::ANGLE, globals);
         self.add_class(&UnitProperty::LENGTH, globals);

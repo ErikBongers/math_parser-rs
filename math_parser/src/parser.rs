@@ -1,8 +1,7 @@
-use std::any::{Any, TypeId};
+use std::any::{TypeId};
 use std::cell::RefCell;
 use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
-use macros::CastAny;
 use crate::errors::{Error, ErrorId};
 use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CommentExpr, ConstExpr, ConstType, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement, UnaryExpr, UnitExpr};
 use crate::resolver::globals::Globals;
@@ -12,7 +11,7 @@ use crate::tokenizer::token_type::TokenType;
 use crate::resolver::scope::Scope;
 use crate::resolver::unit::Unit;
 use crate::tokenizer::Token;
-use crate::tokenizer::token_type::TokenType::{Div, Eq, EqDiv, EqMin, EqMult, EqPlus};
+use crate::tokenizer::token_type::TokenType::{Div};
 
 pub mod nodes;
 pub mod formatted_date_parser;
@@ -40,7 +39,7 @@ pub struct Parser<'g, 'a, 't> {
     code_block: CodeBlock,
 }
 
-impl<'g, 'a, 't> Into<(CodeBlock)> for Parser<'g, 'a, 't> {
+impl<'g, 'a, 't> Into<CodeBlock> for Parser<'g, 'a, 't> {
     fn into(self) -> CodeBlock {
         self.code_block
     }
@@ -103,7 +102,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
 
         let mut param_defs: Vec<String> = Vec::new();
 
-        while (self.tok.peek().kind == TokenType::Id) {
+        while self.tok.peek().kind == TokenType::Id {
             let txt = self.globals.get_text(&self.tok.next().range).to_string();
             param_defs.push(txt);
             if self.match_token(&TokenType::Comma) {
@@ -122,7 +121,6 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             return Some(Statement::error(&mut self.errors, ErrorId::Expected, self.tok.peek().clone(), "{"));
         };
         let new_code_block = self.parse_block();
-        let chars_left = self.tok.cur.chars.as_str().len();
 
         if !self.match_token(&TokenType::CurlClose) {
             return Some(Statement::error(&mut self.errors, ErrorId::Expected, self.tok.peek().clone(), "}"));
@@ -135,7 +133,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             node_data: NodeData { unit: Unit::none(), has_errors: false }
         };
         //TODO add range
-        if(self.code_block.scope.borrow().local_function_defs.contains_key(&fun_def_expr.id)) {
+        if self.code_block.scope.borrow().local_function_defs.contains_key(&fun_def_expr.id) {
             fun_def_expr.node_data.has_errors = true;
             self.errors.push(Error::build(ErrorId::WFunctionOverride, id.range.clone(), &[&self.globals.get_text(&id.range)]));
         };
@@ -150,7 +148,6 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     fn parse_block(&mut self) -> CodeBlock {
         let new_scope = Scope::copy_for_block(&self.code_block.scope);
         let new_code_block = CodeBlock::new(new_scope);
-        let chars_left = self.tok.cur.chars.as_str().len();
         let mut parser = Parser::new(&self.globals, &mut self.tok, &mut self.errors, new_code_block);
         parser.parse(true);
         parser.into()
@@ -314,7 +311,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         let mut n1 = self.parse_unary_expr();
         loop {
             let t = self.tok.peek();
-            if( t.kind != TokenType::Id && t.kind != TokenType::Number && t.kind != TokenType::ParOpen) {
+            if t.kind != TokenType::Id && t.kind != TokenType::Number && t.kind != TokenType::ParOpen {
                 break;
             };
             //don't consume the token yet...

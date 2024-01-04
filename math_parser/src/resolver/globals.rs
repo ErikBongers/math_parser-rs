@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use crate::functions::{create_global_function_defs, GlobalFunctionDef};
-use crate::resolver::operator::{load_operators, operator_id_from, OperatorType};
-use crate::resolver::unit::{create_unit_defs, Unit, UnitDef, UnitsView};
-use crate::resolver::value::{NumberFormat, Value, Variant, variant_to_value_type};
+use crate::resolver::operator::load_operators;
+use crate::resolver::unit::{create_unit_defs, Unit, UnitDef};
+use crate::resolver::value::{NumberFormat, Value, Variant};
 use crate::tokenizer::cursor::{Number, Range};
 use crate::tokenizer::sources::Source;
 
@@ -49,7 +49,6 @@ impl<'a> Globals {
                     unit: Unit::none(),
                     fmt: NumberFormat::Dec,
                 },
-                fmt: NumberFormat::Dec,
             },
             has_errors: false,
         });

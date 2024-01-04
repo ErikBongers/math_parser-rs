@@ -1,5 +1,4 @@
 use std::cell::RefCell;
-use std::rc::Rc;
 use crate::errors::Error;
 use crate::parser::{CodeBlock, Parser};
 use crate::parser::nodes::print_nodes;
@@ -46,7 +45,7 @@ fn _parse_and_print_nodes (text: String, print: bool) -> String {
     let mut parser = Parser::new(&globals, &mut tok, &mut errors, code_block);
     parser.parse(false);
     let code_block: CodeBlock = parser.into();
-    if(print) {
+    if print {
         for stmt in &code_block.statements {
             print_nodes(&stmt.node, 0, &globals);
         }
@@ -102,13 +101,13 @@ pub mod test {
         let mut tok = PeekingTokenizer::new(text);
         let mut globals = Globals::new();
         globals.sources.push(source);//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
-        let mut scope = Scope::new(&globals);
-        let mut code_block = CodeBlock::new(RefCell::new(scope));
+        let scope = Scope::new(&globals);
+        let code_block = CodeBlock::new(RefCell::new(scope));
         let mut errors: Vec<Error> = Vec::new();
         //parse
         let mut parser = Parser::new(&globals, &mut tok, &mut errors, code_block);
         parser.parse(false);
-        let mut code_block: CodeBlock = parser.into();
+        let code_block: CodeBlock = parser.into();
 
         //resolve
         let mut resolver = Resolver {

@@ -64,7 +64,7 @@ impl<'s, 'r> DateParserState<'s, 'r> {
         let low_slice = slice.to_lowercase();
         let month = date::month_from_str(low_slice.as_str());
         if month != Month::NONE {
-            if(self.date.month != Month::NONE) {
+            if self.date.month != Month::NONE {
                 self.date.month = month;
                 return;
             } else {
@@ -97,7 +97,7 @@ impl<'s, 'r> DateParserState<'s, 'r> {
                     self.date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), &["values could be month or year."]));
                     return;
                 }
-                if(self.date.day != 0) {
+                if self.date.day != 0 {
                     self.date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), &["multiple values for day."]));
                     return;
                 }
@@ -218,7 +218,7 @@ impl<'s, 'r> DateParserState<'s, 'r> {
         if self.slices.len() != 3 {
             return;
         }
-        let (day_slice, month_slice, year_slice) = match self.date_format {
+        let (_day_slice, _month_slice, year_slice) = match self.date_format {
             DateFormat::DMY => (0,1,2),
             DateFormat::MDY => (1,0,2),
             DateFormat::YMD => (2,1,0),

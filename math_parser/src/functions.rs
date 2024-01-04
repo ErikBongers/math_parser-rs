@@ -193,12 +193,12 @@ fn avg(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Opt
     let mut exploded_args = Vec::new();
     let args_ref = explode_args(args, &mut exploded_args);
     with_num_vec(global_function_def.unwrap(), &args_ref, range, errors, globals, |num_vec| {
-        let mut val = num_vec.into_iter().reduce(|tot, num| tot + num).unwrap_or(0.0);
+        let val = num_vec.into_iter().reduce(|tot, num| tot + num).unwrap_or(0.0);
         val / args.len() as f64
     })
 }
 
-fn reverse(_global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
+fn reverse(_global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>, _globals: &Globals) -> Value {
     let mut exploded_args = Vec::new();
     let args_ref = explode_args(args, &mut exploded_args);
     let reversed: Vec<Value> = args_ref.into_iter().rev().map(|value| {
@@ -212,7 +212,7 @@ fn reverse(_global_function_def: Option<&GlobalFunctionDef>, _local_function_def
     }
 }
 
-fn sort(_global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
+fn sort(_global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>, _globals: &Globals) -> Value {
     let mut exploded_args = Vec::new();
     let args_ref = explode_args(args, &mut exploded_args);
     let mut sorted: Vec<Value> = args_ref.clone();
@@ -250,7 +250,6 @@ fn floats_to_values(range: &Range, factors: &Vec<f64>) -> Vec<Value> {
                         unit: Unit::none(),
                         fmt: NumberFormat::Dec,
                     },
-                    fmt: NumberFormat::Dec
                 },
                 has_errors: false,
             }
@@ -259,7 +258,7 @@ fn floats_to_values(range: &Range, factors: &Vec<f64>) -> Vec<Value> {
     list
 }
 
-fn factors(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
+fn factors(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
     let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
     let factors = build_factors(number.significand);
     let list = floats_to_values(range, &factors);
@@ -271,7 +270,7 @@ fn factors(global_function_def: Option<&GlobalFunctionDef>, _local_function_def:
     }
 }
 
-fn primes(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
+fn primes(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
     let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
     let factors = build_factors(number.significand);
     let primez = factors.into_iter().filter(|&f| {
@@ -306,13 +305,13 @@ const PRIMES: [i32; 168] = [
 941,947,953,967,971,977,983,991,997
 ];
 
-fn first(_global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
+fn first(_global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, _range: &Range, _errors: &mut Vec<Error>, _globals: &Globals) -> Value {
     let mut exploded_args = Vec::new();
     let args_ref = explode_args(args, &mut exploded_args);
     args_ref.first().unwrap().clone()
 }
 
-fn last(_global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
+fn last(_global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, _range: &Range, _errors: &mut Vec<Error>, _globals: &Globals) -> Value {
     let mut exploded_args = Vec::new();
     let args_ref = explode_args(args, &mut exploded_args);
     args_ref.last().unwrap().clone()
@@ -430,7 +429,7 @@ fn factorial(global_function_def: Option<&GlobalFunctionDef>, _local_function_de
 }
 
 pub fn execute_custom_function(_global_function_def: Option<&GlobalFunctionDef>, local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
-    let mut function_def = local_function_def.unwrap();
+    let function_def = local_function_def.unwrap();
     let mut param_variables = HashMap::<String, Value>::new();
 
     //Note that number of args has already been checked in call()
@@ -461,7 +460,7 @@ fn explode_args<'a>(args: &'a Vec<Value>, exploded_args: &'a mut Vec<Value>) -> 
     }
 }
 
-fn now(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
+fn now(_global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, _args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>, _globals: &Globals) -> Value {
 
     let current_date = Utc::now();
     let year = current_date.year();

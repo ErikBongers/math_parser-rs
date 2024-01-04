@@ -11,15 +11,14 @@ use std::rc::Rc;
 use macros::CastAny;
 use crate::errors::{Error, ErrorId};
 use crate::functions::FunctionDef;
-use crate::parser::formatted_date_parser::{FormattedDateParser, parse_date_string};
+use crate::parser::formatted_date_parser::parse_date_string;
 use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CommentExpr, ConstExpr, ConstType, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, PostfixExpr, Statement, UnaryExpr, UnitExpr};
 use crate::resolver::globals::Globals;
 use crate::resolver::operator::{operator_id_from, OperatorType};
 use crate::resolver::scope::Scope;
 use crate::resolver::unit::{Unit, UnitsView};
-use crate::resolver::value::{Value, Variant, variant_to_value_type};
+use crate::resolver::value::{NumberFormat, Value, Variant, variant_to_value_type};
 use crate::resolver::value::Variant::Numeric;
-use crate::tokenizer::cursor;
 use crate::tokenizer::cursor::{Number, Range};
 use crate::tokenizer::token_type::TokenType;
 
@@ -172,28 +171,85 @@ impl<'g, 'a> Resolver<'g, 'a> {
     fn resolve_unit_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let unit_expr = expr.as_any().downcast_ref::<UnitExpr>().unwrap();
         let mut result = self.resolve_node(&unit_expr.node);
-        if let Numeric { ref mut number, .. } = &mut result.variant {
+        if let Numeric { .. } = &mut result.variant {
             Resolver::apply_unit(&mut result, expr, &self.scope.borrow().units_view, &expr.get_range(), self.errors, self.globals);
         }
         result
     }
 
+    //A postfix is ALWAYS separated by a dot, contrary to a implcit mult or a 'glued' unit.
+    //A 'glued' unit is applied to the variant itself (numeric, duration,...)
     fn resolve_postfix_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let pfix_expr = expr.as_any().downcast_ref::<PostfixExpr>().unwrap();
         let mut result = self.resolve_node(&pfix_expr.node);
+        let id = self.globals.get_text(&pfix_expr.postfix_id.range).to_string();
+        let mut result = match id.as_str() {
+            "to_days" | "days" | "months" | "years" => self.resolve_duration_fragment(result, &id),
+            "day" | "month" | "year" => self.resolve_date_fragment(&pfix_expr, result, &id),
+            "bin" | "hex" | "dec" =>  self.resolve_num_format(pfix_expr, result, &id),
+            _ => self.resolve_unit_postfix(result, &pfix_expr, &id)
+        };
+
+        Resolver::apply_unit(&mut result, expr, &self.scope.borrow().units_view, &expr.get_range(), self.errors, self.globals);
+        result
+    }
+
+    fn resolve_unit_postfix(&mut self, mut result: Value, pfix_expr: &PostfixExpr, id: &String) -> Value {
         match &mut result.variant {
             Numeric { ref mut number, .. } => {
-                let id = self.globals.get_text(&pfix_expr.postfix_id.range).to_string();
                 if pfix_expr.postfix_id.kind == TokenType::ClearUnit {
                     number.unit = Unit::none();
                 } else {
-                    number.convert_to_unit(&Unit { range: Some(pfix_expr.postfix_id.range.clone()), id }, &self.scope.borrow().units_view,&pfix_expr.postfix_id.range, self.errors, self.globals);
+                    number.convert_to_unit(&Unit { range: Some(pfix_expr.postfix_id.range.clone()), id: id.clone() }, &self.scope.borrow().units_view,&pfix_expr.postfix_id.range, self.errors, self.globals);
                 }
             },
             _ => return self.add_error(ErrorId::UnknownExpr, pfix_expr.postfix_id.range.clone(), &["Postfix expression not valid here."], result)
         };
-        Resolver::apply_unit(&mut result, expr, &self.scope.borrow().units_view, &expr.get_range(), self.errors, self.globals);
         result
+    }
+    fn resolve_num_format(&mut self, pfix_expr: &PostfixExpr, mut result: Value, id: &String) -> Value {
+        if let Some(number) = result.as_number() {
+            number.fmt = match id.as_str() {
+                "bin" => NumberFormat::Bin,
+                "hex" => NumberFormat::Hex,
+                "dec" => NumberFormat::Dec,
+                "oct" => NumberFormat::Oct,
+                "exp" => NumberFormat::Exp,
+                _ => number.fmt.clone()
+            }
+        } else {
+            return self.add_error(ErrorId::InvFormat, pfix_expr.postfix_id.range.clone(), &[id.as_str()], result);
+        }
+        result
+    }
+
+    fn resolve_date_fragment(&mut self, pfix_expr: &PostfixExpr, mut result: Value, id: &str) -> Value {
+        let Some(date) = result.as_date() else {
+            return self.add_error(ErrorId::InvFormat, pfix_expr.postfix_id.range.clone(), &[id], result);
+        };
+        let val = match id {
+            "day" => date.day as i32,
+            "year" => date.year,
+            "month" => date.month.clone() as i32,
+            _ => return result
+        };
+        Value {
+            id: None,
+            stmt_range: pfix_expr.get_range().clone(),
+            variant: Variant::Numeric {
+                number: Number {
+                    significand: val as f64,
+                    exponent: 0,
+                    unit: Unit::none(),
+                    fmt: NumberFormat::Dec,
+                },
+            },
+            has_errors: false,
+        }
+    }
+
+    fn resolve_duration_fragment(&mut self, mut result: Value, id: &str) -> Value {
+        todo!()
     }
 
     //in case of (x.km)m, both postfixId (km) and unit (m) are filled.
@@ -239,7 +295,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
     fn resolve_unary_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let expr = expr.as_any().downcast_ref::<UnaryExpr>().unwrap();
         let mut result = self.resolve_node(&expr.expr);
-        if(expr.op.kind == TokenType::Min) {
+        if expr.op.kind == TokenType::Min {
             if let Numeric {ref mut number,..} = result.variant {
                 number.significand = -number.significand
             }

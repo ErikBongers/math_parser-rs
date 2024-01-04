@@ -1,3 +1,6 @@
+* readme:
+  > document number format postfixes.
+
 * date and duration.
   > implement fragments.
   > implement Duration

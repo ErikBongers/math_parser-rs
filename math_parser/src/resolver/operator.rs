@@ -1,7 +1,6 @@
-use std::fmt;
 use std::fmt::{Display, Formatter};
 use crate::resolver::globals::Globals;
-use crate::resolver::unit::{Unit, UnitsView};
+use crate::resolver::unit::Unit;
 use crate::resolver::value::{NumberFormat, Value, ValueType, Variant};
 use crate::tokenizer::cursor::{Number, Range};
 use crate::tokenizer::token_type::TokenType;
@@ -103,7 +102,7 @@ pub fn load_operators(globals: &mut Globals) {
     globals.operators.insert(operator_id_from(ValueType::Number, OperatorType::Power, ValueType::Number), op_num_pow_num);
 }
 
-fn do_term(v1: &Number, adding: bool, v2: &Number, range: &Range, globals: &Globals) -> Number {
+fn do_term(v1: &Number, adding: bool, v2: &Number, _range: &Range, globals: &Globals) -> Number {
     //if both values have units: convert them to SI before operation.
     if !v1.unit.is_empty() && !v2.unit.is_empty() {
         //TODO: don't I have to check if the ids are valid?
