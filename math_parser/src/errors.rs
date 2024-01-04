@@ -53,7 +53,7 @@ pub enum ErrorId
     EExplicitUnitsExpected,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, PartialEq)]
 pub enum ErrorType { E, W}
 
 pub struct ErrorDef<'a> {

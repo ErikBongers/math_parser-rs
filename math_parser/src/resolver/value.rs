@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 use std::fmt;
 use serde::Serialize;
+use crate::parser::date::Date;
 use crate::tokenizer::cursor::{Number, Range};
 
 #[derive(Serialize, Debug)]
@@ -23,7 +24,7 @@ pub enum NumberFormat {
 #[derive(Clone)]
 pub enum Variant {
     Numeric { number: Number, fmt: NumberFormat },
-    Date, //TODO
+    Date { date: Date},
     Duration,
     List { values: Vec<Value> },
     FunctionDef,
@@ -34,7 +35,7 @@ pub enum Variant {
 pub fn variant_to_value_type(variant: &Variant) -> ValueType {
     match variant {
         Variant::Numeric {..} => ValueType::Number,
-        Variant::Date => ValueType::Date,
+        Variant::Date {..} => ValueType::Date,
         Variant::Duration => ValueType::Duration,
         Variant::List {..} => ValueType::List,
         _ => ValueType::None
@@ -64,6 +65,15 @@ impl Value {
             id: None,
             stmt_range: range.clone(),
             variant: Variant::Numeric {number: value, fmt: NumberFormat::Dec},
+            has_errors: false
+        }
+    }
+
+    pub fn from_date(value: Date, range: &Range) -> Self {
+        Value {
+            id: None,
+            stmt_range: range.clone(),
+            variant: Variant::Date {date: value},
             has_errors: false
         }
     }

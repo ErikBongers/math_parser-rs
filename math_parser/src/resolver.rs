@@ -11,7 +11,8 @@ use std::rc::Rc;
 use macros::CastAny;
 use crate::errors::{Error, ErrorId};
 use crate::functions::FunctionDef;
-use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CommentExpr, ConstExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, PostfixExpr, Statement, UnaryExpr, UnitExpr};
+use crate::parser::formatted_date_parser::{FormattedDateParser, parse_date_string};
+use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CommentExpr, ConstExpr, ConstType, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, PostfixExpr, Statement, UnaryExpr, UnitExpr};
 use crate::resolver::globals::Globals;
 use crate::resolver::operator::{operator_id_from, OperatorType};
 use crate::resolver::scope::Scope;
@@ -248,11 +249,42 @@ impl<'g, 'a> Resolver<'g, 'a> {
 
     fn resolve_const_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let expr = expr.as_any().downcast_ref::<ConstExpr>().unwrap();
-        let mut n = expr.value.clone();
-        n.unit = expr.node_data.unit.clone();
-        Value::from_number(n, &expr.get_range())
+        match &expr.const_type {
+            ConstType::Numeric { number } => {
+                let mut n = number.clone();
+                n.unit = expr.node_data.unit.clone();
+                Value::from_number(n, &expr.get_range())
+           },
+            _ => {
+                //TODO: FormattedNumberParser
+                //TODO: date_parser.ymd_format = self.ymd_format
+                let mut trimmed_range = expr.range.clone();
+                if (trimmed_range.end - trimmed_range.start) >=2 {
+                    trimmed_range.start += 1;
+                    trimmed_range.end -= 1;
+                }
+                let mut date = parse_date_string(self.globals.get_text(&trimmed_range), &expr.range);
+                self.errors.append(&mut date.errors);
+                Value::from_date(date, &expr.get_range())
+            }
+        }
     }
+/*            {
+            FormattedNumberParser numberParser;
+            auto number = numberParser.parse(*codeBlock.scope, codeBlock.scope->getText(constExpr.value.range), constExpr.range());
+            if (number.errors.empty())
+                {
+                return number;
+                }
 
+            FormattedDateParser dateParser;
+            dateParser.dateFormat = this->dateFormat;
+            auto date = dateParser.parse(codeBlock.scope->getText(constExpr.value.range), constExpr.range());
+            if(!date.errors.empty())
+                date.errors.insert(date.errors.begin(), number.errors.begin(), number.errors.end());
+            return Value(date);
+            }
+*/
     fn resolve_bin_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let expr = expr.as_any().downcast_ref::<BinExpr>().unwrap();
 

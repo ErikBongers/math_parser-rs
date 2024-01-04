@@ -4,7 +4,7 @@ use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 use macros::CastAny;
 use crate::errors::{Error, ErrorId};
-use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CommentExpr, ConstExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement, UnaryExpr, UnitExpr};
+use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CommentExpr, ConstExpr, ConstType, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement, UnaryExpr, UnitExpr};
 use crate::resolver::globals::Globals;
 use crate::tokenizer::cursor::Range;
 use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
@@ -15,6 +15,8 @@ use crate::tokenizer::Token;
 use crate::tokenizer::token_type::TokenType::{Div, Eq, EqDiv, EqMin, EqMult, EqPlus};
 
 pub mod nodes;
+pub mod formatted_date_parser;
+pub mod date;
 
 pub struct CodeBlock {
     pub statements: Vec<Box<Statement>>,
@@ -518,6 +520,14 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 let t = self.tok.next().clone();
                 self.parse_abs_operator(t)
             },
+            TokenType::QuotedStr => {
+                let t = self.tok.next();
+                Box::new(ConstExpr {
+                    node_data: NodeData::new(),
+                    const_type: ConstType::FormattedString,
+                    range: t.range,
+                })
+            }
             _ => Box::new(NoneExpr { node_data: NodeData { unit: Unit::none(), has_errors: false,}, token: self.tok.next().clone()})
         }
     }
@@ -543,7 +553,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     fn parse_number_expr(&mut self) -> Box<dyn Node> {
         //assuming type of token already checked.
         let token = self.tok.next();
-        Box::new(ConstExpr { value: self.tok.get_number(), node_data: NodeData { unit: Unit::none(),has_errors: false,}, range: token.range.clone()})
+        Box::new(ConstExpr { const_type: ConstType::Numeric { number: self.tok.get_number()}, node_data: NodeData { unit: Unit::none(),has_errors: false,}, range: token.range.clone()})
     }
 
     //TODO: try if this works with:

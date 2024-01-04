@@ -48,7 +48,7 @@ fn _parse_and_print_nodes (text: String, print: bool) -> String {
     let code_block: CodeBlock = parser.into();
     if(print) {
         for stmt in &code_block.statements {
-            print_nodes(&stmt.node, 0);
+            print_nodes(&stmt.node, 0, &globals);
         }
     }
 

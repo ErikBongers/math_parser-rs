@@ -1,6 +1,7 @@
 use std::any::{Any, TypeId};
 use macros::{CastAny, Node};
 use crate::errors::{Error, ErrorId};
+use crate::resolver::globals::Globals;
 use crate::resolver::unit::Unit;
 use crate::tokenizer::cursor::{Number, Range};
 use crate::tokenizer::Token;
@@ -111,10 +112,12 @@ impl HasRange for UnaryExpr {
     }
 }
 
+
+pub enum ConstType { Numeric {number: Number}, FormattedString }
 #[derive(CastAny, Node)]
 pub struct ConstExpr {
     pub node_data: NodeData,
-    pub value: Number,
+    pub const_type: ConstType,
     pub range: Range,
 }
 
@@ -214,19 +217,23 @@ impl HasRange for CallExpr {
     }
 }
 
-pub fn print_nodes(expr: &Box<dyn Node>, indent: usize) {
+pub fn print_nodes(expr: &Box<dyn Node>, indent: usize, globals: &Globals) {
     print!("{: <1$}", "", indent);
     let indent= indent+5;
     match expr.as_any().type_id() {
         t if TypeId::of::<ConstExpr>() == t => {
             let expr = expr.as_any().downcast_ref::<ConstExpr>().unwrap();
-            println!("{0}: {1}{2}", "ConstExpr", expr.as_any().downcast_ref::<ConstExpr>().unwrap().value.significand, expr.node_data.unit.id);
+            let value_str = match &expr.const_type {
+                ConstType::Numeric { number } => number.to_double().to_string(),
+                ConstType::FormattedString => globals.get_text(&expr.range).to_string()
+            };
+            println!("{0}: {1}{2}", "ConstExpr", value_str, expr.node_data.unit.id);
         },
         t if TypeId::of::<BinExpr>() == t => {
             println!("{0}: {1:?}", "BinExpr", expr.as_any().downcast_ref::<BinExpr>().unwrap().op.kind);
             let bin_expr = expr.as_any().downcast_ref::<BinExpr>().unwrap();
-            print_nodes(&bin_expr.expr1, indent);
-            print_nodes(&bin_expr.expr2, indent);
+            print_nodes(&bin_expr.expr1, indent, globals);
+            print_nodes(&bin_expr.expr2, indent, globals);
         },
         t if TypeId::of::<NoneExpr>() == t => {
             println!("{0}", "NoneExpr");
@@ -235,13 +242,13 @@ pub fn print_nodes(expr: &Box<dyn Node>, indent: usize) {
             println!("{0}", "ListExpr");
             let list_expr = expr.as_any().downcast_ref::<ListExpr>().unwrap();
             for child in &list_expr.nodes {
-                print_nodes(&child, indent);
+                print_nodes(&child, indent, globals);
             }
         },
         t if TypeId::of::<AssignExpr>() == t => {
             println!("{0}", "AssignExpr");
             let assign_expr = expr.as_any().downcast_ref::<AssignExpr>().unwrap();
-            print_nodes(&assign_expr.expr, indent);
+            print_nodes(&assign_expr.expr, indent, globals);
         },
         t if TypeId::of::<PostfixExpr>() == t => {
             println!("{0}", "PostfixExpr");

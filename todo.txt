@@ -1,4 +1,3 @@
-* math_parser crate: split main.rs and lib.rs so that the lib is not compiled when the tests are compiled?
 * Dec, Hex, Bin,...
     > add output for value.val and formattedNumber.
     > to reduce precision: (x*precision).round()/precision
