@@ -1,9 +1,13 @@
+* Date input
+  > formatted input: test it thurrougly
+  > via list notation.
+
 * Scope borrows.
   > see if if Scope, which changes during resolving, can be moved into a ResolverState object,
   > See formatted_date_parser.
 
-* readme:
-  > document number format postfixes.
+* Number formats
+  > allow input with 0x...,etc...
 
 * date and duration.
   > implement fragments.

@@ -91,6 +91,20 @@ mod test {
     }
 
     #[test]
+    fn test_number_formats () {
+        test_result("123.dec;", 123.0, "");
+        test_result("123.hex;", 123.0, "");
+        test_result("123.oct;", 123.0, "");
+        test_result("123.bin;", 123.0, "");
+        test_result("0o173", 123.0, "");
+        test_result("0O173", 123.0, "");
+        test_result("0x7b", 123.0, "");
+        test_result("0X7B", 123.0, "");
+        test_result("0b1111011", 123.0, "");
+        test_result("0B1111011", 123.0, "");
+    }
+
+    #[test]
     fn test_units () {
         test_result("(10.3+3).m-300cm", 10.3, "m");
         test_result("1L", 1.0, "L");

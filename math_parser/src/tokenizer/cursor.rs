@@ -314,7 +314,66 @@ impl<'a> Cursor<'a> {
     }
 
     pub fn parse_number(&mut self, c: char) -> Number {
-        self.parse_decimal(c)
+        if c == '0' {
+            match self.peek() {
+               'b' | 'B' => self.parse_binary(),
+                'x' | 'X' => self.parse_hex(),
+                'o' | 'O' => self.parse_oct(),
+                _ => self.parse_decimal(c)
+            }
+       } else {
+            self.parse_decimal(c)
+        }
+    }
+
+    pub fn parse_binary(&mut self) -> Number {
+        let mut bin: u64 = 0;
+        self.next(); //consume 'b'\
+        loop {
+            if self.peek() != '0' && self.peek() != '1' && self.peek() != '_' {
+                break;
+            }
+            let c = self.next().unwrap(); //checked.
+            if c == '_' { continue;}
+            bin <<= 1;
+            if c == '1' {
+                bin += 1;
+            }
+        }
+        Number { significand: bin as f64, exponent: 0, unit: Unit::none(), fmt: NumberFormat::Bin, }
+    }
+
+    pub fn parse_oct(&mut self) -> Number {
+        let mut oct: u64 = 0;
+        self.next(); //consume 'b'
+        loop {
+            if (self.peek() < '0' || self.peek() > '7') && self.peek() != '_' {
+                break;
+            }
+            let c = self.next().unwrap(); //checked
+            if c == '_' { continue;}
+            oct *= 8;
+            oct += c as u64 - '0' as u64;
+        }
+        Number { significand: oct as f64, exponent: 0, unit: Unit::none(), fmt: NumberFormat::Oct, }
+    }
+
+    pub fn parse_hex(&mut self) -> Number {
+        let mut hex: u64 = 0;
+        self.next(); //consume 'b'\
+        loop {
+            let c = match self.peek() {
+                '_' => continue,
+                c if c >= '0' && c <= '9' => c as u64 - '0' as u64,
+                c if c >= 'a' && c <= 'f' => c as u64 - 'a' as u64 + 10,
+                c if c >= 'A' && c <= 'F' => c as u64 - 'A' as u64 + 10,
+                _ => break
+            };
+            self.next();
+            hex *= 16;
+            hex += c;
+        }
+        Number { significand: hex as f64, exponent: 0, unit: Unit::none(), fmt: NumberFormat::Hex, }
     }
 }
 

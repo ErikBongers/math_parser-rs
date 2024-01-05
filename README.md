@@ -100,7 +100,7 @@ Hot.=C; //Does the same as the above line.
 * Volume: `L, ml, gal, pt`
 
 ### Formats
-Like units, an output format can be specified with dot notaion.
+Like units, an output format can be specified with dot notation.
 ```
 123.dec; // 123 (default) 
 123.hex; // 0x7B
