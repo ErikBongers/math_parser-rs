@@ -127,7 +127,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
 
         let arguments = call_expr.arguments.as_any().downcast_ref::<ListExpr>().unwrap();
 
-        //TODO: try trait objects. (trait references, actually)
+        //TODO: try trait objects. (trait references, actually). Doesn't work in combination with RefCell<Scope> and I haven't found a way to get rid of the RefCell.
         let mut arg_count_wrong = false;
         if global_function_def {
             if !self.globals.global_function_defs.get(call_expr.function_name.as_str()).unwrap().is_correct_arg_count(arguments.nodes.len()) {

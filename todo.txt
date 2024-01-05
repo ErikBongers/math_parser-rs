@@ -1,3 +1,7 @@
+* Scope borrows.
+  > see if if Scope, which changes during resolving, can be moved into a ResolverState object,
+  > See formatted_date_parser.
+
 * readme:
   > document number format postfixes.
 

@@ -7,8 +7,8 @@ use crate::parser::date::date::EMPTY_YEAR;
 use crate::resolver::globals::Globals;
 use crate::resolver::Resolver;
 use crate::resolver::unit::Unit;
-use crate::resolver::value::{Value, Variant::*, variant_to_value_type};
-use crate::tokenizer::cursor::Range;
+use crate::resolver::value::{NumberFormat, Value, Variant::*, variant_to_value_type};
+use crate::tokenizer::cursor::{Number, Range};
 
 struct ScopedValue<'a> {
     // scope: Rc<RefCell<Scope>>,
@@ -81,6 +81,26 @@ impl<'a> Serialize for ScopedValue<'a> {
 impl Serialize for Unit {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
         serializer.serialize_str(&self.id)
+    }
+}
+
+impl Serialize for Number {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+        let mut state = serializer.serialize_struct("numbber", 5)?;
+
+        state.serialize_field("sig", &self.significand)?;
+        state.serialize_field("exp", &self.exponent)?;
+        state.serialize_field("u", &self.unit)?;
+        state.serialize_field("fmt", &self.fmt)?;
+        let fmtd = match &self.fmt {
+            NumberFormat::Dec => format!("{}", self.to_double()),
+            NumberFormat::Hex => format!("{:0X}", self.to_double() as u64),
+            NumberFormat::Oct => format!("{:0o}", self.to_double() as u64),
+            NumberFormat::Bin => format!("{:0b}", self.to_double() as u64),
+            NumberFormat::Exp => format!("{}", self.to_double() as u64), //TODO: format exponential
+        };
+        state.serialize_field("fmtd", &fmtd)?;
+        state.end()
     }
 }
 

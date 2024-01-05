@@ -57,16 +57,12 @@ impl ops::Add for &Range {
 }
 
 
-#[derive(Clone, Serialize)]
+#[derive(Clone)]
 pub struct Number {
-    #[serde(rename = "sig")]
     pub significand: f64,
-    #[serde(rename = "exp")]
     pub exponent: i32,
-    #[serde(rename = "u")]
     pub unit: Unit,
     pub fmt: NumberFormat
-    // Range range;
 }
 
 impl Number {
