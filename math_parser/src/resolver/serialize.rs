@@ -94,10 +94,10 @@ impl Serialize for Number {
         state.serialize_field("fmt", &self.fmt)?;
         let fmtd = match &self.fmt {
             NumberFormat::Dec => format!("{}", self.to_double()),
-            NumberFormat::Hex => format!("{:0X}", self.to_double() as u64),
-            NumberFormat::Oct => format!("{:0o}", self.to_double() as u64),
-            NumberFormat::Bin => format!("{:0b}", self.to_double() as u64),
-            NumberFormat::Exp => format!("{}", self.to_double() as u64), //TODO: format exponential
+            NumberFormat::Hex => format!("0x{:0X}", self.to_double() as u64),
+            NumberFormat::Oct => format!("0o{:0o}", self.to_double() as u64),
+            NumberFormat::Bin => format!("0b{:0b}", self.to_double() as u64),
+            NumberFormat::Exp => format!("{0}e{1}", self.significand as u64, self.exponent), //TODO: format exponential properly. (move decimal part of sig to exp....or something like that...)
         };
         state.serialize_field("fmtd", &fmtd)?;
         state.end()

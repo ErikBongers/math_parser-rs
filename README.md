@@ -71,16 +71,26 @@ a+=7;
 #/
 a; //finally, the result will be output
 ```
+
 ### Units
+Units can be appended either directly to numbers or seperated by a dot for identifiers.
+Values get automatically converted to the last unit.
 ```
+12kg;
+twelve.kg;
 Distance=10km+1mi; //Distance will be expressed in the first unit: km.
-Imperial=Distance.mi; //Conversion
+
+//Conversion
+Distance=100; //Standard unit (m) implied.
+Imperial=Distance.mi; //Conversion from meter to miles.
 Result=(Imperial+5m).km; //Conversion of an expression.
 Hot=1000K.C.F; //Conversion from K to C to F. Note that the intermediate conversion to C is pointless.
-Hot.C; //Output the value of Hot in Celcius. Note that the variable Hot remains in K!
+
+//Only output or conversion?
+Hot=1000K;
+Hot.C; //Output the value of Hot in Celcius. The variable Hot remains in K!
 Hot=Hot.C; //Convert Hot to Celcius.
 Hot.=C; //Does the same as the above line.
-
 ```
 #### Implemented units:
 * Angle: `rad, deg`
@@ -89,6 +99,15 @@ Hot.=C; //Does the same as the above line.
 * Mass (weight): `kg, g, mg, t, lb (lbs), oz, N` (note that for convenience no distinction is made between weight and mass)
 * Volume: `L, ml, gal, pt`
 
+### Formats
+Like units, an output format can be specified with dot notaion.
+```
+123.dec; // 123 (default) 
+123.hex; // 0x7B
+123.oct; // 0o173
+123.bin; // 0b1111011
+123.exp; // 123e0
+```
 ### Built in functions
 * Trigonometry: `sin, cos, tan, asin, acos, atan`
 * Other: `round, floor, ceil, trunc, abs, factors`
