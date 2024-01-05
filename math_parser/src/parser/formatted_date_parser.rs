@@ -218,66 +218,42 @@ impl<'s, 'r> DateParserState<'s, 'r> {
         if self.slices.len() != 3 {
             return;
         }
-        let (_day_slice, _month_slice, year_slice) = match self.date_format {
-            DateFormat::DMY => (0,1,2),
-            DateFormat::MDY => (1,0,2),
-            DateFormat::YMD => (2,1,0),
-            DateFormat::Undefined => return
-        };
+        let idx = self.date_format.indices();
         let mut tmp_date = Date::new();
-        if !self.parse_year(&mut tmp_date, self.slices[year_slice]) {
-            tmp_date.errors.push( Error::build(ErrorId::InvDateStr, self.range.clone(), &["invalid date for format."])); //TODO specify the format.
-        }
-        if !self.parse_year(&mut tmp_date, self.slices[year_slice]) {
-            tmp_date.errors.push( Error::build(ErrorId::InvDateStr, self.range.clone(), &["invalid date for format."])); //TODO specify the format.
-        }
-        if !self.parse_year(&mut tmp_date, self.slices[year_slice]) {
+        self.parse_year(&mut tmp_date, self.slices[idx.year]);
+        self.parse_month(&mut tmp_date, self.slices[idx.month]);
+        self.parse_day(&mut tmp_date, self.slices[idx.day]);
+
+        if !tmp_date.is_valid() {
             tmp_date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), &["invalid date for format."])); //TODO specify the format.
-        }
-        if has_real_errors(&tmp_date.errors) {
-            return;
         }
         self.date = tmp_date;
    }
 
-    fn parse_day(&self, date: &mut Date, slice: &str) -> bool {
+    fn parse_day(&self, date: &mut Date, slice: &str) {
         if slice == "last" {
             date.day = LAST;
-            return true;
+            return;
         }
-        let Ok(n) = slice.parse::<i32>() else {
-            return false;
-        };
-        if n > 0 && n <= 31 {
-            date.day = n as i8;
-            return true;
-        }
-        false
+        date.day = slice.parse::<i8>().unwrap_or(0);
     }
 
-    fn parse_year(&self, date: &mut Date, slice: &str) -> bool {
-        let Ok(n) = slice.parse::<i32>() else {
-            return false;
-        };
-        date.year = n;
-        true
+    fn parse_year(&self, date: &mut Date, slice: &str) {
+        date.year = slice.parse::<i32>().unwrap_or(EMPTY_YEAR);
     }
 
-    fn parse_month(&self, date: &mut Date, slice: &str) -> bool {
+    fn parse_month(&self, date: &mut Date, slice: &str) {
         let month = month_from_str(&slice.to_lowercase());
         if month != Month::NONE {
-            date.month= month;
-            return true;
+            date.month = month;
+            return;
         }
         let Ok(n) = slice.parse::<i32>() else {
-            return false;
+            date.month = Month::NONE;
+            return;
         };
-        if n > 0 && n <= 12 {
-            date.month = month_from_int(n);
-            return true;
-        }
-        false
-    }
+        date.month = month_from_int(n);
+   }
 }
 
 //TODO: move this elsewhere

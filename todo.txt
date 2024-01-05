@@ -1,6 +1,6 @@
 * Date input
   > formatted input: test it thurrougly
-  > via list notation.
+  > via list notation: allow for _last_ special value.
 
 * Scope borrows.
   > see if if Scope, which changes during resolving, can be moved into a ResolverState object,

@@ -208,7 +208,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
         result
     }
     fn resolve_num_format(&mut self, pfix_expr: &PostfixExpr, mut result: Value, id: &String) -> Value {
-        if let Some(number) = result.as_number() {
+        if let Some(number) = result.as_number_mut() {
             number.fmt = match id.as_str() {
                 "bin" => NumberFormat::Bin,
                 "hex" => NumberFormat::Hex,
@@ -254,7 +254,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
 
     //in case of (x.km)m, both postfixId (km) and unit (m) are filled.
     fn apply_unit(value: &mut Value, node: &Box<dyn Node>, units_view: &UnitsView, range: &Range, errors: &mut Vec<Error>, globals: &Globals) {
-        if let Some(number) = value.as_number() {
+        if let Some(number) = value.as_number_mut() {
             if !node.get_node_data().unit.is_empty() {
                 number.convert_to_unit(&node.get_node_data().unit, units_view, range, errors, globals);
             }

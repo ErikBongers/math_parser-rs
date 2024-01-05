@@ -39,6 +39,7 @@ pub enum ErrorId
 
     InvDateStr,
     InvDateValue,
+    InvDate,
     InvList,
     InvNumberStr,
     InvFormat,
@@ -115,6 +116,7 @@ pub static ERROR_MAP: Lazy<HashMap<ErrorId, ErrorDef>>  = Lazy::new(|| HashMap::
 (ErrorId::DurInvFrag, ErrorDef{id: ErrorId::DurInvFrag, error_type: ErrorType::E, name: "DurInvFrag", message: "Invalid fragment `{0}` for duration."}),
 (ErrorId::InvDateStr, ErrorDef{id: ErrorId::InvDateStr, error_type: ErrorType::E, name: "InvDateStr", message: "Invalid date string: `{0}`"}),
 (ErrorId::InvDateValue, ErrorDef{id: ErrorId::InvDateValue, error_type: ErrorType::E, name: "InvDateValue", message: "Invalid date value `{0}` for {1}."}),
+(ErrorId::InvDate, ErrorDef{id: ErrorId::InvDate, error_type: ErrorType::E, name: "InvDate", message: "Invalid date."}),
 (ErrorId::InvList, ErrorDef{id: ErrorId::InvList, error_type: ErrorType::E, name: "InvList", message: "Cannot convert value list. {0}"}),
 (ErrorId::InvNumberStr, ErrorDef{id: ErrorId::InvNumberStr, error_type: ErrorType::E, name: "InvNumberStr", message: "Invalid number string: `{0}`"}),
 (ErrorId::InvFormat, ErrorDef{id: ErrorId::InvFormat, error_type: ErrorType::E, name: "InvFormat", message: "Invalid format for this type of value: `{0}`"}),

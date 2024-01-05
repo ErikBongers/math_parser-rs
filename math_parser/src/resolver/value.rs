@@ -77,8 +77,15 @@ impl Value {
         }
     }
 
-    pub fn as_number(&mut self) -> Option<&mut Number> {
+    pub fn as_number_mut(&mut self) -> Option<&mut Number> {
         if let Variant::Numeric { ref mut number, ..} = self.variant {
+            Some(number)
+        } else {
+            None
+        }
+    }
+    pub fn as_number(&self) -> Option<&Number> {
+        if let Variant::Numeric { ref number, ..} = self.variant {
             Some(number)
         } else {
             None

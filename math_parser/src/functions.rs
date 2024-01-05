@@ -6,7 +6,7 @@ use crate::resolver::scope::Scope;
 use crate::errors::{Error, ErrorId};
 use crate::parser::CodeBlock;
 use crate::parser::date::Date;
-use crate::parser::date::date::month_from_int;
+use crate::parser::date::date::{DateFormat, month_from_int};
 use crate::parser::nodes::{FunctionDefExpr};
 use crate::resolver::{add_error, Resolver};
 use crate::resolver::globals::Globals;
@@ -136,6 +136,7 @@ pub fn create_global_function_defs() -> HashMap<String, GlobalFunctionDef> {
         ("primes".to_string(), GlobalFunctionDef { name: "primes".to_string(), min_args: 1, max_args: 999, execute: primes}),
 
         ("now".to_string(), GlobalFunctionDef { name: "now".to_string(), min_args: 0, max_args: 0, execute: now}),
+        ("date".to_string(), GlobalFunctionDef { name: "date".to_string(), min_args: 1, max_args: 3, execute: date_func}),
     ]);
     defs
 }
@@ -322,7 +323,7 @@ fn with_num_vec(function_def: &dyn FunctionDef, args: &Vec<Value>, range: &Range
         let mut val = Value::from_number(Number {significand: func(num_vec), exponent: 0, unit: Unit::none(), fmt: NumberFormat::Dec }, range);
         let Some(number) = match_arg_number(function_def, &args[0], range, errors) else { return Value::error(range) };
         let si_id = globals.unit_defs.get(&number.unit.id).unwrap().si_id;
-        val.as_number().unwrap().unit.id = si_id.to_string();
+        val.as_number_mut().unwrap().unit.id = si_id.to_string();
         val
     } else { Value::error(range) }
 }
@@ -468,4 +469,34 @@ fn now(_global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Op
     let day = current_date.day();
 
    Value::from_date(Date { month: month_from_int(month as i32), day: day as i8, year, range: range.clone(), errors: vec![], }, range)
+}
+
+fn date_func(_global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
+    let mut date = Date::new();
+
+    let  idx = scope.borrow().date_format.indices();
+    let mut exploded_args = Vec::<Value>::new();
+    let args_list = explode_args(args, &mut exploded_args);
+    if args_list.len() < 3 {
+        return Value::error(range); //TODO: provide error message?
+    }
+    let mut day = &args_list[idx.day];
+    let mut month = &args_list[idx.month];
+    let mut year = &args_list[idx.year];
+
+    if let Some(day_num) = &day.as_number() {
+        date.day = day_num.to_double() as i8;
+    } else {
+        todo!("implement special value `last`");
+    }
+    if let Some(month_num) = &month.as_number() {
+        date.month = month_from_int(month_num.to_double() as i32);
+    }
+    if let Some(year_num) = &year.as_number() {
+        date.year = year_num.to_double() as i32;
+    }
+    if !date.is_valid() {
+        errors.push(Error::build(ErrorId::InvDate, range.clone(), &[]));
+    }
+    Value::from_date(date, range)
 }

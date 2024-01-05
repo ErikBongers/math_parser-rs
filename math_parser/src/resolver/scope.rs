@@ -3,6 +3,7 @@ use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 use crate::functions::{CustomFunctionDef, execute_custom_function, FunctionView};
 use crate::parser::CodeBlock;
+use crate::parser::date::date::DateFormat;
 use crate::parser::nodes::FunctionDefExpr;
 use crate::resolver::globals::Globals;
 use crate::resolver::unit::UnitsView;
@@ -15,6 +16,7 @@ pub struct Scope {
     pub function_view: FunctionView,
     pub local_function_defs:  HashMap<String, CustomFunctionDef>,
     pub units_view: UnitsView,
+    pub date_format: DateFormat,
 }
 
 impl Scope {
@@ -25,7 +27,8 @@ impl Scope {
             variables: HashMap::new(),
             function_view: FunctionView { ids: HashSet::new()},
             local_function_defs: HashMap::new(),
-            units_view: UnitsView::new(globals)
+            units_view: UnitsView::new(globals),
+            date_format: DateFormat::YMD,
         }
     }
 
@@ -36,6 +39,7 @@ impl Scope {
             parent_scope: Some(rc_scope),
             function_view: scope.function_view.clone(),
             units_view: scope.units_view.clone(),
+            date_format: scope.date_format,
 
             //don't copy variables.
             local_function_defs: HashMap::new(),
