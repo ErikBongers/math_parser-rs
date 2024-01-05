@@ -3,7 +3,7 @@ use serde::ser::{SerializeStruct};
 use crate::errors;
 use crate::errors::ERROR_MAP;
 use crate::parser::date;
-use crate::parser::date::date::EMPTY_YEAR;
+use crate::parser::date::date::{EMPTY_YEAR, LAST};
 use crate::resolver::globals::Globals;
 use crate::resolver::Resolver;
 use crate::resolver::unit::Unit;
@@ -182,9 +182,26 @@ impl Serialize for date::Date {
             S: Serializer
     {
         let mut state = serializer.serialize_struct("Timepoint", 4)?;
-        let str_day = if self.day == 0 { "??".to_string()} else { self.day.to_string()};
+        let str_day_formatted = if self.day == 0 {
+            "??".to_string()
+        } else {
+            if self.day == LAST {
+                self.get_normalized_day().to_string()
+            } else {
+                self.day.to_string()
+            }
+        };
+        let str_day = if self.day == 0 {
+            "--".to_string()
+        } else {
+            if self.day == LAST {
+                format!("last ({})", self.get_normalized_day())
+            } else {
+                self.day.to_string()
+            }
+        };
         let str_year = if self.year == EMPTY_YEAR { "????".to_string()} else { self.year.to_string()};
-        let formatted = format!("{0}-{1:?}-{2}", &str_year, &self.month, &self.day);
+        let formatted = format!("{0}-{1:?}-{2}", &str_year, &self.month, &str_day_formatted);
         state.serialize_field("formatted", &formatted)?;
         state.serialize_field("day", &str_day)?;
         state.serialize_field("month", &self.month)?;

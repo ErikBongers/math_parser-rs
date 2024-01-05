@@ -4,9 +4,10 @@ use crate::parser::date::date::{DateFormat, EMPTY_YEAR, LAST, Month, month_from_
 use crate::tokenizer::cursor::Range;
 
 
-pub fn parse_date_string(text: &str, range: &Range) -> Date {
+pub fn parse_date_string(text: &str, range: &Range, date_format: DateFormat) -> Date {
     let slices = text.split(|c| c == ' ' || c == '/' || c == ',' || c == '-').filter(|s| !s.is_empty()).collect();
     let mut parser = FormattedDateParser::new(&slices, range);
+    parser.parser_state.date_format = date_format;
     parser.parse()
 }
 

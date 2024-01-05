@@ -6,7 +6,7 @@ use crate::tokenizer::cursor::{Number, Range};
 #[derive(Serialize, Debug)]
 #[repr(u8)]
 pub enum ValueType{
-    None = 0, Number = 1, Timepoint = 2, Duration = 3, List,
+    None = 0, Number = 1, Timepoint = 2, Duration = 3, List = 4, Last = 5
 }
 
 impl fmt::Display for ValueType {
@@ -28,6 +28,7 @@ pub enum Variant {
     List { values: Vec<Value> },
     FunctionDef,
     Comment, //echo comment
+    Last, // used for dates.
     Error //TODO
 }
 
@@ -37,6 +38,7 @@ pub fn variant_to_value_type(variant: &Variant) -> ValueType {
         Variant::Date {..} => ValueType::Timepoint,
         Variant::Duration => ValueType::Duration,
         Variant::List {..} => ValueType::List,
+        Variant::Last => ValueType::Last,
         _ => ValueType::None
     }
 }
@@ -56,6 +58,15 @@ impl Value {
             stmt_range: range.clone(),
             variant: Variant::Error,
             has_errors: true
+        }
+    }
+
+    pub fn last_variant(range: &Range) -> Self {
+        Value {
+            id: None,
+            stmt_range: range.clone(),
+            variant: Variant::Last,
+            has_errors: false
         }
     }
 

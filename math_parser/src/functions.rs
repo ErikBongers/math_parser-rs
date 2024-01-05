@@ -6,7 +6,7 @@ use crate::resolver::scope::Scope;
 use crate::errors::{Error, ErrorId};
 use crate::parser::CodeBlock;
 use crate::parser::date::Date;
-use crate::parser::date::date::{DateFormat, month_from_int};
+use crate::parser::date::date::{DateFormat, LAST, month_from_int};
 use crate::parser::nodes::{FunctionDefExpr};
 use crate::resolver::{add_error, Resolver};
 use crate::resolver::globals::Globals;
@@ -487,7 +487,9 @@ fn date_func(_global_function_def: Option<&GlobalFunctionDef>, _local_function_d
     if let Some(day_num) = &day.as_number() {
         date.day = day_num.to_double() as i8;
     } else {
-        todo!("implement special value `last`");
+        if let Variant::Last = &day.variant {
+            date.day = LAST;//TODO: magic value
+        }
     }
     if let Some(month_num) = &month.as_number() {
         date.month = month_from_int(month_num.to_double() as i32);

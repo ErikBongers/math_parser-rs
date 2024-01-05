@@ -1,5 +1,6 @@
+use std::ops::Deref;
 use crate::errors::Error;
-use crate::parser::date::date::{EMPTY_YEAR, Month};
+use crate::parser::date::date::{EMPTY_YEAR, LAST, Month};
 use crate::tokenizer::cursor::Range;
 
 pub mod date {
@@ -94,9 +95,34 @@ impl Date {
 
     pub fn is_valid(&self) -> bool {
         if self.year == EMPTY_YEAR { return false; }
-        if self.day <= 0 || self.day > 31 { return false; }
+        if self.day != LAST && (self.day <= 0 || self.day > 31) { return false; }
         if self.month == Month::NONE { return false; }
 
         true
+    }
+
+    pub fn get_normalized_day(&self) -> i8 {
+        //check leap year: if y/4 and not y/100 : leap year. Also, if y/100 and y/400: leap year.
+        if  self.day == LAST {
+            match self.month {
+                Month::APR | Month::JUN | Month::SEP | Month::NOV => 30,
+                Month::FEB => {
+                    if self.year == EMPTY_YEAR {
+                        self.day
+                    } else {
+                        if (self.year%4 == 0 && self.year%100 != 0)
+                            || (self.year%100 == 0 && self.year%400 == 0) {
+                            29
+                        } else {
+                            28
+                        }
+                    }
+                },
+                Month::NONE => self.day,
+                _ => 31
+            }
+        } else {
+            self.day
+        }
     }
 }

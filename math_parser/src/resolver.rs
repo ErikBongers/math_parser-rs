@@ -311,15 +311,18 @@ impl<'g, 'a> Resolver<'g, 'a> {
                 n.unit = expr.node_data.unit.clone();
                 Value::from_number(n, &expr.get_range())
            },
-            _ => {
+            ConstType::FormattedString => {
                 //TODO: FormattedNumberParser
-                //TODO: date_parser.ymd_format = self.ymd_format
                 let mut trimmed_range = expr.range.clone();
                 if (trimmed_range.end - trimmed_range.start) >=2 {
                     trimmed_range.start += 1;
                     trimmed_range.end -= 1;
                 }
-                let mut date = parse_date_string(self.globals.get_text(&trimmed_range), &expr.range);
+                let string = self.globals.get_text(&trimmed_range);
+                if string == "last" {
+                    return Value::last_variant(&expr.range);
+                }
+                let mut date = parse_date_string(string, &expr.range, self.scope.borrow().date_format);
                 self.errors.append(&mut date.errors);
                 Value::from_date(date, &expr.get_range())
             }

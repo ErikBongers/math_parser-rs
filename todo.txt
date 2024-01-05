@@ -1,6 +1,8 @@
-* Date input
-  > formatted input: test it thurrougly
-  > via list notation: allow for _last_ special value.
+* Months:
+  > use #[repr(u8)]
+
+* Variant and ValueType:
+  > is it really needed to have both?
 
 * Scope borrows.
   > see if if Scope, which changes during resolving, can be moved into a ResolverState object,
