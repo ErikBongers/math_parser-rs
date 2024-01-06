@@ -17,7 +17,7 @@ use crate::resolver::globals::Globals;
 use crate::resolver::operator::{operator_id_from, OperatorType};
 use crate::resolver::scope::Scope;
 use crate::resolver::unit::{Unit, UnitsView};
-use crate::resolver::value::{NumberFormat, Value, Variant, variant_to_value_type};
+use crate::resolver::value::{NumberFormat, Value, Variant};
 use crate::resolver::value::Variant::Numeric;
 use crate::tokenizer::cursor::{Number, Range};
 use crate::tokenizer::token_type::TokenType;
@@ -359,11 +359,11 @@ impl<'g, 'a> Resolver<'g, 'a> {
         }
 
         let operator_type = OperatorType::from(&expr.op.kind);
-        let op_id = operator_id_from(variant_to_value_type(&expr1.variant), operator_type, variant_to_value_type(&expr2.variant));
+        let op_id = operator_id_from(&expr1.variant, operator_type, &expr2.variant);
         if !self.globals.exists_operator(op_id) {
             let op_str = operator_type.to_string();
-            let val_type1 = variant_to_value_type(&expr1.variant).to_string();
-            let val_type2 = variant_to_value_type(&expr2.variant).to_string();
+            let val_type1 = &expr1.variant.name();
+            let val_type2 = &expr2.variant.name();
             return self.add_error(ErrorId::NoOp, expr.get_range().clone(), &[&op_str, &val_type1, &val_type2], Value::error(&expr.get_range()));
         }
 

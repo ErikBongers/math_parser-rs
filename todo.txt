@@ -1,15 +1,9 @@
- Months:
+* Months:
   > use #[repr(u8)]
-
-* Variant and ValueType:
-  > is it really needed to have both?
 
 * Scope borrows.
   > see if if Scope, which changes during resolving, can be moved into a ResolverState object,
   > See formatted_date_parser.
-
-* Number formats
-  > allow input with 0x...,etc...
 
 * date and duration.
   > implement Duration
@@ -17,7 +11,10 @@
 
 * exponents
 
-# defines
+* #define
+  > extra defines:
+    - date format
+    - output precision
 
 * blocks
   > a block should have it's own scope...but the results and errors should be added to the main list, contrary to custom functions.
@@ -36,10 +33,6 @@
 * to examine TokenStream for macros:
   > https://github.com/dtolnay/proc-macro-workshop
   > https://dev.to/dandyvica/rust-procedural-macros-step-by-step-tutorial-36n8
-
-* implement constants.
-  > implement PI
-  > test for redefine of constant.
 
 * Range: replace { start, end } with &str? It's essentially the same and it's safer.
   > byte indexes can probably still be calculated -> see cursor?

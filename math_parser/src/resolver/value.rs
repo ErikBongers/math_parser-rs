@@ -3,18 +3,6 @@ use serde::Serialize;
 use crate::parser::date::Date;
 use crate::tokenizer::cursor::{Number, Range};
 
-#[derive(Serialize, Debug)]
-#[repr(u8)]
-pub enum ValueType{
-    None = 0, Number = 1, Timepoint = 2, Duration = 3, List = 4, Last = 5
-}
-
-impl fmt::Display for ValueType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Debug::fmt(self, f)
-    }
-}
-
 #[derive(Clone, Serialize)]
 pub enum NumberFormat {
     Dec, Hex, Oct, Bin, Exp
@@ -32,14 +20,31 @@ pub enum Variant {
     Error //TODO
 }
 
-pub fn variant_to_value_type(variant: &Variant) -> ValueType {
-    match variant {
-        Variant::Numeric {..} => ValueType::Number,
-        Variant::Date {..} => ValueType::Timepoint,
-        Variant::Duration => ValueType::Duration,
-        Variant::List {..} => ValueType::List,
-        Variant::Last => ValueType::Last,
-        _ => ValueType::None
+impl Variant {
+    pub fn name(&self) -> &'static str {
+        match self {
+            Variant::Numeric {..} => "Numeric",
+            Variant::Date {..} => "Timepoint",
+            Variant::Duration {..} => "Duration",
+            Variant::List {..} => "List",
+            Variant::FunctionDef => "FunctionDef",
+            Variant::Comment  => "Comment",
+            Variant::Last  => "Last",
+            Variant::Error  => "Error",
+        }
+    }
+
+    pub fn to_u32(&self) -> u32 {
+        match self {
+            Variant::Numeric {..} => 1,
+            Variant::Date {..} => 2,
+            Variant::Duration {..} => 3,
+            Variant::List {..} => 4,
+            Variant::FunctionDef => 5,
+            Variant::Comment  => 6,
+            Variant::Last  => 7,
+            Variant::Error  => 8,
+        }
     }
 }
 

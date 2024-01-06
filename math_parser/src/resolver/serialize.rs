@@ -7,7 +7,7 @@ use crate::parser::date::date::{EMPTY_YEAR, LAST};
 use crate::resolver::globals::Globals;
 use crate::resolver::Resolver;
 use crate::resolver::unit::Unit;
-use crate::resolver::value::{NumberFormat, Value, Variant::*, variant_to_value_type};
+use crate::resolver::value::{NumberFormat, Value, Variant::*};
 use crate::tokenizer::cursor::{Number, Range};
 
 struct ScopedValue<'a> {
@@ -54,7 +54,7 @@ impl<'a> Serialize for ScopedValue<'a> {
             state.serialize_field("id", "_")?; //TODO: replace with None? This will be output as `null` or better, DON'T output id -> shorter JSON
         }
 
-        state.serialize_field("type", &variant_to_value_type(&self.value.variant))?;
+        state.serialize_field("type", &&self.value.variant.name())?;
         state.serialize_field("src", &self.value.stmt_range.source_index)?;
         let source = &self.globals.sources[self.value.stmt_range.source_index as usize];
         let (line, _) = source.get_line_and_column(self.value.stmt_range.start);

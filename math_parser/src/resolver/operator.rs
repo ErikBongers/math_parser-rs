@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter};
 use crate::resolver::globals::Globals;
 use crate::resolver::unit::Unit;
-use crate::resolver::value::{NumberFormat, Value, ValueType, Variant};
+use crate::resolver::value::{NumberFormat, Value, Variant};
 use crate::tokenizer::cursor::{Number, Range};
 use crate::tokenizer::token_type::TokenType;
 
@@ -46,8 +46,8 @@ impl From<&TokenType> for OperatorType {
     }
 }
 
-pub fn operator_id_from(type1: ValueType, op: OperatorType, type2: ValueType) -> u32 {
-    (type1 as u32*265*265) + (op as u32*265) + type2 as u32
+pub fn operator_id_from(type1: &Variant, op: OperatorType, type2: &Variant) -> u32 {
+    (type1.to_u32() *265*265) + (op as u32*265) + type2.to_u32()
 }
 
 pub fn op_num_plus_num(globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
@@ -93,13 +93,14 @@ pub fn op_num_pow_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> V
 }
 
 pub fn load_operators(globals: &mut Globals) {
-    globals.operators.insert(operator_id_from(ValueType::Number, OperatorType::Plus, ValueType::Number), op_num_plus_num);
-    globals.operators.insert(operator_id_from(ValueType::Number, OperatorType::Min, ValueType::Number), op_num_min_num);
-    globals.operators.insert(operator_id_from(ValueType::Number, OperatorType::Mult, ValueType::Number), op_num_mult_num);
-    globals.operators.insert(operator_id_from(ValueType::Number, OperatorType::Div, ValueType::Number), op_num_div_num);
-    globals.operators.insert(operator_id_from(ValueType::Number, OperatorType::Remain, ValueType::Number), op_num_rem_num);
-    globals.operators.insert(operator_id_from(ValueType::Number, OperatorType::Modulo, ValueType::Number), op_num_mod_num);
-    globals.operators.insert(operator_id_from(ValueType::Number, OperatorType::Power, ValueType::Number), op_num_pow_num);
+    let variant_num = Variant::Numeric { number: Number::from(0.0)}; //note that even with discriminant.hash(), you'd have to have a concrete variant to generate the hash.
+    globals.operators.insert(operator_id_from(&variant_num, OperatorType::Plus, &variant_num), op_num_plus_num);
+    globals.operators.insert(operator_id_from(&variant_num, OperatorType::Min, &variant_num), op_num_min_num);
+    globals.operators.insert(operator_id_from(&variant_num, OperatorType::Mult, &variant_num), op_num_mult_num);
+    globals.operators.insert(operator_id_from(&variant_num, OperatorType::Div, &variant_num), op_num_div_num);
+    globals.operators.insert(operator_id_from(&variant_num, OperatorType::Remain, &variant_num), op_num_rem_num);
+    globals.operators.insert(operator_id_from(&variant_num, OperatorType::Modulo, &variant_num), op_num_mod_num);
+    globals.operators.insert(operator_id_from(&variant_num, OperatorType::Power, &variant_num), op_num_pow_num);
 }
 
 fn do_term(v1: &Number, adding: bool, v2: &Number, _range: &Range, globals: &Globals) -> Number {
