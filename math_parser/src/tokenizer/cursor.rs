@@ -84,6 +84,29 @@ impl Number {
         }
     }
 
+    pub fn normalize_number (&self) -> Number {
+        //don't use to_double() to avoid loss of precision.
+
+        //find base of sig, to get one digit before the decimal.
+        let mut sig_base: f64 = 0.0;
+        let mut sig = self.significand;
+        loop {
+            if(1.0 <= sig && sig < 10.0) { break }
+            if sig >= 10.0 {
+                sig_base += 1.0;
+                sig /= 10.0;
+            } else { // < 1.0
+                sig_base -= 1.0;
+                sig *= 10.0;
+            }
+        }
+        //now we have sig's base, but there's already an exponent.
+
+        Number::new(self.significand/10_f64.powf(sig_base), self.exponent+(sig_base as i32))
+    }
+
+
+
     pub fn to_si(&self, globals: &Globals) -> f64 {
         if globals.unit_defs.contains_key(&*self.unit.id) {
             let to_si = globals.unit_defs[&*self.unit.id].to_si;

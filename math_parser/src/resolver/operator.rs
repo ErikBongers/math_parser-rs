@@ -77,19 +77,19 @@ pub fn op_num_div_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> V
 pub fn op_num_rem_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
     let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!("has been checked."); };
     let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!("has been checked."); };
-    Value::from_number(Number { significand: n1.significand % n2.significand, exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number { significand: n1.to_double() % n2.to_double(), exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range)
 }
 
 pub fn op_num_mod_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
     let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!("has been checked."); };
     let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!("has been checked."); };
-    Value::from_number(Number { significand: ((n1.significand % n2.significand) + n2.significand) % n2.significand, exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number { significand: ((n1.to_double() % n2.to_double()) + n2.to_double()) % n2.to_double(), exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range)
 }
 
 pub fn op_num_pow_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
     let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!("has been checked."); };
     let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!("has been checked."); };
-    Value::from_number(Number { significand: n1.significand.powf(n2.significand), exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number { significand: n1.to_double().powf(n2.to_double()), exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range)
 }
 
 pub fn load_operators(globals: &mut Globals) {

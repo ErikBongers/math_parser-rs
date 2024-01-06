@@ -148,23 +148,23 @@ fn abs(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Opt
 }
 fn round(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
     let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
-    Value::from_number(Number {significand: number.significand.round(), exponent: number.exponent, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number {significand: number.to_double().round(), exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
 }
 fn trunc(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
     let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
-    Value::from_number(Number {significand: number.significand.trunc(), exponent: number.exponent, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number {significand: number.to_double().trunc(), exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
 }
 fn floor(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
     let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
-    Value::from_number(Number {significand: number.significand.floor(), exponent: number.exponent, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number {significand: number.to_double().floor(), exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
 }
 fn ceil(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
     let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
-    Value::from_number(Number {significand: number.significand.ceil(), exponent: number.exponent, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number {significand: number.to_double().ceil(), exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
 }
 fn sqrt(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
     let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
-    Value::from_number(Number {significand: number.significand.sqrt(), exponent: number.exponent, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number {significand: number.to_double().sqrt(), exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
 }
 fn sum(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
     let mut exploded_args = Vec::new();
@@ -261,7 +261,7 @@ fn floats_to_values(range: &Range, factors: &Vec<f64>) -> Vec<Value> {
 
 fn factors(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
     let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
-    let factors = build_factors(number.significand);
+    let factors = build_factors(number.to_double());
     let list = floats_to_values(range, &factors);
     Value {
         id: None,
@@ -273,7 +273,7 @@ fn factors(global_function_def: Option<&GlobalFunctionDef>, _local_function_def:
 
 fn primes(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
     let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
-    let factors = build_factors(number.significand);
+    let factors = build_factors(number.to_double());
     let primez = factors.into_iter().filter(|&f| {
         PRIMES.binary_search(&(f as i32)).is_ok()
     }).collect();
@@ -361,14 +361,14 @@ fn inc(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Opt
     let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else {
         return Value::error(range);
     };
-    Value::from_number(Number {significand: number.significand+1.0, exponent: number.exponent, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number {significand: number.to_double()+1.0, exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
 }
 
 fn dec(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
     let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else {
         return Value::error(range);
     };
-    Value::from_number(Number {significand: number.significand-1.0, exponent: number.exponent, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number {significand: number.to_double()-1.0, exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
 }
 
 fn sin(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
@@ -377,7 +377,7 @@ fn sin(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Opt
     if number.unit.id == "deg" {
         number.convert_to_unit(&Unit { range: None, id: "rad".to_string() }, &scope.borrow().units_view, range, errors, globals); //TODO: we don't need to make another number. Just convert units for a f64.
     }
-    Value::from_number(Number {significand: number.significand.sin(), exponent: number.exponent, unit: Unit::none(), fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number {significand: number.to_double().sin(), exponent: 0, unit: Unit::none(), fmt: NumberFormat::Dec }, range)
 }
 
 fn cos(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
@@ -385,7 +385,7 @@ fn cos(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Opt
     let mut number = number.clone(); //Needed? Test it.
     if number.unit.id == "deg" {
         number.convert_to_unit(&Unit { range: None, id: "rad".to_string() }, &scope.borrow().units_view, range, errors, globals);     }
-    Value::from_number(Number {significand: number.significand.cos(), exponent: number.exponent, unit: Unit::none(), fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number {significand: number.to_double().cos(), exponent: 0, unit: Unit::none(), fmt: NumberFormat::Dec }, range)
 }
 
 fn tan(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
@@ -394,20 +394,20 @@ fn tan(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Opt
     if number.unit.id == "deg" {
         number.convert_to_unit(&Unit { range: None, id: "rad".to_string() }, &scope.borrow().units_view, range, errors, globals);
     }
-    Value::from_number(Number {significand: number.significand.tan(), exponent: number.exponent, unit: Unit::none(), fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number {significand: number.to_double().tan(), exponent: 0, unit: Unit::none(), fmt: NumberFormat::Dec }, range)
 }
 
 fn asin(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
     let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
-    Value::from_number(Number {significand: number.significand.asin(), exponent: number.exponent, unit: Unit { id: "rad".to_string(), range: Some(range.clone())}, fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number {significand: number.to_double().asin(), exponent: 0, unit: Unit { id: "rad".to_string(), range: Some(range.clone())}, fmt: NumberFormat::Dec }, range)
 }
 fn acos(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
     let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
-    Value::from_number(Number {significand: number.significand.acos(), exponent: number.exponent, unit: Unit { id: "rad".to_string(), range: Some(range.clone())}, fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number {significand: number.to_double().acos(), exponent: 0, unit: Unit { id: "rad".to_string(), range: Some(range.clone())}, fmt: NumberFormat::Dec }, range)
 }
 fn atan(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
     let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
-    Value::from_number(Number {significand: number.significand.atan(), exponent: number.exponent, unit: Unit { id: "rad".to_string(), range: Some(range.clone())}, fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number {significand: number.to_double().atan(), exponent: 0, unit: Unit { id: "rad".to_string(), range: Some(range.clone())}, fmt: NumberFormat::Dec }, range)
 }
 
 
@@ -415,7 +415,7 @@ fn factorial(global_function_def: Option<&GlobalFunctionDef>, _local_function_de
     let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else {
         return Value::error(range);
     };
-    let size = number.significand;
+    let size = number.to_double();
     if size < 0.0 {
         errors.push(Error { id: ErrorId::Expected, message: "factorial argument should be a non-negative integer".to_string(), range: range.clone(), stack_trace: None,});
         return Value::error(range);
@@ -426,7 +426,7 @@ fn factorial(global_function_def: Option<&GlobalFunctionDef>, _local_function_de
     }
     let size = size as i64;
     let val = (1..=size).reduce(|v, i| v*i).unwrap_or(1);
-    Value::from_number(Number {significand: val as f64, exponent: number.exponent, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number {significand: val as f64, exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
 }
 
 pub fn execute_custom_function(_global_function_def: Option<&GlobalFunctionDef>, local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {

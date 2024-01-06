@@ -84,20 +84,29 @@ impl Serialize for Unit {
     }
 }
 
+#[inline]
+fn reduce_precision(n: f64, prec: f64) -> f64 {
+    (n*prec).round()/prec
+}
+
 impl Serialize for Number {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
-        let mut state = serializer.serialize_struct("numbber", 5)?;
+        let mut state = serializer.serialize_struct("number", 5)?;
 
         state.serialize_field("sig", &self.significand)?;
         state.serialize_field("exp", &self.exponent)?;
         state.serialize_field("u", &self.unit)?;
         state.serialize_field("fmt", &self.fmt)?;
+        let reduced_precision = reduce_precision(self.to_double(), 100000.0);
         let fmtd = match &self.fmt {
-            NumberFormat::Dec => format!("{}", self.to_double()),
-            NumberFormat::Hex => format!("0x{:0X}", self.to_double() as u64),
-            NumberFormat::Oct => format!("0o{:0o}", self.to_double() as u64),
-            NumberFormat::Bin => format!("0b{:0b}", self.to_double() as u64),
-            NumberFormat::Exp => format!("{0}e{1}", self.significand as u64, self.exponent), //TODO: format exponential properly. (move decimal part of sig to exp....or something like that...)
+            NumberFormat::Dec => format!("{}", reduced_precision),
+            NumberFormat::Hex => format!("0x{:0X}", reduced_precision as u64),
+            NumberFormat::Oct => format!("0o{:0o}", reduced_precision as u64),
+            NumberFormat::Bin => format!("0b{:0b}", reduced_precision as u64),
+            NumberFormat::Exp => {
+                let norm = self.normalize_number();
+                format!("{0}e{1}", reduce_precision(norm.significand, 100000.0), norm.exponent)
+            },
         };
         state.serialize_field("fmtd", &fmtd)?;
         state.end()

@@ -1,4 +1,4 @@
-* Months:
+ Months:
   > use #[repr(u8)]
 
 * Variant and ValueType:
@@ -12,15 +12,10 @@
   > allow input with 0x...,etc...
 
 * date and duration.
-  > implement fragments.
   > implement Duration
   > implement operators.
-* Dec, Hex, Bin,...
-    > add output for value.val and formattedNumber.
-    > to reduce precision: (x*precision).round()/precision
 
 * exponents
-
 
 # defines
 
