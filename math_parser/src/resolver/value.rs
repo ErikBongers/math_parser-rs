@@ -1,6 +1,7 @@
 use std::fmt;
 use serde::Serialize;
 use crate::parser::date::Date;
+use crate::parser::Duration::date::Duration;
 use crate::tokenizer::cursor::{Number, Range};
 
 #[derive(Clone, Serialize)]
@@ -12,7 +13,7 @@ pub enum NumberFormat {
 pub enum Variant {
     Numeric { number: Number },
     Date { date: Date},
-    Duration,
+    Duration { duration: Duration },
     List { values: Vec<Value> },
     FunctionDef,
     Comment, //echo comment
@@ -84,11 +85,20 @@ impl Value {
         }
     }
 
-    pub fn from_date(value: Date, range: &Range) -> Self {
+    pub fn from_date(date: Date, range: &Range) -> Self {
         Value {
             id: None,
             stmt_range: range.clone(),
-            variant: Variant::Date {date: value},
+            variant: Variant::Date {date },
+            has_errors: false
+        }
+    }
+
+    pub fn from_duration(duration: Duration, range: &Range) -> Self {
+        Value {
+            id: None,
+            stmt_range: range.clone(),
+            variant: Variant::Duration {duration},
             has_errors: false
         }
     }

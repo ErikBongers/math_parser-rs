@@ -1,13 +1,17 @@
+* add a .normalize suffix for Duration.
+  > removes negative days and months, if possiblbe.
+  > What if years is also negative?
+
+* date and duration.
+  > implement Duration
+  > implement operators.
+
 * Months:
   > use #[repr(u8)]
 
 * Scope borrows.
   > see if if Scope, which changes during resolving, can be moved into a ResolverState object,
   > See formatted_date_parser.
-
-* date and duration.
-  > implement Duration
-  > implement operators.
 
 * exponents
 

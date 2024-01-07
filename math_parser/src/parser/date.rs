@@ -1,6 +1,8 @@
+use std::ops;
 use std::ops::Deref;
 use crate::errors::Error;
 use crate::parser::date::date::{EMPTY_YEAR, LAST, Month};
+use crate::parser::Duration::date::Duration;
 use crate::tokenizer::cursor::Range;
 
 pub mod date {
@@ -123,6 +125,20 @@ impl Date {
             }
         } else {
             self.day
+        }
+    }
+}
+
+impl ops::Sub<&Date> for &Date {
+    type Output = Duration; //TODO: try to put Duration and Date in parser::date::...
+
+    fn sub(self, rhs: &Date) -> Self::Output {
+        //TODO: what if day = last or year = EMPTY_YEAR?
+        //Normalize both dates?
+        Duration {
+            days: self.day as i32 - rhs.day as i32,
+            months: self.month as i32 - rhs.month as i32,
+            years: self.year - rhs.year,
         }
     }
 }

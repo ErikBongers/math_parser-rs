@@ -1,1 +1,7 @@
-PI=5
+function ageThisYear(bday)
+  {
+  lastDay=date(now().year, 12, 31);
+  lastDay-bday;
+  }
+
+ ageThisYear('30-jul-1968');

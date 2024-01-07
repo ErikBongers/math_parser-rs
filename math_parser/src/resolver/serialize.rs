@@ -63,6 +63,7 @@ impl<'a> Serialize for ScopedValue<'a> {
         match &self.value.variant {
             Numeric { number, .. } => state.serialize_field("number", number),
             Date { date } => state.serialize_field("date", date),
+            Duration { duration } => state.serialize_field("duration", duration),
             Comment  => state.serialize_field("comment", &source.text[self.value.stmt_range.start..self.value.stmt_range.end]),
             FunctionDef => {
                 let function_name =  source.text[self.value.stmt_range.start..self.value.stmt_range.end].to_string();
@@ -215,6 +216,30 @@ impl Serialize for date::Date {
         state.serialize_field("day", &str_day)?;
         state.serialize_field("month", &self.month)?;
         state.serialize_field("year", &str_year)?;
+
+        state.end()
+    }
+}
+impl Serialize for crate::parser::Duration::date::Duration {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer
+    {
+        let mut slices: Vec<String> = Vec::new();
+        let mut dur = *self;
+        dur.normalize();
+        if(self.years != 0) {
+            slices.push(format!("{} years", dur.years));
+            slices.push(format!("{} months", dur.months));
+            slices.push(format!("{} days", dur.days));
+        }
+        let formatted = slices.join(",");
+
+        let mut state = serializer.serialize_struct("Duration", 4)?;
+        state.serialize_field("formatted", &formatted)?;
+        state.serialize_field("days", &dur.days)?;
+        state.serialize_field("months", &dur.months)?;
+        state.serialize_field("years", &dur.years)?;
 
         state.end()
     }

@@ -16,6 +16,7 @@ use crate::tokenizer::token_type::TokenType::{Div};
 pub mod nodes;
 pub mod formatted_date_parser;
 pub mod date;
+pub mod Duration;
 
 pub struct CodeBlock {
     pub statements: Vec<Box<Statement>>,

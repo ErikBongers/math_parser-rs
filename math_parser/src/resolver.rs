@@ -184,7 +184,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
         let mut result = self.resolve_node(&pfix_expr.node);
         let id = self.globals.get_text(&pfix_expr.postfix_id.range).to_string();
         let mut result = match id.as_str() {
-            "to_days" | "days" | "months" | "years" => self.resolve_duration_fragment(result, &id),
+            "to_days" | "days" | "months" | "years" | "normalize" => self.resolve_duration_fragment(result, &id),
             "day" | "month" | "year" => self.resolve_date_fragment(&pfix_expr, result, &id),
             "bin" | "hex" | "dec" | "oct" | "exp" =>  self.resolve_num_format(pfix_expr, result, &id),
             _ => self.resolve_unit_postfix(result, &pfix_expr, &id)

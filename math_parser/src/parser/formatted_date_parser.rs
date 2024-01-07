@@ -63,9 +63,9 @@ impl<'s, 'r> DateParserState<'s, 'r> {
             return;
         }
         let low_slice = slice.to_lowercase();
-        let month = date::month_from_str(low_slice.as_str());
+        let month = month_from_str(low_slice.as_str());
         if month != Month::NONE {
-            if self.date.month != Month::NONE {
+            if self.date.month == Month::NONE {
                 self.date.month = month;
                 return;
             } else {

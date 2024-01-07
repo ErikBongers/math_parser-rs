@@ -1,4 +1,6 @@
 use std::fmt::{Display, Formatter};
+use std::ops::Sub;
+use crate::parser::date::Date;
 use crate::resolver::globals::Globals;
 use crate::resolver::unit::Unit;
 use crate::resolver::value::{NumberFormat, Value, Variant};
@@ -51,49 +53,50 @@ pub fn operator_id_from(type1: &Variant, op: OperatorType, type2: &Variant) -> u
 }
 
 pub fn op_num_plus_num(globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
-    let Variant::Numeric {number: ref n1, ..} = args[0].variant else { unreachable!("has been checked."); };
-    let Variant::Numeric {number: ref n2, ..} = args[1].variant else { unreachable!("has been checked."); };
+    let Variant::Numeric {number: ref n1, ..} = args[0].variant else { unreachable!(); }; //has been checked.
+    let Variant::Numeric {number: ref n2, ..} = args[1].variant else { unreachable!(); };
     Value::from_number( do_term(n1, true, n2, range, &globals), &range)
 }
 
 pub fn op_num_min_num(globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
-    let Variant::Numeric {number: ref n1, ..} = args[0].variant else { unreachable!("has been checked."); };
-    let Variant::Numeric {number: ref n2, ..} = args[1].variant else { unreachable!("has been checked."); };
+    let Variant::Numeric {number: ref n1, ..} = args[0].variant else { unreachable!(); };
+    let Variant::Numeric {number: ref n2, ..} = args[1].variant else { unreachable!(); };
     Value::from_number( do_term(n1, false, n2, range, &globals), &range)
 }
 
 pub fn op_num_mult_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
-    let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!("has been checked."); };
-    let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!("has been checked."); };
+    let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!(); };
+    let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!(); };
     Value::from_number(Number { significand: n1.significand * n2.significand, exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range)
 }
 
 pub fn op_num_div_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
-    let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!("has been checked."); };
-    let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!("has been checked."); };
+    let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!(); };
+    let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!(); };
     Value::from_number(Number { significand: n1.significand / n2.significand, exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range)
 }
 
 pub fn op_num_rem_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
-    let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!("has been checked."); };
-    let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!("has been checked."); };
+    let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!(); };
+    let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!(); };
     Value::from_number(Number { significand: n1.to_double() % n2.to_double(), exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range)
 }
 
 pub fn op_num_mod_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
-    let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!("has been checked."); };
-    let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!("has been checked."); };
+    let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!(); };
+    let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!(); };
     Value::from_number(Number { significand: ((n1.to_double() % n2.to_double()) + n2.to_double()) % n2.to_double(), exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range)
 }
 
 pub fn op_num_pow_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
-    let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!("has been checked."); };
-    let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!("has been checked."); };
+    let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!(); };
+    let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!(); };
     Value::from_number(Number { significand: n1.to_double().powf(n2.to_double()), exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range)
 }
 
 pub fn load_operators(globals: &mut Globals) {
     let variant_num = Variant::Numeric { number: Number::from(0.0)}; //note that even with discriminant.hash(), you'd have to have a concrete variant to generate the hash.
+    let variant_date = Variant::Date { date: Date::new()};
     globals.operators.insert(operator_id_from(&variant_num, OperatorType::Plus, &variant_num), op_num_plus_num);
     globals.operators.insert(operator_id_from(&variant_num, OperatorType::Min, &variant_num), op_num_min_num);
     globals.operators.insert(operator_id_from(&variant_num, OperatorType::Mult, &variant_num), op_num_mult_num);
@@ -101,6 +104,7 @@ pub fn load_operators(globals: &mut Globals) {
     globals.operators.insert(operator_id_from(&variant_num, OperatorType::Remain, &variant_num), op_num_rem_num);
     globals.operators.insert(operator_id_from(&variant_num, OperatorType::Modulo, &variant_num), op_num_mod_num);
     globals.operators.insert(operator_id_from(&variant_num, OperatorType::Power, &variant_num), op_num_pow_num);
+    globals.operators.insert(operator_id_from(&variant_date, OperatorType::Min, &variant_date), op_date_min_date);
 }
 
 fn do_term(v1: &Number, adding: bool, v2: &Number, _range: &Range, globals: &Globals) -> Number {
@@ -134,4 +138,13 @@ fn do_term(v1: &Number, adding: bool, v2: &Number, _range: &Range, globals: &Glo
         };
         Number::from(result)
     }
+}
+
+pub fn op_date_min_date(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
+    let Variant::Date {date: ref d1, ..} = &args[0].variant else { unreachable!(); }; //has been checked.
+    let Variant::Date {date: ref d2, ..} = &args[1].variant else { unreachable!(); }; //has been checked.
+
+
+    let dur = d1.sub(d2);
+    Value::from_duration(dur, range)
 }
