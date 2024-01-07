@@ -6,7 +6,7 @@ use crate::resolver::scope::Scope;
 use crate::errors::{Error, ErrorId};
 use crate::parser::CodeBlock;
 use crate::parser::date::Date;
-use crate::parser::date::date::{DateFormat, LAST, month_from_int};
+use crate::parser::date::date::{LAST, month_from_int};
 use crate::parser::nodes::{FunctionDefExpr};
 use crate::resolver::{add_error, Resolver};
 use crate::resolver::globals::Globals;

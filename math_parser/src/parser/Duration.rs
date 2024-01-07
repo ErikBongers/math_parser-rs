@@ -1,6 +1,3 @@
-use crate::errors::{Error, ErrorId};
-use crate::tokenizer::cursor::{Number, Range};
-
 pub mod date {
     use crate::errors::{Error, ErrorId};
     use crate::tokenizer::cursor::{Number, Range};
@@ -38,7 +35,7 @@ pub mod date {
             self.days = (self.days as f64 % 30.437) as i32;
         }
 
-        fn to_days(&self) -> i32 {
+        pub fn to_days(&self) -> i32 {
             let ytod = self.years as f64 * 365.2425;
             let mtod = self.months as f64 * 30.437;
             (ytod + mtod + self.days as f64) as i32

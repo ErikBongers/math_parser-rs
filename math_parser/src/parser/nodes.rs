@@ -213,7 +213,12 @@ pub struct CallExpr {
 
 impl HasRange for CallExpr {
     fn get_range(&self) -> Range {
-        &self.function_name_range + &self.arguments.get_range()
+        let arg_range = self.arguments.get_range();
+        if arg_range.is_none() {
+            self.function_name_range.clone()
+        } else {
+            &self.function_name_range + &self.arguments.get_range()
+        }
     }
 }
 

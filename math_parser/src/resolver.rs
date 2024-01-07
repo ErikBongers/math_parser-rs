@@ -181,10 +181,10 @@ impl<'g, 'a> Resolver<'g, 'a> {
     //A 'glued' unit is applied to the variant itself (numeric, duration,...)
     fn resolve_postfix_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let pfix_expr = expr.as_any().downcast_ref::<PostfixExpr>().unwrap();
-        let mut result = self.resolve_node(&pfix_expr.node);
+        let result = self.resolve_node(&pfix_expr.node);
         let id = self.globals.get_text(&pfix_expr.postfix_id.range).to_string();
         let mut result = match id.as_str() {
-            "to_days" | "days" | "months" | "years" | "normalize" => self.resolve_duration_fragment(result, &id),
+            "to_days" | "days" | "months" | "years" => self.resolve_duration_fragment(result, &id, &pfix_expr.postfix_id.range),
             "day" | "month" | "year" => self.resolve_date_fragment(&pfix_expr, result, &id),
             "bin" | "hex" | "dec" | "oct" | "exp" =>  self.resolve_num_format(pfix_expr, result, &id),
             _ => self.resolve_unit_postfix(result, &pfix_expr, &id)
@@ -235,7 +235,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
         };
         Value {
             id: None,
-            stmt_range: pfix_expr.get_range().clone(),
+            stmt_range: pfix_expr.postfix_id.range.clone(),
             variant: Variant::Numeric {
                 number: Number {
                     significand: val as f64,
@@ -248,9 +248,18 @@ impl<'g, 'a> Resolver<'g, 'a> {
         }
     }
 
-    fn resolve_duration_fragment(&mut self, mut result: Value, id: &str) -> Value {
-        todo!()
-    }
+    fn resolve_duration_fragment(&mut self, mut result: Value, id: &str, range: &Range) -> Value {
+        let Variant::Duration {mut duration} = result.variant else { return Value::error(range)};
+        duration.normalize();
+        let value = match id {
+            "days" => duration.days,
+            "months" => duration.months,
+            "years" => duration.years,
+            "to_days" => duration.to_days(),
+            _ => return Value::error(range)
+        };
+        Value::from_number(Number { significand: value as f64, exponent: 0, unit: Unit::from_id(id), fmt: NumberFormat::Dec }, range)
+   }
 
     //in case of (x.km)m, both postfixId (km) and unit (m) are filled.
     fn apply_unit(value: &mut Value, node: &Box<dyn Node>, units_view: &UnitsView, range: &Range, errors: &mut Vec<Error>, globals: &Globals) {

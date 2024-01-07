@@ -228,7 +228,7 @@ impl Serialize for crate::parser::Duration::date::Duration {
         let mut slices: Vec<String> = Vec::new();
         let mut dur = *self;
         dur.normalize();
-        if(self.years != 0) {
+        if self.years != 0 {
             slices.push(format!("{} years", dur.years));
             slices.push(format!("{} months", dur.months));
             slices.push(format!("{} days", dur.days));

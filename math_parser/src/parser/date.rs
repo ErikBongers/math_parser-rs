@@ -1,5 +1,4 @@
 use std::ops;
-use std::ops::Deref;
 use crate::errors::Error;
 use crate::parser::date::date::{EMPTY_YEAR, LAST, Month};
 use crate::parser::Duration::date::Duration;

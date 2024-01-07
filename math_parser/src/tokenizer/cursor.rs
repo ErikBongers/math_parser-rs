@@ -33,6 +33,10 @@ impl Range {
             end: 0
         }
     }
+
+    pub fn is_none(&self) -> bool {
+        self.start == 0 && self.end == 0
+    }
 }
 
 impl ops::AddAssign for Range {
@@ -91,7 +95,7 @@ impl Number {
         let mut sig_base: f64 = 0.0;
         let mut sig = self.significand;
         loop {
-            if(1.0 <= sig && sig < 10.0) { break }
+            if 1.0 <= sig && sig < 10.0 { break }
             if sig >= 10.0 {
                 sig_base += 1.0;
                 sig /= 10.0;

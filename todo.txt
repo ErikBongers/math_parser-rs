@@ -1,10 +1,11 @@
-* add a .normalize suffix for Duration.
-  > removes negative days and months, if possiblbe.
-  > What if years is also negative?
+* Bug: these print the result on the same line:
+  > the now() function results in line = 0;
+test='31/03/2015';
+
+x=now().year;
 
 * date and duration.
-  > implement Duration
-  > implement operators.
+  > implement remaining operators.
 
 * Months:
   > use #[repr(u8)]

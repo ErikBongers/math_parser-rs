@@ -1,4 +1,3 @@
-use std::fmt;
 use serde::Serialize;
 use crate::parser::date::Date;
 use crate::parser::Duration::date::Duration;
@@ -24,7 +23,7 @@ pub enum Variant {
 impl Variant {
     pub fn name(&self) -> &'static str {
         match self {
-            Variant::Numeric {..} => "Numeric",
+            Variant::Numeric {..} => "Number",
             Variant::Date {..} => "Timepoint",
             Variant::Duration {..} => "Duration",
             Variant::List {..} => "List",
