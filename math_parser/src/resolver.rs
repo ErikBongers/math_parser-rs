@@ -280,7 +280,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
             if self.globals.constants.contains_key(&id_str.as_str()) {
                 self.add_error(ErrorId::ConstRedef, expr.id.range.clone(), &[id_str.as_str()], Value::error(&expr.get_range()));
             }
-            if self.globals.unit_defs.contains_key(&id_str) {
+            if self.scope.borrow().units_view.units.contains(&id_str) {
                 self.add_error(ErrorId::WVarIsUnit, expr.id.range.clone(), &[id_str.as_str()], Value::error(&expr.get_range()));
             }
             //TODO: disallow redefine of constant in case of `strict`

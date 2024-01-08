@@ -27,7 +27,7 @@ impl Scope {
             variables: HashMap::new(),
             function_view: FunctionView { ids: HashSet::new()},
             local_function_defs: HashMap::new(),
-            units_view: UnitsView::new(globals),
+            units_view: globals.units_view.as_ref().unwrap().clone(),
             date_format: DateFormat::YMD,
         }
     }
