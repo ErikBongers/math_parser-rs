@@ -1,7 +1,10 @@
 use std::any::{Any, TypeId};
+use std::cell::RefCell;
+use std::rc::Rc;
 use macros::{CastAny, Node};
 use crate::errors::{Error, ErrorId};
 use crate::resolver::globals::Globals;
+use crate::resolver::scope::Scope;
 use crate::resolver::unit::Unit;
 use crate::tokenizer::cursor::{Number, Range};
 use crate::tokenizer::Token;
@@ -221,6 +224,33 @@ impl HasRange for CallExpr {
         }
     }
 }
+
+#[derive(CastAny, Node)]
+pub struct CodeBlock {
+    pub node_data: NodeData,
+    pub statements: Vec<Box<Statement>>,
+    pub scope: Rc<RefCell<Scope>>,
+}
+
+impl CodeBlock {
+    pub fn new(scope: RefCell<Scope>) -> Self {
+        CodeBlock {
+            node_data: NodeData::new(),
+            scope: Rc::new(scope),
+            statements: Vec::new(),
+        }
+    }
+}
+
+impl HasRange for CodeBlock {
+    fn get_range(&self) -> Range {
+        self.statements.iter()
+            .map(|stmt| stmt.get_range())
+            .reduce(|sum, range| &sum + &range).unwrap_or(Range::none()) //TODO: add the range of the start point of the block, which may be the beginning of the text or the opening '{'.
+    }
+}
+
+
 
 pub fn print_nodes(expr: &Box<dyn Node>, indent: usize, globals: &Globals) {
     print!("{: <1$}", "", indent);

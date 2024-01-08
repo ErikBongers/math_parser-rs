@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 use crate::errors::{Error, ErrorId};
-use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CommentExpr, ConstExpr, ConstType, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement, UnaryExpr, UnitExpr};
+use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement, UnaryExpr, UnitExpr};
 use crate::resolver::globals::Globals;
 use crate::tokenizer::cursor::Range;
 use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
@@ -17,20 +17,6 @@ pub mod nodes;
 pub mod formatted_date_parser;
 pub mod date;
 pub mod Duration;
-
-pub struct CodeBlock {
-    pub statements: Vec<Box<Statement>>,
-    pub scope: Rc<RefCell<Scope>>,
-}
-
-impl<'a> CodeBlock {
-    pub fn new(scope: RefCell<Scope>) -> Self {
-        CodeBlock {
-            scope: Rc::new(scope),
-            statements: Vec::new(),
-        }
-    }
-}
 
 pub struct Parser<'g, 'a, 't> {
     globals: &'g Globals,
@@ -68,6 +54,13 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     }
 
     fn parse_statement(&mut self) -> Statement {
+        if self.match_token(&TokenType::CurlOpen) {
+            let block = self.parse_block();
+            if !self.match_token(&TokenType::CurlClose) {
+                self.add_error(ErrorId::Expected, self.tok.peek().range.clone(), "}"); //TODO: add_error should take a [] of args.
+            }
+            return Statement { node_data: NodeData::new(), node: Box::new(block) }
+        }
         if let Some(stmt) = self.parse_echo_comment() {
             return stmt;
         }

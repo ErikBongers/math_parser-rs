@@ -126,6 +126,8 @@ mod test {
         test_compiles("");
         test_compiles(";");
         test_compiles("-");
+        test_compiles("date(2022, 'sdf', 31)"); //fales in c++!
+        test_compiles("a=1; { a=2; "); //block not closed.
     }
 
 }

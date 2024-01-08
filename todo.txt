@@ -1,3 +1,6 @@
+* Allow a block in the middle of an expression?
+  > At least an assign expression?
+
 * Don't report internal error message:
   : "30thou.mm; --> "Error: resolve_node blabla..."
 

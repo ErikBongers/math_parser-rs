@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use crate::errors::Error;
-use crate::parser::{CodeBlock, Parser};
-use crate::parser::nodes::print_nodes;
+use crate::parser::{Parser};
+use crate::parser::nodes::{CodeBlock, print_nodes};
 use crate::resolver::globals::Globals;
 use crate::resolver::Resolver;
 use crate::resolver::scope::Scope;
@@ -69,10 +69,11 @@ pub mod test {
     use std::cell::RefCell;
     use crate::{
         errors::{ Error, ErrorId },
-        parser::{CodeBlock, Parser},
+        parser::{Parser},
         resolver::{ globals::Globals, Resolver, scope::Scope, value::{Value, Variant} },
         tokenizer::{ peeking_tokenizer::PeekingTokenizer, sources::Source }
     };
+    use crate::parser::nodes::CodeBlock;
 
     pub fn test_result(text: &str, expected_result: f64, unit: &str) {
         let (results, _errors) = get_results(text);

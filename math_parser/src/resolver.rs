@@ -12,7 +12,7 @@ use macros::CastAny;
 use crate::errors::{Error, ErrorId};
 use crate::functions::FunctionDef;
 use crate::parser::formatted_date_parser::parse_date_string;
-use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CommentExpr, ConstExpr, ConstType, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, PostfixExpr, Statement, UnaryExpr, UnitExpr};
+use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, PostfixExpr, Statement, UnaryExpr, UnitExpr};
 use crate::resolver::globals::Globals;
 use crate::resolver::operator::{operator_id_from, OperatorType};
 use crate::resolver::scope::Scope;
@@ -58,6 +58,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
 
     pub fn resolve_node(&mut self, expr: &Box<dyn Node>) -> Value {
         match expr.as_any().type_id() {
+            t if TypeId::of::<CodeBlock>() == t => { self.resolve_codeblock_expr(expr) },
             t if TypeId::of::<ConstExpr>() == t => { self.resolve_const_expr(expr) },
             t if TypeId::of::<BinExpr>() == t => { self.resolve_bin_expr(expr) },
             t if TypeId::of::<IdExpr>() == t => { self.resolve_id_expr(expr) },
@@ -71,6 +72,17 @@ impl<'g, 'a> Resolver<'g, 'a> {
             t if TypeId::of::<FunctionDefExpr>() == t => { self.resolve_func_def_expr(expr) },
             _ => { self.add_error(ErrorId::Expected, expr.get_range(), &["Unknown expression to resolve_node"], Value::error(&expr.get_range())) },
         }
+    }
+
+    fn resolve_codeblock_expr(&mut self, expr: &Box<dyn Node>) -> Value {
+        let code_block = expr.as_any().downcast_ref::<CodeBlock>().unwrap();
+        let mut resolver = Resolver {globals: self.globals, scope: code_block.scope.clone(), results: Vec::new(), errors: self.errors};
+        let result = resolver.resolve(&code_block.statements);
+        let Some(result) = result else {
+            self.add_error(ErrorId::FuncNoBody, code_block.get_range().clone(),&["anonymous block"], Value::error(&code_block.get_range()));
+            return Value::error(&code_block.get_range());
+        };
+        result
     }
 
     fn resolve_list_expr(&mut self, expr: &Box<dyn Node>) -> Value {
