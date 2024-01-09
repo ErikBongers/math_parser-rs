@@ -132,10 +132,9 @@ impl ops::Sub<&Date> for &Date {
     type Output = Duration; //TODO: try to put Duration and Date in parser::date::...
 
     fn sub(self, rhs: &Date) -> Self::Output {
-        //TODO: what if day = last or year = EMPTY_YEAR?
-        //Normalize both dates?
+        //TODO: what if year = EMPTY_YEAR?
         Duration {
-            days: self.day as i32 - rhs.day as i32,
+            days: self.get_normalized_day() as i32 - rhs.get_normalized_day() as i32,
             months: self.month as i32 - rhs.month as i32,
             years: self.year - rhs.year,
         }
