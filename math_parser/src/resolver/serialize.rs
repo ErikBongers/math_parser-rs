@@ -72,6 +72,9 @@ impl<'a> Serialize for ScopedValue<'a> {
             List { values }=> {
                 let scoped_values: Vec<ScopedValue> = values.iter().map(|v| ScopedValue { globals: &self.globals, value: &v }).collect();
                 state.serialize_field("list", &scoped_values)
+            },
+            Last => {
+                state.serialize_field("Last", "last")
             }
             _ => state.serialize_field("todo", "No serialization for this Value.Variant.")
         }?;
