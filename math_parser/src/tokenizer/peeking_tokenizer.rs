@@ -4,23 +4,20 @@ use crate::tokenizer::Token;
 #[derive(Clone)]
 pub struct PeekingTokenizer<'a> {
     pub cur: Cursor<'a>,
-    pub peeked_token: Token
+    pub prev_cur: Cursor<'a>,
+    pub peeked_token: Token,
 }
 
 impl<'a> PeekingTokenizer<'a> {
     pub fn new(text: &'a str) -> Self {
         let mut cur =  Cursor::new(text);
-        let token = cur.next_token();
+        let prev_cur = cur.clone();
+        let peeked_token = cur.next_token();
         PeekingTokenizer {
             cur,
-            peeked_token: token
+            prev_cur,
+            peeked_token,
         }
-    }
-
-    //TODO: probably the Copy trait would work...
-    pub fn copy_from(&mut self, tok: &PeekingTokenizer<'a>) {
-        self.cur.copy_from(&tok.cur);
-        self.peeked_token = tok.peeked_token.clone();
     }
 
     pub fn peek(&self) -> &Token {
@@ -42,9 +39,18 @@ impl<'a> PeekingTokenizer<'a> {
         t
     }
     pub fn next(&mut self)  -> Token {
+        self.prev_cur = self.cur.clone();
         let t = self.peeked_token.clone();
         self.peeked_token = self.cur.next_token();
         return t;
+    }
+
+    pub fn set_ln_is_token(&mut self, is_token: bool) {
+        if(self.cur.ln_is_token == is_token) { return; }
+
+        self.cur = self.prev_cur.clone();
+        self.cur.ln_is_token = is_token;
+        self.peeked_token = self.cur.next_token();
     }
 
     pub fn get_number(&self) -> Number {

@@ -33,6 +33,7 @@ impl Cursor<'_> {
             Some(c) => c
         };
         let token_type = match first_char {
+            '\n' => Newline, //only if nl_is_token == true
             '{' => CurlOpen,
             '}' => CurlClose,
             '(' => ParOpen,

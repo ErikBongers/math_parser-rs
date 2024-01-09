@@ -5,14 +5,15 @@ pub mod scope;
 mod serialize;
 pub mod unit;
 
-use std::any::TypeId;
+use std::any::{Any, TypeId};
 use std::cell::RefCell;
 use std::rc::Rc;
 use macros::CastAny;
 use crate::errors::{Error, ErrorId};
 use crate::functions::FunctionDef;
+use crate::parser::date::date::DateFormat;
 use crate::parser::formatted_date_parser::parse_date_string;
-use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, PostfixExpr, Statement, UnaryExpr, UnitExpr};
+use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, DefineExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, PostfixExpr, Statement, UnaryExpr, UnitExpr};
 use crate::resolver::globals::Globals;
 use crate::resolver::operator::{operator_id_from, OperatorType};
 use crate::resolver::scope::Scope;
@@ -41,8 +42,14 @@ impl<'g, 'a> Resolver<'g, 'a> {
 
     pub fn resolve(&mut self, statements: &Vec<Box<Statement>>) -> Option<Value> {
         for stmt in statements {
-            let result = self.resolve_statement(stmt);
-            self.results.push(result);
+            let stmt = stmt.as_any().downcast_ref::<Statement>().unwrap();
+            if TypeId::of::<DefineExpr>() == stmt.node.as_any().type_id() {
+                self.resolve_define_expr(&stmt.node);
+            } else {
+                let mut result = self.resolve_node(&stmt.node);
+                result.stmt_range = stmt.get_range();
+                self.results.push(result);
+            }
         };
         let Some(result) = self.results.last() else {
             return None
@@ -85,6 +92,19 @@ impl<'g, 'a> Resolver<'g, 'a> {
         result
     }
 
+    fn resolve_define_expr(&mut self, expr: &Box<dyn Node>) {
+        let define_expr = expr.as_any().downcast_ref::<DefineExpr>().unwrap();
+        for token in &define_expr.tokens {
+            let txt = self.globals.get_text(&token.range);
+            match txt {
+                "ymd" => self.scope.borrow_mut().date_format = DateFormat::YMD,
+                "dmy" => self.scope.borrow_mut().date_format = DateFormat::DMY,
+                "mdy" => self.scope.borrow_mut().date_format = DateFormat::MDY,
+                _ => () //todo: add defines.
+            }
+        }
+    }
+
     fn resolve_list_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let list_expr = expr.as_any().downcast_ref::<ListExpr>().unwrap();
         let mut number_list = Vec::<Value>::new();
@@ -98,13 +118,6 @@ impl<'g, 'a> Resolver<'g, 'a> {
             variant: Variant::List {values: number_list},
             has_errors: false,
         }
-    }
-
-    fn resolve_statement(&mut self, expr: &Box<Statement>) -> Value {
-        let stmt = expr.as_any().downcast_ref::<Statement>().unwrap();
-        let mut result = self.resolve_node(&stmt.node);
-        result.stmt_range = stmt.get_range();
-        result
     }
 
     fn resolve_comment_expr(&mut self, expr: &Box<dyn Node>) -> Value {

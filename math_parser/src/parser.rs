@@ -1,9 +1,7 @@
 use std::any::{TypeId};
-use std::cell::RefCell;
 use std::ops::{Deref, DerefMut};
-use std::rc::Rc;
 use crate::errors::{Error, ErrorId};
-use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement, UnaryExpr, UnitExpr};
+use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, DefineExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement, UnaryExpr, UnitExpr};
 use crate::resolver::globals::Globals;
 use crate::tokenizer::cursor::Range;
 use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
@@ -64,10 +62,35 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         if let Some(stmt) = self.parse_echo_comment() {
             return stmt;
         }
+        if let Some(stmt) = self.parse_define() {
+            return stmt;
+        }
         if let Some(stmt) = self.parse_function_def() {
             return stmt;
         }
         self.parse_expr_statement()
+    }
+
+    fn parse_define(&mut self) -> Option<Statement> {
+        if self.tok.peek().kind == TokenType::Define || self.tok.peek().kind == TokenType::Undef {
+            let t = self.tok.next();
+            self.tok.set_ln_is_token(true);
+            let mut tokens: Vec<Token> = Vec::new();
+            while self.tok.peek().kind != TokenType::Eot {
+                if self.tok.peek().kind == TokenType::Newline || self.tok.peek().kind == TokenType::SemiColon {
+                    self.tok.next();
+                    break;
+                }
+                tokens.push(self.tok.next());
+            }
+            self.tok.set_ln_is_token(false);
+            return Some(Statement { node_data: NodeData::new(), node: Box::new(DefineExpr {
+                node_data: NodeData::new(),
+                def_undef: t,
+                tokens,
+            }) })
+        }
+        None
     }
 
     fn parse_echo_comment(&mut self) -> Option<Statement> {

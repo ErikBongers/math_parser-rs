@@ -1,3 +1,11 @@
+* #define
+  > already implemented partially:
+    > is_whitespace() should look at is_nl_token!
+    > resolve_define()
+  > extra defines:
+    - date format
+    - output precision
+
 * Allow a block in the middle of an expression?
   > At least an assign expression?
 
@@ -15,11 +23,6 @@
   > See formatted_date_parser.
 
 * exponents
-
-* #define
-  > extra defines:
-    - date format
-    - output precision
 
 * blocks
   > a block should have it's own scope...but the results and errors should be added to the main list, contrary to custom functions.

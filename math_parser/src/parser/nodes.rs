@@ -251,6 +251,21 @@ impl HasRange for CodeBlock {
 }
 
 
+#[derive(CastAny, Node)]
+pub struct DefineExpr {
+    pub node_data: NodeData,
+    pub def_undef: Token,
+    pub tokens: Vec<Token>,
+}
+
+impl HasRange for DefineExpr {
+    fn get_range(&self) -> Range {
+        &self.def_undef.range + &self.tokens.iter()
+            .map(|token| &token.range)
+            .fold(self.def_undef.range.clone(), |sum, range| &sum + range)
+    }
+}
+
 
 pub fn print_nodes(expr: &Box<dyn Node>, indent: usize, globals: &Globals) {
     print!("{: <1$}", "", indent);
@@ -302,6 +317,9 @@ pub fn print_nodes(expr: &Box<dyn Node>, indent: usize, globals: &Globals) {
         },
         t if TypeId::of::<UnitExpr>() == t => {
             println!("{0}", "UnitExpr");
+        },
+        t if TypeId::of::<DefineExpr>() == t => {
+            println!("{0}", "DefineExpr");
         },
         _ => {
             println!("{0}", "It's a dunno...");

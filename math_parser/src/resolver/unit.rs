@@ -32,7 +32,7 @@ impl Unit {
 pub enum UnitProperty { ANGLE, LENGTH, TEMP, MassWeight, DURATION, VOLUME, CURRENT, VOLTAGE, RESISTANCE, UNDEFINED }
 
 #[derive(PartialEq)]
-pub enum UnitTag { ShortDateTime }
+pub enum UnitTag { DateTime, ShortDateTime, LongDateTime }
 pub struct UnitDef {
     pub to_si_factor: f64,
     pub id: String,
@@ -76,7 +76,7 @@ impl UnitsView {
     }
 
     pub fn remove_tagged(&mut self, globals: &Globals, tag: UnitTag) {
-        self.units.retain(|unit| globals.unit_defs[unit].tags.contains(&UnitTag::ShortDateTime) == false);
+        self.units.retain(|unit| globals.unit_defs[unit].tags.contains(&tag) == false);
     }
 
     pub fn add_all_classes(&mut self, globals: &Globals) {
@@ -138,23 +138,23 @@ pub fn create_unit_defs() -> HashMap<String, UnitDef> {
         ( "lbs".to_string(), UnitDef { id: "lbs".to_string(), si_id: "kg", to_si_factor: 0.45359, property: UnitProperty::MassWeight, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
         ( "oz".to_string(), UnitDef { id: "oz".to_string(), si_id: "kg", to_si_factor: 1.0/ 35.2739619496, property: UnitProperty::MassWeight, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
 
-        ( "seconds".to_string(), UnitDef { id: "seconds".to_string(), si_id: "s", to_si_factor: 1.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "minutes".to_string(), UnitDef { id: "minutes".to_string(), si_id: "s", to_si_factor: 60.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "hours".to_string(), UnitDef { id: "hours".to_string(), si_id: "s", to_si_factor: 3600.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "days".to_string(), UnitDef { id: "days".to_string(), si_id: "s", to_si_factor: 86400.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "weeks".to_string(), UnitDef { id: "weeks".to_string(), si_id: "s", to_si_factor: (60 * 60 * 24 * 7) as f64, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "months".to_string(), UnitDef { id: "months".to_string(), si_id: "s", to_si_factor: 2629746.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "years".to_string(), UnitDef { id: "years".to_string(), si_id: "s", to_si_factor: 31556952.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "milliseconds".to_string(), UnitDef { id: "milliseconds".to_string(), si_id: "s", to_si_factor: 1.0/1000.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
+        ( "seconds".to_string(), UnitDef { id: "seconds".to_string(), si_id: "s", to_si_factor: 1.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::DateTime]}),
+        ( "minutes".to_string(), UnitDef { id: "minutes".to_string(), si_id: "s", to_si_factor: 60.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::DateTime]}),
+        ( "hours".to_string(), UnitDef { id: "hours".to_string(), si_id: "s", to_si_factor: 3600.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::DateTime]}),
+        ( "days".to_string(), UnitDef { id: "days".to_string(), si_id: "s", to_si_factor: 86400.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::DateTime]}),
+        ( "weeks".to_string(), UnitDef { id: "weeks".to_string(), si_id: "s", to_si_factor: (60 * 60 * 24 * 7) as f64, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::DateTime]}),
+        ( "months".to_string(), UnitDef { id: "months".to_string(), si_id: "s", to_si_factor: 2629746.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::DateTime]}),
+        ( "years".to_string(), UnitDef { id: "years".to_string(), si_id: "s", to_si_factor: 31556952.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::DateTime]}),
+        ( "milliseconds".to_string(), UnitDef { id: "milliseconds".to_string(), si_id: "s", to_si_factor: 1.0/1000.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::DateTime]}),
 
-        ( "s".to_string(), UnitDef { id: "s".to_string(), si_id: "s", to_si_factor: 1.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::ShortDateTime]}),
-        ( "min".to_string(), UnitDef { id: "min".to_string(), si_id: "s", to_si_factor: 60.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::ShortDateTime]}),
-        ( "h".to_string(), UnitDef { id: "h".to_string(), si_id: "s", to_si_factor: 3600.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::ShortDateTime]}),
-        ( "d".to_string(), UnitDef { id: "d".to_string(), si_id: "s", to_si_factor: 86400.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::ShortDateTime]}),
-        ( "w".to_string(), UnitDef { id: "w".to_string(), si_id: "s", to_si_factor: (60 * 60 * 24 * 7) as f64, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::ShortDateTime]}),
-        ( "mon".to_string(), UnitDef { id: "mon".to_string(), si_id: "s", to_si_factor: 2629746.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::ShortDateTime]}),
-        ( "y".to_string(), UnitDef { id: "y".to_string(), si_id: "s", to_si_factor: 31556952.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::ShortDateTime]}),
-        ( "ms".to_string(), UnitDef { id: "ms".to_string(), si_id: "s", to_si_factor: 1.0/1000.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::ShortDateTime]}),
+        ( "s".to_string(), UnitDef { id: "s".to_string(), si_id: "s", to_si_factor: 1.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::ShortDateTime, UnitTag::DateTime]}),
+        ( "min".to_string(), UnitDef { id: "min".to_string(), si_id: "s", to_si_factor: 60.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::ShortDateTime, UnitTag::DateTime]}),
+        ( "h".to_string(), UnitDef { id: "h".to_string(), si_id: "s", to_si_factor: 3600.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::ShortDateTime, UnitTag::DateTime]}),
+        ( "d".to_string(), UnitDef { id: "d".to_string(), si_id: "s", to_si_factor: 86400.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::ShortDateTime, UnitTag::DateTime]}),
+        ( "w".to_string(), UnitDef { id: "w".to_string(), si_id: "s", to_si_factor: (60 * 60 * 24 * 7) as f64, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::ShortDateTime, UnitTag::DateTime]}),
+        ( "mon".to_string(), UnitDef { id: "mon".to_string(), si_id: "s", to_si_factor: 2629746.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::ShortDateTime, UnitTag::DateTime]}),
+        ( "y".to_string(), UnitDef { id: "y".to_string(), si_id: "s", to_si_factor: 31556952.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::ShortDateTime, UnitTag::DateTime]}),
+        ( "ms".to_string(), UnitDef { id: "ms".to_string(), si_id: "s", to_si_factor: 1.0/1000.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::ShortDateTime, UnitTag::DateTime]}),
 
         ( "A".to_string(), UnitDef { id: "A".to_string(), si_id: "A", to_si_factor: 1.0, property: UnitProperty::CURRENT, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
         ( "mA".to_string(), UnitDef { id: "mA".to_string(), si_id: "A", to_si_factor: 0.001, property: UnitProperty::CURRENT, from_si: default_from_si, to_si: default_to_si, tags: &[]}),

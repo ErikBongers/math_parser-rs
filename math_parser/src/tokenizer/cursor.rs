@@ -16,6 +16,7 @@ pub struct Cursor<'a> {
     pub newline_found: bool,
     pub number: Number,
     pub is_beginning_of_text: bool,
+    pub ln_is_token: bool, //TODO: pub (super) ?
 }
 
 #[derive(Debug, Clone, Serialize)] //TODO: make Copy instead of Clone?
@@ -165,16 +166,8 @@ impl<'a> Cursor<'a> {
             newline_found: true, //first line is also a new line!
             number: Number::new(0.0, 0),
             is_beginning_of_text: true,
+            ln_is_token: false,
         }
-    }
-
-    pub fn copy_from(&mut self, cursor: &Cursor<'a>) {
-        self.text = cursor.text;
-        self.chars = cursor.chars.clone();
-        self.len_text = cursor.len_text;
-        self.newline_found = cursor.newline_found;
-        self.number = cursor.number.clone();
-        self.is_beginning_of_text = cursor.is_beginning_of_text;
     }
 
     pub fn peek(&self) -> char {
@@ -258,7 +251,7 @@ impl<'a> Cursor<'a> {
             // Dedicated whitespace characters from Unicode
             | '\u{2028}' // LINE SEPARATOR
             | '\u{2029}' => true, // PARAGRAPH SEPARATOR
-            '\n' => true,
+            '\n' => if self.ln_is_token { false }  else { true },
             _ => false
         }
     }
