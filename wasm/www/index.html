@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en-us">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Parser 0.12</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="g_id_onload"
+     data-client_id="595809100273-9vvaauhe57ovk2s67g6buuqptsiamfrg.apps.googleusercontent.com"
+     data-context="use"
+     data-callback="onSignedIn"
+     data-auto_select="true">
+</div>
+<header class="header">
+    <div class="title">
+        <h1 class="hide-on-phone">
+            Math Parser
+        </h1>
+    </div>
+    <div id="script-selector">
+        <select name="script" id="scriptSelector" onchange="onScriptSwitch()">
+            <option value="start">Startup script</option>
+            <option value="script1" selected>Script 1</option>
+        </select>
+    </div>
+    <div class="right">
+        <div id="userName">Not logged in...</div>
+        <div class="help">
+            <a href="https://github.com/ErikBongers/MathParser#readme" target="_blank">Help</a>
+        </div>
+    </div>
+</header>
+
+<div id="layoutGrid">
+    <div id="scrollWrapper">
+        <div id="textWrapper">
+            <div id="result">
+                <div id="txtResult"></div>
+            </div>
+            <div id="input">
+                <div id="txtInput"></div>
+            </div>
+            <div id="output">
+                <div id="txtOutput" spellcheck="false" rows="8"></div>
+            </div>
+        </div>
+    </div>
+    <div id="calculator"></div>
+</div>
+
+<script type='text/javascript'>
+    //make module functions global for event listeners.
+    import("./cloud.js").then((cloud) => {
+        window.onSignedIn = cloud.onSignedIn;
+        window.onScriptSwitch = cloud.onScriptSwitch;
+    });
+
+</script>
+<script type="module" src="./api.wasm.js"></script>
+<script src="editor.bundle.js"></script>
+<script type="module" src="./parser.js"></script>
+<script type="module" src="./cloud.js"></script>
+<script defer type="text/javascript" src="keyboard.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</body>
+</html >

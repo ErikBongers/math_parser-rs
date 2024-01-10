@@ -1,0 +1,168 @@
+body
+{
+	font-family: sans-serif;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0px;
+	padding: 20px;
+	padding-block-start: 5px;
+}
+
+h1 {
+	font-family: 'Basic', sans-serif;
+	font-size: 2em;
+	color: #ffbb88;
+	margin-block-start: 0;
+    margin-block-end: 0;
+}
+
+header
+{
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+}
+
+header .right {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	}
+header .help {
+	align-self: flex-end;
+	text-align: right;
+	}
+
+#script-selector {
+	align-self: flex-end;
+	padding: 3px;
+	}
+#userName {
+	align-self: flex-end;
+	opacity: .7;
+	padding-right: 10px;
+}
+
+
+/* layout grid*/
+
+#layoutGrid {
+	display: grid;
+	grid-gap: 5px;
+	grid-template-columns: 1fr;
+	grid-template-rows: 1fr 1fr;
+}
+#result, #input, #output {
+	border-style: solid;
+	border-color: #999;
+	border-width: 1px;
+	overflow-x: scroll;
+}
+
+#scrollWrapper {
+	grid-column: 1;
+	grid-row: 1;
+
+}
+#textWrapper {
+	display: grid;
+	grid-gap: 5px;
+	grid-template-columns: 1fr 2fr 1fr;
+	grid-template-rows: 1fr;
+}
+
+#result {
+	grid-column: 1;
+	grid-row: 1;
+}
+#input {
+	grid-column: 2;
+	grid-row: 1;
+}
+#output {
+	grid-column: 3;
+	grid-row: 1;
+}
+#txtResult, #txtInput, #txtOutput{
+	width:inherit;
+	height: 100%;
+}
+
+#result .cm-editor { 
+	text-align: right!important; 
+}
+.CodeMirror {
+	height: inherit;
+}
+
+/* calculator grid */
+#calculator {
+    display: grid;
+    grid-gap: 5px;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+	visibility: collapse;
+	display:none;
+	}
+
+#calculator .grid-item {
+	display:flex;
+	justify-content: center;
+	border-radius: 1.5vw;
+	align-items: center;
+	font-family: 'JetBrains Mono', monospace;
+	height: 2.5em;
+	}
+
+#calculator .grid-item.light
+{
+	background-color: #f0f0f0;
+}
+#calculator .grid-item.medium
+{
+	background-color: #dddddd;
+}
+
+@media only screen and (max-width: 30em) {
+	#layoutGrid {
+		height: 85vh;
+		grid-template-columns: 1fr;
+		grid-template-rows: 1fr min-content 1fr;
+	}
+	#scrollWrapper{
+		overflow-y: scroll;
+	}
+
+	#input {
+		grid-column: 2/ span 2;
+		grid-row: 1;
+	}
+	#result, #input, #output,
+	#txtResult, #txtInput, #txtOutput
+	 {
+		overflow-y: visible;
+	}
+	.hide-on-phone {
+	  display: none;
+	}
+	#calculator {
+		margin-top: 0px;
+	}
+	
+	#output {
+		display: none;
+		visibility: collapse;
+	}
+	
+	#calculator {
+		grid-column: 1;
+		grid-row: 3;
+		visibility: visible;
+		display: grid;
+	}
+}
+  
