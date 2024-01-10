@@ -1,6 +1,10 @@
+* invalidate reference in PeekingTokenizer?
+  : let first = tok.peek();
+    tok.next();
+    first --> references the SECOND token!!
+
 * #define
  > extra defines:
-    - output precision
 
 * Allow a block in the middle of an expression?
   > At least an assign expression?

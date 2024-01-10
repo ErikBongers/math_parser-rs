@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use serde::{Serialize, Serializer};
 use serde::ser::{SerializeStruct};
 use crate::errors;
@@ -6,14 +8,15 @@ use crate::parser::date;
 use crate::parser::date::date::{EMPTY_YEAR, LAST};
 use crate::resolver::globals::Globals;
 use crate::resolver::Resolver;
+use crate::resolver::scope::Scope;
 use crate::resolver::unit::Unit;
 use crate::resolver::value::{NumberFormat, Value, Variant::*};
 use crate::tokenizer::cursor::{Number, Range};
 
 struct ScopedValue<'a> {
-    // scope: Rc<RefCell<Scope>>,
+    scope: Rc<RefCell<Scope>>,
     globals: &'a Globals,
-    value: &'a Value
+    value: &'a Value,
 }
 
 impl<'g, 'a> Resolver<'g, 'a> {
@@ -21,7 +24,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
         let context_results: Vec<ScopedValue> =
             self.results.iter()
             .map(|value|
-                ScopedValue { globals: self.globals, value: &value})
+                ScopedValue { scope: self.scope.clone(), globals: self.globals, value: &value})
             .collect();
         context_results
     }
@@ -61,7 +64,9 @@ impl<'a> Serialize for ScopedValue<'a> {
         state.serialize_field("line", &line)?;
 
         match &self.value.variant {
-            Numeric { number, .. } => state.serialize_field("number", number),
+            Numeric { number, .. } => {
+                state.serialize_field("number", &NumberContext{ number: &number, scope: self.scope.clone()})
+            },
             Date { date } => state.serialize_field("date", date),
             Duration { duration } => state.serialize_field("duration", duration),
             Comment  => state.serialize_field("comment", &source.text[self.value.stmt_range.start..self.value.stmt_range.end]),
@@ -70,7 +75,7 @@ impl<'a> Serialize for ScopedValue<'a> {
                 state.serialize_field("function", &function_name)
             },
             List { values }=> {
-                let scoped_values: Vec<ScopedValue> = values.iter().map(|v| ScopedValue { globals: &self.globals, value: &v }).collect();
+                let scoped_values: Vec<ScopedValue> = values.iter().map(|v| ScopedValue { scope: self.scope.clone(), globals: &self.globals, value: &v }).collect();
                 state.serialize_field("list", &scoped_values)
             },
             Last => {
@@ -93,23 +98,29 @@ fn reduce_precision(n: f64, prec: f64) -> f64 {
     (n*prec).round()/prec
 }
 
-impl Serialize for Number {
+struct NumberContext<'n> {
+    number: &'n Number,
+    scope: Rc<RefCell<Scope>>,
+}
+
+impl<'n> Serialize for NumberContext<'n> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
         let mut state = serializer.serialize_struct("number", 5)?;
 
-        state.serialize_field("sig", &self.significand)?;
-        state.serialize_field("exp", &self.exponent)?;
-        state.serialize_field("u", &self.unit)?;
-        state.serialize_field("fmt", &self.fmt)?;
-        let reduced_precision = reduce_precision(self.to_double(), 100000.0);
-        let fmtd = match &self.fmt {
+        state.serialize_field("sig", &self.number.significand)?;
+        state.serialize_field("exp", &self.number.exponent)?;
+        state.serialize_field("u", &self.number.unit)?;
+        state.serialize_field("fmt", &self.number.fmt)?;
+        let precision = 10.0_f64.powf(self.scope.borrow().precision as f64); //todo: expensive: put it in scope.
+        let reduced_precision = reduce_precision(self.number.to_double(), precision);
+        let fmtd = match &self.number.fmt {
             NumberFormat::Dec => format!("{}", reduced_precision),
             NumberFormat::Hex => format!("0x{:0X}", reduced_precision as u64),
             NumberFormat::Oct => format!("0o{:0o}", reduced_precision as u64),
             NumberFormat::Bin => format!("0b{:0b}", reduced_precision as u64),
             NumberFormat::Exp => {
-                let norm = self.normalize_number();
-                format!("{0}e{1}", reduce_precision(norm.significand, 100000.0), norm.exponent)
+                let norm = self.number.normalize_number();
+                format!("{0}e{1}", reduce_precision(norm.significand, precision), norm.exponent)
             },
         };
         state.serialize_field("fmtd", &fmtd)?;

@@ -111,11 +111,13 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                     self.add_error(ErrorId::Expected, eq.range.clone(), "=");
                     return None;
                 }
-                let int = self.tok.next();
+                let eq = self.tok.next();
+                let int = self.tok.peek();
                 if int.kind != TokenType::Number {
                     self.add_error(ErrorId::Expected, int.range.clone(), "an integer"); //TODO: make arg1 a []
                     return None;
                 }
+                let int = self.tok.next();
                 let number = self.tok.get_number();//TODO: document get_number: it get's the numericc value for the last next_token() ?
                 Precision {number}
             },

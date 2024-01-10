@@ -1,2 +1,2 @@
-#define ymd
-'1-2-2022'
+#define precision=5
+1.23456789
