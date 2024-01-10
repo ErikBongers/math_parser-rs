@@ -250,18 +250,29 @@ impl HasRange for CodeBlock {
     }
 }
 
+pub struct Define {
+    pub define_type: DefineType,
+    pub range:Range,
+}
+
+pub enum DefineType {
+    Dmy,
+    Ymd,
+    Mdy,
+    Precision { number: Number },
+}
 
 #[derive(CastAny, Node)]
 pub struct DefineExpr {
     pub node_data: NodeData,
     pub def_undef: Token,
-    pub tokens: Vec<Token>,
+    pub defines: Vec<Define>,
 }
 
 impl HasRange for DefineExpr {
     fn get_range(&self) -> Range {
-        &self.def_undef.range + &self.tokens.iter()
-            .map(|token| &token.range)
+        &self.def_undef.range + &self.defines.iter()
+            .map(|define| &define.range)
             .fold(self.def_undef.range.clone(), |sum, range| &sum + range)
     }
 }

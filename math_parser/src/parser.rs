@@ -1,13 +1,16 @@
 use std::any::{TypeId};
 use std::ops::{Deref, DerefMut};
 use crate::errors::{Error, ErrorId};
-use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, DefineExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement, UnaryExpr, UnitExpr};
+use crate::parser::date::date::DateFormat;
+use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, Define, DefineExpr, DefineType, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement, UnaryExpr, UnitExpr};
+use crate::parser::nodes::DefineType::Precision;
 use crate::resolver::globals::Globals;
 use crate::tokenizer::cursor::Range;
 use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
 use crate::tokenizer::token_type::TokenType;
 use crate::resolver::scope::Scope;
 use crate::resolver::unit::Unit;
+use crate::resolver::value::Value;
 use crate::tokenizer::Token;
 use crate::tokenizer::token_type::TokenType::{Div};
 
@@ -62,7 +65,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         if let Some(stmt) = self.parse_echo_comment() {
             return stmt;
         }
-        if let Some(stmt) = self.parse_define() {
+        if let Some(stmt) = self.parse_defines() {
             return stmt;
         }
         if let Some(stmt) = self.parse_function_def() {
@@ -71,26 +74,57 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         self.parse_expr_statement()
     }
 
-    fn parse_define(&mut self) -> Option<Statement> {
+    fn parse_defines(&mut self) -> Option<Statement> {
         if self.tok.peek().kind == TokenType::Define || self.tok.peek().kind == TokenType::Undef {
             let t = self.tok.next();
             self.tok.set_ln_is_token(true);
-            let mut tokens: Vec<Token> = Vec::new();
+            let mut defines: Vec<Define> = Vec::new();
             while self.tok.peek().kind != TokenType::Eot {
                 if self.tok.peek().kind == TokenType::Newline || self.tok.peek().kind == TokenType::SemiColon {
                     self.tok.next();
                     break;
                 }
-                tokens.push(self.tok.next());
+                if let Some(define) = self.parse_define() { //parse_define always eats at least one token, so no risk of deadloop.
+                    defines.push(define);
+                }
             }
             self.tok.set_ln_is_token(false);
             return Some(Statement { node_data: NodeData::new(), node: Box::new(DefineExpr {
                 node_data: NodeData::new(),
                 def_undef: t,
-                tokens,
+                defines,
             }) })
         }
         None
+    }
+
+    fn parse_define(&mut self) -> Option<Define>{
+        let token = self.tok.next();
+        let txt = self.globals.get_text(&token.range); //assuming TokenType::Id, not checking as the next match will cover it.
+        let define_type = match txt {
+            "ymd" => DefineType::Ymd,
+            "dmy" => DefineType::Dmy,
+            "mdy" => DefineType::Mdy,
+            "precision" => {
+                let eq = self.tok.peek();
+                if eq.kind != TokenType::Eq {
+                    self.add_error(ErrorId::Expected, eq.range.clone(), "=");
+                    return None;
+                }
+                let int = self.tok.next();
+                if int.kind != TokenType::Number {
+                    self.add_error(ErrorId::Expected, int.range.clone(), "an integer"); //TODO: make arg1 a []
+                    return None;
+                }
+                let number = self.tok.get_number();//TODO: document get_number: it get's the numericc value for the last next_token() ?
+                Precision {number}
+            },
+            _ => { //todo: add defines.
+                //TODO: add error for unknown define option.
+                return None;
+            }
+        };
+    Some(Define{ define_type, range: token.range.clone()}) //TODO: is token.range wide enough?
     }
 
     fn parse_echo_comment(&mut self) -> Option<Statement> {

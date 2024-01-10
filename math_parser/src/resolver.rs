@@ -94,13 +94,16 @@ impl<'g, 'a> Resolver<'g, 'a> {
 
     fn resolve_define_expr(&mut self, expr: &Box<dyn Node>) {
         let define_expr = expr.as_any().downcast_ref::<DefineExpr>().unwrap();
-        for token in &define_expr.tokens {
-            let txt = self.globals.get_text(&token.range);
-            match txt {
-                "ymd" => self.scope.borrow_mut().date_format = DateFormat::YMD,
-                "dmy" => self.scope.borrow_mut().date_format = DateFormat::DMY,
-                "mdy" => self.scope.borrow_mut().date_format = DateFormat::MDY,
-                _ => () //todo: add defines.
+        for define in &define_expr.defines  {
+            use crate::parser::nodes::DefineType::*;
+            match &define.define_type {
+                Ymd => self.scope.borrow_mut().date_format = DateFormat::YMD,
+                Dmy => self.scope.borrow_mut().date_format = DateFormat::DMY,
+                Mdy => self.scope.borrow_mut().date_format = DateFormat::MDY,
+                Precision {ref number} => {
+                    //TODO: test if integer!
+                    self.scope.borrow_mut().precision = number.to_double() as i8;
+                }
             }
         }
     }

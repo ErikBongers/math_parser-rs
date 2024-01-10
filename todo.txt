@@ -1,9 +1,5 @@
 * #define
-  > already implemented partially:
-    > is_whitespace() should look at is_nl_token!
-    > resolve_define()
-  > extra defines:
-    - date format
+ > extra defines:
     - output precision
 
 * Allow a block in the middle of an expression?

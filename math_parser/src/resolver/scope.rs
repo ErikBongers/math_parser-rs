@@ -16,6 +16,7 @@ pub struct Scope {
     pub local_function_defs:  HashMap<String, CustomFunctionDef>,
     pub units_view: UnitsView,
     pub date_format: DateFormat,
+    pub precision: i8,
 }
 
 impl Scope {
@@ -28,6 +29,7 @@ impl Scope {
             local_function_defs: HashMap::new(),
             units_view: globals.units_view.as_ref().unwrap().clone(),
             date_format: DateFormat::YMD,
+            precision: 5,
         }
     }
 
@@ -39,6 +41,7 @@ impl Scope {
             function_view: scope.function_view.clone(),
             units_view: scope.units_view.clone(),
             date_format: scope.date_format,
+            precision: scope.precision,
 
             //don't copy variables.
             local_function_defs: HashMap::new(),
