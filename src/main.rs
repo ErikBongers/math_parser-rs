@@ -21,13 +21,21 @@ fn test_resolver() {
 
 #[cfg(test)]
 mod test {
-    use math_parser::test::{test_compiles, test_result, test_error};
+    use math_parser::test::{test_compiles, test_result, test_error, test_date};
     use math_parser::errors::ErrorId;
     #[test]
     fn test_numbers (){
         test_result("123.456", 123.456, "");
         test_result("0.123", 0.123, "");
         test_result("-1", -1.0, "");
+    }
+
+    #[test]
+    fn test_dates (){
+        test_date("#define dmy \n date(1,2,2022)", 1, 2, 2022);
+        test_error("#define ymd \n date(1,2,2022)", ErrorId::InvDate);
+        test_date("#define dmy \n '1-2-2022'", 1, 2, 2022);
+        test_error("#define ymd \n '1-2-2022'", ErrorId::InvDateStr);
     }
 
     #[test]

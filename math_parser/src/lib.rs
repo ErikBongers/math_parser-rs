@@ -89,6 +89,17 @@ pub mod test {
         assert_eq!(number.unit.id, unit);
     }
 
+    pub fn test_date(text: &str, day: i8, month: i32, year: i32) {
+        let (results, _errors) = get_results(text);
+        let value = results.last().expect("No result found.");
+        let Variant::Date { date, .. } = &value.variant else {
+            panic!("Result isn't a date.");
+        };
+        assert_eq!(date.day, day);
+        assert_eq!(date.month as i32, month);
+        assert_eq!(date.year, year);
+    }
+
     pub fn test_error(text: &str, error_id: ErrorId) {
         let (_results, errors) = get_results(text);
         // let cnt = errors.len();
