@@ -1,10 +1,9 @@
-* add build number
-  > only update version no if exe is more recent that previous one.
-    - compare version.no with exe date.
-    - if exe more recent, update version.
-  > https://www.keiruaprod.fr/blog/2020/05/12/include-version-in-rust-binary.html
-
-* filesync backup: does this exclude the target folders?
+* multiple files.
+  > expose Sources[] from rust to JS.
+  > JS can then call the wasm functions to add sources or compile a source.
+  > Each of these must pass the ...
+  > Actually...the JS thing works as a class, with an implicit self pointer.
+  > Change the API to return a global object on which you can call add_source() and parse_source().
 
 * invalidate reference in PeekingTokenizer?
   : let first = tok.peek();
@@ -31,9 +30,6 @@
   > See formatted_date_parser.
 
 * exponents
-
-* blocks
-  > a block should have it's own scope...but the results and errors should be added to the main list, contrary to custom functions.
 
 * WASM dealing with strings and persistent storage:
   1. No persisten state, but pass all strings as byte arrays (see js_sys)

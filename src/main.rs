@@ -16,7 +16,6 @@ fn test_resolver() {
     println!("{0}", text);
     let json_string = parse_and_print_nodes(text);
     println!("{}", json_string);
-    println!("{}",get_math_version());
 }
 
 
