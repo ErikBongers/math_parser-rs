@@ -29,7 +29,10 @@ pub fn upload_source(text: String) -> i32 {
 }
 
 pub fn get_math_version() -> String {
-    "0.0.0".to_string()
+    let major = env!("MATH_MAJOR");
+    let minor = env!("MATH_MINOR");
+    let build = env!("MATH_BUILD");
+    format!("{major}.{minor}.{build}")
 }
 
 fn _parse_and_print_nodes (text: String, print: bool) -> String {

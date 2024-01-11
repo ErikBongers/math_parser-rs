@@ -1,5 +1,5 @@
 use std::fs;
-use math_parser::parse_and_print_nodes;
+use math_parser::{get_math_version, parse_and_print_nodes};
 
 fn main() {
 test_resolver();
@@ -16,6 +16,7 @@ fn test_resolver() {
     println!("{0}", text);
     let json_string = parse_and_print_nodes(text);
     println!("{}", json_string);
+    println!("{}",get_math_version());
 }
 
 

@@ -1,3 +1,11 @@
+* add build number
+  > only update version no if exe is more recent that previous one.
+    - compare version.no with exe date.
+    - if exe more recent, update version.
+  > https://www.keiruaprod.fr/blog/2020/05/12/include-version-in-rust-binary.html
+
+* filesync backup: does this exclude the target folders?
+
 * invalidate reference in PeekingTokenizer?
   : let first = tok.peek();
     tok.next();
