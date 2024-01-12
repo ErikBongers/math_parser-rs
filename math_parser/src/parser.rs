@@ -427,7 +427,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                     self.tok.next();
                     // postfix.postfix_id already set!
                 } else {
-                    postfix.postfix_id = Token { kind: TokenType::ClearUnit, range : Range { start: 0, end: 0, source_index: 0},
+                    postfix.postfix_id = Token { kind: TokenType::ClearUnit, range : Range { start: 0, end: 0, source_index: self.tok.source_index()},
                         #[cfg(debug_assertions)]
                         text: "".to_string()
                     } //TODO: since range can be empty: use Option?

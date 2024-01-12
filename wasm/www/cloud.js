@@ -1,5 +1,11 @@
 import * as mp from "./parser.js"
-import init, { parse_direct as parseDirect, parse as parseMath, upload_source as uploadSource, get_math_version as getMathVersion } from './pack/wasm.js';
+import init, {
+    parse_direct as parseDirect,
+    parse as parseMath,
+    upload_source as uploadSource,
+    get_math_version as getMathVersion,
+    MathParser
+} from './pack/wasm.js';
 
 let userSession = {};
 
@@ -119,8 +125,11 @@ export function onScriptSwitch() {
     }
 }
 
+let parserInstance = {}
+
 export function startUp() {
-    window.document.title = "Math Parser " + getMathVersion();
+    parserInstance = MathParser.new();
+    window.document.title = "Math Parser " + MathParser.get_math_version(); //getMathVersion();
     mp.sources[0] = "start";
     mp.sources[1] = "script1";
 
@@ -157,10 +166,8 @@ function parseAfterChange(scriptId) {
             localStorage.savedStartCode = "";
         uploadSource("start", localStorage.savedStartCode);
         let theText = cm.editor.state.doc.toString();
-        sourceIndex = uploadSource(scriptId, theText);
-        sourceIndex = 0;//TODO: remove this line when source_index is implemented.
-        // result = parseMath("start", scriptId);
-        result = parseDirect(theText);
+        sourceIndex = parserInstance.add_source(scriptId, theText);
+        result = parserInstance.parse(scriptId);
     } else {
         sourceIndex = uploadSource(scriptId, cm.editor.state.doc.toString());
         result = parseMath("", scriptId);

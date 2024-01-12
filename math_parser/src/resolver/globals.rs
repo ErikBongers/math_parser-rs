@@ -8,7 +8,7 @@ use crate::tokenizer::sources::Source;
 
 pub struct Globals {
     pub operators: HashMap<u32, fn(&Globals, &Vec<Value>, &Range)-> Value>,
-    pub sources: Vec<Source>,
+    pub sources: Vec<Source>, //TODO: try to make private. Serializer may fail.
     pub unit_defs: HashMap<String, UnitDef>,
     pub global_function_defs:  HashMap<String, GlobalFunctionDef>,
     pub constants: HashMap<&'static str, Value>,
@@ -29,6 +29,25 @@ impl<'a> Globals {
         load_operators(&mut globals);
         globals.fill_constants();
         globals
+    }
+
+    pub fn set_source(&mut self, name: String, text: String) -> i32 {
+        if let Some(source) = self.sources.iter_mut().find(|s| s.name == name) {
+            source.text = text;
+            source.index as i32
+        } else  {
+            self.sources.push(Source::new(name, text));
+            let index = self.sources.len() - 1;
+            if let Some(last) = self.sources.last_mut() {
+                last.index = index;
+            }
+            index as i32
+        }
+    }
+
+    pub fn get_source_by_name(&self, name: &str) -> Option<&Source> {
+        self.sources.iter()
+            .find(|source| source.name == name)
     }
 
     pub fn get_operator(&self, op_id: u32) -> Option<&fn(&Globals, &Vec<Value>, &Range)-> Value> {

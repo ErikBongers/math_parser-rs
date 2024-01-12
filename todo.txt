@@ -1,9 +1,9 @@
+* Clean up cloud.js, to get rid of the old api functions.
+
+* document all unwraps.
+  > just a comment to explain why unwrap() is safe.
+
 * multiple files.
-  > expose Sources[] from rust to JS.
-  > JS can then call the wasm functions to add sources or compile a source.
-  > Each of these must pass the ...
-  > Actually...the JS thing works as a class, with an implicit self pointer.
-  > Change the API to return a global object on which you can call add_source() and parse_source().
 
 * invalidate reference in PeekingTokenizer?
   : let first = tok.peek();

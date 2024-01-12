@@ -8,15 +8,17 @@ pub struct MultiByteChar {
     pub bytes: u8,
 }
 pub struct Source {
+    pub name: String,
+    pub index: usize,
     pub text: String,
     pub lines: Vec<usize>,
     pub multi_byte_chars: Vec<MultiByteChar>,
 }
 impl Source {
-    pub fn new(text: String) -> Self {
-        let mut file_index = Source {text, lines: vec![], multi_byte_chars: vec![]};
-        file_index.index_lines_and_multibytechars();
-        file_index
+    pub fn new(name: String, text: String) -> Self {
+        let mut source = Source {name, text, index: 0, lines: vec![], multi_byte_chars: vec![]};
+        source.index_lines_and_multibytechars();
+        source
     }
     fn index_lines_and_multibytechars(&mut self) {
         let scan_len = self.text.len();

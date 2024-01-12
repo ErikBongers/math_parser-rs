@@ -7,10 +7,11 @@ use crate::resolver::add_error;
 use crate::resolver::globals::Globals;
 use crate::resolver::unit::{Unit, UnitsView};
 use crate::resolver::value::{NumberFormat, Value};
+use crate::tokenizer::sources::Source;
 
 #[derive(Clone)]
 pub struct Cursor<'a> {
-    pub text: &'a str,
+    pub source: &'a Source,
     pub chars: Chars<'a>,
     pub len_text: usize,
     pub newline_found: bool,
@@ -21,7 +22,7 @@ pub struct Cursor<'a> {
 
 #[derive(Debug, Clone, Serialize)] //TODO: make Copy instead of Clone?
 pub struct Range {
-    pub source_index: u8,
+    pub source_index: u8, //TODO: try to use a ref, as an index is checked every time at runtime.
     pub start :usize,
     pub end : usize
 }
@@ -158,11 +159,11 @@ pub(crate) const EOF_CHAR: char = '\0';
 
 // https://doc.rust-lang.org/beta/nightly-rustc/rustc_lexer/index.html
 impl<'a> Cursor<'a> {
-    pub fn new (text: &str) -> Cursor {
+    pub fn new (source: &Source) -> Cursor {
         Cursor {
-            text,
-            chars: text.chars(),
-            len_text: text.len(),
+            source,
+            chars: source.text.chars(),
+            len_text: source.text.len(),
             newline_found: true, //first line is also a new line!
             number: Number::new(0.0, 0),
             is_beginning_of_text: true,
@@ -411,21 +412,25 @@ pub fn is_id_continue(c: char) -> bool {
 #[cfg(test)]
 mod tests {
     use crate::tokenizer::cursor::Cursor;
+    use crate::tokenizer::sources::Source;
 
     #[test]
     fn test_integer() {
         let text = "12345";
-        let mut cur = Cursor::new(text);
+        let source = Source { name: "N/A".to_string(), index: 0, text: text.to_string(), lines: vec![], multi_byte_chars: vec![], };
+        let mut cur = Cursor::new(&source);
         let i = cur.parse_integer();
         assert_eq!(i, 12345);
 
         let text = "-12345";
-        let mut cur = Cursor::new(text);
+        let source = Source { name: "N/A".to_string(), index: 0, text: text.to_string(), lines: vec![], multi_byte_chars: vec![], };
+        let mut cur = Cursor::new(&source);
         let i = cur.parse_integer();
         assert_eq!(i, -12345);
 
         let text = "12_345";
-        let mut cur = Cursor::new(text);
+        let source = Source { name: "N/A".to_string(), index: 0, text: text.to_string(), lines: vec![], multi_byte_chars: vec![], };
+        let mut cur = Cursor::new(&source);
         let i = cur.parse_integer();
         assert_eq!(i, 12345);
     }
@@ -441,7 +446,8 @@ mod tests {
     }
 
     fn test_number(text: &str, sig: f64, exp: i32) {
-        let mut cur = Cursor::new(text);
+        let source = Source { name: "N/A".to_string(), index: 0, text: text.to_string(), lines: vec![], multi_byte_chars: vec![], };
+        let mut cur = Cursor::new(&source);
         let c = cur.next().unwrap();
         let n = cur.parse_decimal(c);
         assert_eq!(n.significand, sig);
@@ -451,7 +457,8 @@ mod tests {
     #[test]
     fn test_newline() {
         let text = "first word\nsecond word and\n  third line \n  \n  fifth?\n";
-        let mut cur = Cursor::new(text);
+        let source = Source { name: "N/A".to_string(), index: 0, text: text.to_string(), lines: vec![], multi_byte_chars: vec![], };
+        let mut cur = Cursor::new(&source);
         cur.next_token();
         assert!(cur.newline_found);
         cur.next_token();

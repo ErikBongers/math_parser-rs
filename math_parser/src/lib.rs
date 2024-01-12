@@ -15,6 +15,55 @@ pub mod errors; //ErrorId is public
 mod functions;
 
 
+pub struct Api {
+    globals: Globals,
+}
+
+impl Api {
+    pub fn new() -> Api {
+        Api {
+            globals: Globals::new(),
+        }
+    }
+
+    pub fn set_source(&mut self, name: String, text: String) -> i32 {
+        self.globals.set_source(name, text)
+    }
+
+    pub fn parse(&mut self, source_name: String) -> String {
+        let Some(source) = self.globals.get_source_by_name(&source_name) else {
+            panic!("TODO: return source file not found as an error -> json");
+        };
+        let mut tok = PeekingTokenizer::new(source);
+        let mut errors = Vec::<Error>::new();
+        let scope = RefCell::new(Scope::new(&self.globals));
+        let code_block = CodeBlock::new(scope);
+
+        //parse
+        let mut parser = Parser::new(&self.globals, &mut tok, &mut errors, code_block);
+        parser.parse(false);
+        let code_block: CodeBlock = parser.into();
+
+        //resolve
+        let mut resolver = Resolver {
+            scope: code_block.scope.clone(),
+            results: Vec::new(),
+            errors: &mut errors,
+            globals: &self.globals,
+        };
+        resolver.resolve(&code_block.statements);
+
+        serde_json::to_string_pretty(&resolver).unwrap()
+    }
+
+    pub fn get_math_version() -> String {
+        let major = env!("MATH_MAJOR");
+        let minor = env!("MATH_MINOR");
+        let build = env!("MATH_BUILD");
+        format!("{major}.{minor}.{build}")
+    }
+}
+
 pub fn parse_and_print_nodes (text: String) -> String {
     _parse_and_print_nodes(text, true)
 }
@@ -36,10 +85,10 @@ pub fn get_math_version() -> String {
 }
 
 fn _parse_and_print_nodes (text: String, print: bool) -> String {
-    let source = Source::new(text);
+    let source = Source::new("todo".to_string(), text);
     let mut globals = Globals::new();
     globals.sources.push(source);//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
-    let mut tok = PeekingTokenizer::new(globals.sources[0].text.as_str());
+    let mut tok = PeekingTokenizer::new(&globals.sources[0]);
     let mut errors = Vec::<Error>::new();
     let scope = RefCell::new(Scope::new(&globals));
     let code_block = CodeBlock::new(scope);
@@ -58,7 +107,7 @@ fn _parse_and_print_nodes (text: String, print: bool) -> String {
     let mut resolver = Resolver {
         scope: code_block.scope.clone(),
         results: Vec::new(),
-        errors: &mut errors, //TODO: make reference
+        errors: &mut errors,
         globals: &globals,
     };
     resolver.resolve(&code_block.statements);
@@ -112,10 +161,10 @@ pub mod test {
     }
 
     pub fn get_results(text: &str) -> (Vec<Value>, Vec<Error>) {
-        let source = Source::new(text.to_string());
-        let mut tok = PeekingTokenizer::new(text);
+        let source = Source::new("TODO: name".to_string(), text.to_string());
         let mut globals = Globals::new();
         globals.sources.push(source);//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
+        let mut tok = PeekingTokenizer::new(globals.sources.last().unwrap()); //unwrap ok: we just pushed a source.
         let scope = Scope::new(&globals);
         let code_block = CodeBlock::new(RefCell::new(scope));
         let mut errors: Vec<Error> = Vec::new();

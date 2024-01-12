@@ -24,6 +24,9 @@ impl Token {
 }
 
 impl Cursor<'_> {
+    #[inline]
+    pub fn source_index(&self) -> usize { self.source.index }
+
     pub fn next_token(&mut self) -> Token {
         self.eat_whitespace();
         let mut start_pos = self.get_pos();
@@ -109,7 +112,7 @@ impl Cursor<'_> {
                 self.next();
                 if is_id_start(self.peek()) {
                     self.eat_while(is_id_continue);
-                    let id = &self.text[(start_pos+1)..self.get_pos()];
+                    let id = &self.source.text[(start_pos+1)..self.get_pos()];
                     match id {
                         "define" => Define,
                         "undef" => Undef,
@@ -154,7 +157,7 @@ impl Cursor<'_> {
             },
             c if is_id_start(c) => {
                 self.eat_while(is_id_continue);
-                let id = &self.text[start_pos..self.get_pos()];
+                let id = &self.source.text[start_pos..self.get_pos()];
                 match id {
                     "function" => Function,
                     _ => Id
@@ -163,7 +166,7 @@ impl Cursor<'_> {
 
             _ => Unknown
         };
-        let res = Token::new(token_type, 0, start_pos, self.get_pos(), self.text[start_pos..self.get_pos()].to_string());
+        let res = Token::new(token_type, 0, start_pos, self.get_pos(), self.source.text[start_pos..self.get_pos()].to_string());
         res
     }
 }

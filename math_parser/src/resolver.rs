@@ -405,7 +405,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
         }
 
         let args = vec![expr1, expr2];
-        let range = Range { source_index: 0, start: 0, end: 0};
+        let range = Range { source_index: expr.get_range().source_index, start: 0, end: 0};
 
         let result = (self.globals.get_operator(op_id).unwrap())(&self.globals, &args, &range);
         if expr.is_implicit_mult() {

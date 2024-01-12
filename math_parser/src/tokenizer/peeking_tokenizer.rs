@@ -1,16 +1,17 @@
 use crate::tokenizer::cursor::{Cursor, Number};
+use crate::tokenizer::sources::Source;
 use crate::tokenizer::Token;
 
 #[derive(Clone)]
 pub struct PeekingTokenizer<'a> {
-    pub cur: Cursor<'a>,
+    pub cur: Cursor<'a>, //TODO: private?
     pub prev_cur: Cursor<'a>,
     pub peeked_token: Token,
 }
 
 impl<'a> PeekingTokenizer<'a> {
-    pub fn new(text: &'a str) -> Self {
-        let mut cur =  Cursor::new(text);
+    pub fn new(source: &'a Source) -> Self {
+        let mut cur =  Cursor::new(source);
         let prev_cur = cur.clone();
         let peeked_token = cur.next_token();
         PeekingTokenizer {
@@ -19,6 +20,9 @@ impl<'a> PeekingTokenizer<'a> {
             peeked_token,
         }
     }
+
+    #[inline]
+    pub fn source_index(&self) -> u8 { self.cur.source_index() as u8 }
 
     pub fn peek(&self) -> &Token {
         &self.peeked_token
