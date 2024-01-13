@@ -79,27 +79,6 @@ impl Api {
     }
 }
 
-pub fn parse_and_print_nodes (text: String) -> String {
-    _parse_and_print_nodes(text, true)
-}
-
-pub fn parse(text: String) -> String {
-    _parse_and_print_nodes(text, false)
-}
-
-//TODO
-pub fn upload_source(text: String) -> i32 {
-    12345
-}
-
-pub fn get_math_version() -> String {
-    let major = env!("MATH_MAJOR");
-    let minor = env!("MATH_MINOR");
-    let build = env!("MATH_BUILD");
-    format!("{major}.{minor}.{build}")
-}
-
-
 pub fn parse_2_files(text1: String, text2: String) -> String {
     let mut api = Api::new();
 
@@ -109,35 +88,12 @@ pub fn parse_2_files(text1: String, text2: String) -> String {
     api.parse("source1".to_string(), "source2".to_string())
 }
 
-fn _parse_and_print_nodes (text: String, print: bool) -> String {
-    let source = Source::new("todo".to_string(), text);
-    let mut globals = Globals::new();
-    globals.sources.push(source);//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
-    let mut tok = PeekingTokenizer::new(&globals.sources[0]);
-    let mut errors = Vec::<Error>::new();
-    let scope = RefCell::new(Scope::new(&globals));
-    let code_block = CodeBlock::new(scope);
+pub fn parse_1_file(text1: String) -> String {
+    let mut api = Api::new();
 
-    //parse
-    let mut parser = Parser::new(&globals, &mut tok, &mut errors, code_block);
-    parser.parse(false);
-    let code_block: CodeBlock = parser.into();
-    if print {
-        for stmt in &code_block.statements {
-            print_nodes(&stmt.node, 0, &globals);
-        }
-    }
+    api.set_source("source1".to_string(), text1);
 
-    //resolve
-    let mut resolver = Resolver {
-        scope: code_block.scope.clone(),
-        results: Vec::new(),
-        errors: &mut errors,
-        globals: &globals,
-    };
-    resolver.resolve(&code_block.statements);
-
-    serde_json::to_string_pretty(&resolver).unwrap()
+    api.parse("".to_string(), "source1".to_string())
 }
 
 /// Public api with test functions to use in external tests.

@@ -1,4 +1,4 @@
-import init, { parse } from './pack/wasm.js';
+import init from './pack/wasm.js';
 
 async function run() {
 	await init();

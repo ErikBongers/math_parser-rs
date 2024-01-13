@@ -1,11 +1,5 @@
 import * as mp from "./parser.js"
-import init, {
-    parse_direct as parseDirect,
-    parse as parseMath,
-    upload_source as uploadSource,
-    get_math_version as getMathVersion,
-    MathParser
-} from './pack/wasm.js';
+import { MathParser } from './pack/wasm.js';
 
 let userSession = {};
 

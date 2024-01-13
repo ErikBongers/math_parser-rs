@@ -36,24 +36,3 @@ impl MathParser {
     }
 
 }
-
-#[wasm_bindgen]
-pub fn parse(startscript_id: String, mainscript_id: String) -> String {
-    math_parser::parse("TODO".to_string())
-}
-
-#[wasm_bindgen]
-pub fn parse_direct(text: String) -> String {
-    math_parser::parse(text)
-}
-
-#[wasm_bindgen]
-pub fn upload_source(script_id: String, text: String) -> i32 {
-    math_parser::upload_source(text)
-}
-
-#[wasm_bindgen]
-pub fn get_math_version() -> String {
-    math_parser::get_math_version()
-}
-
