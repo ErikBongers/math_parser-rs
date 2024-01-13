@@ -1,9 +1,11 @@
+* main.rs: add a start and main script and test with 2 scripts
+
 * Clean up cloud.js, to get rid of the old api functions.
+
+* multiple files.
 
 * document all unwraps.
   > just a comment to explain why unwrap() is safe.
-
-* multiple files.
 
 * invalidate reference in PeekingTokenizer?
   : let first = tok.peek();

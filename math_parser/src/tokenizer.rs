@@ -32,7 +32,7 @@ impl Cursor<'_> {
         let mut start_pos = self.get_pos();
         self.is_beginning_of_text = false; // clear this once per next_token instead of once per next(), for performance.
         let first_char = match self.next() {
-            None => return Token::new(Eot, 0, 0, 0, "".to_string()),
+            None => return Token::new(Eot, self.source.index as u8, 0, 0, "".to_string()),
             Some(c) => c
         };
         let token_type = match first_char {
@@ -112,7 +112,7 @@ impl Cursor<'_> {
                 self.next();
                 if is_id_start(self.peek()) {
                     self.eat_while(is_id_continue);
-                    let id = &self.source.text[(start_pos+1)..self.get_pos()];
+                    let id = &self.source.get_text()[(start_pos+1)..self.get_pos()];
                     match id {
                         "define" => Define,
                         "undef" => Undef,
@@ -157,7 +157,7 @@ impl Cursor<'_> {
             },
             c if is_id_start(c) => {
                 self.eat_while(is_id_continue);
-                let id = &self.source.text[start_pos..self.get_pos()];
+                let id = &self.source.get_text()[start_pos..self.get_pos()];
                 match id {
                     "function" => Function,
                     _ => Id
@@ -166,7 +166,7 @@ impl Cursor<'_> {
 
             _ => Unknown
         };
-        let res = Token::new(token_type, 0, start_pos, self.get_pos(), self.source.text[start_pos..self.get_pos()].to_string());
+        let res = Token::new(token_type, self.source.index as u8, start_pos, self.get_pos(), self.source.get_text()[start_pos..self.get_pos()].to_string());
         res
     }
 }

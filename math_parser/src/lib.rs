@@ -30,19 +30,34 @@ impl Api {
         self.globals.set_source(name, text)
     }
 
-    pub fn parse(&mut self, source_name: String) -> String {
-        let Some(source) = self.globals.get_source_by_name(&source_name) else {
-            panic!("TODO: return source file not found as an error -> json");
-        };
-        let mut tok = PeekingTokenizer::new(source);
+    pub fn parse(&mut self, start_script_id: String, main_script_id: String) -> String {
+        //global stuff
         let mut errors = Vec::<Error>::new();
         let scope = RefCell::new(Scope::new(&self.globals));
-        let code_block = CodeBlock::new(scope);
+        let mut code_block = CodeBlock::new(scope);
+
+        //parse start script first?
+        if(start_script_id != "") {
+            let Some(source) = self.globals.get_source_by_name(&start_script_id) else {
+                panic!("TODO: return source file {} not found as an error -> json", start_script_id);
+            };
+            let mut tok = PeekingTokenizer::new(source);
+
+            //parse
+            let mut parser = Parser::new(&self.globals, &mut tok, &mut errors, code_block);
+            parser.parse(false);
+            code_block = parser.into();
+        }
+
+        let Some(source) = self.globals.get_source_by_name(&main_script_id) else {
+            panic!("TODO: return source file {} not found as an error -> json", main_script_id);
+        };
+        let mut tok = PeekingTokenizer::new(source);
 
         //parse
         let mut parser = Parser::new(&self.globals, &mut tok, &mut errors, code_block);
         parser.parse(false);
-        let code_block: CodeBlock = parser.into();
+        code_block = parser.into();
 
         //resolve
         let mut resolver = Resolver {
@@ -82,6 +97,16 @@ pub fn get_math_version() -> String {
     let minor = env!("MATH_MINOR");
     let build = env!("MATH_BUILD");
     format!("{major}.{minor}.{build}")
+}
+
+
+pub fn parse_2_files(text1: String, text2: String) -> String {
+    let mut api = Api::new();
+
+    api.set_source("source1".to_string(), text1);
+    api.set_source("source2".to_string(), text2);
+
+    api.parse("source1".to_string(), "source2".to_string())
 }
 
 fn _parse_and_print_nodes (text: String, print: bool) -> String {

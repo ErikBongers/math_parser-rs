@@ -35,12 +35,13 @@ impl<'g, 'a, 't> Into<CodeBlock> for Parser<'g, 'a, 't> {
 
 impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     pub fn new (globals: &'g Globals, tok: &'a mut PeekingTokenizer<'t>, errors: &'a mut Vec<Error>, code_block: CodeBlock) -> Self {
+        let source_index =  tok.source_index();
         Parser {
             globals,
             tok,
             errors,
             code_block,
-            statement_start: Range { start: 0, end: 0, source_index: 0}
+            statement_start: Range { start: 0, end: 0, source_index }
         }
     }
 
@@ -281,7 +282,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 })
             },
             EqUnit => {
-                let unit_token = if self.tok.peek().kind == TokenType::Id { //assume id = a unit
+                let id_token = if self.tok.peek().kind == TokenType::Id { //assume id is a variable with a unit we'd like to apply.
                     self.tok.next()
                 } else {
                     Token {
@@ -294,7 +295,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 Box::new(PostfixExpr {
                     node_data: NodeData::new(),
                     node: Box::new(id_expr),
-                    postfix_id: unit_token,
+                    postfix_id: id_token,
                 })
             },
             _ => unreachable!("expected a Eq operator.")

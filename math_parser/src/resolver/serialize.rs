@@ -52,7 +52,7 @@ impl<'a> Serialize for ScopedValue<'a> {
         let mut state = serializer.serialize_struct("Value", 5)?;
 
         if let Some(id) = &self.value.id {
-            state.serialize_field("id", &self.globals.sources[id.source_index as usize].text[id.start..id.end])?;
+            state.serialize_field("id", &self.globals.sources[id.source_index as usize].get_text()[id.start..id.end])?;
         } else {
             state.serialize_field("id", "_")?; //TODO: replace with None? This will be output as `null` or better, DON'T output id -> shorter JSON
         }
@@ -69,9 +69,9 @@ impl<'a> Serialize for ScopedValue<'a> {
             },
             Date { date } => state.serialize_field("date", date),
             Duration { duration } => state.serialize_field("duration", duration),
-            Comment  => state.serialize_field("comment", &source.text[self.value.stmt_range.start..self.value.stmt_range.end]),
+            Comment  => state.serialize_field("comment", &source.get_text()[self.value.stmt_range.start..self.value.stmt_range.end]),
             FunctionDef => {
-                let function_name =  source.text[self.value.stmt_range.start..self.value.stmt_range.end].to_string();
+                let function_name =  source.get_text()[self.value.stmt_range.start..self.value.stmt_range.end].to_string();
                 state.serialize_field("function", &function_name)
             },
             List { values }=> {

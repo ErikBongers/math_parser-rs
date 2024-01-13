@@ -162,8 +162,8 @@ impl<'a> Cursor<'a> {
     pub fn new (source: &Source) -> Cursor {
         Cursor {
             source,
-            chars: source.text.chars(),
-            len_text: source.text.len(),
+            chars: source.get_text().chars(),
+            len_text: source.get_text().len(),
             newline_found: true, //first line is also a new line!
             number: Number::new(0.0, 0),
             is_beginning_of_text: true,

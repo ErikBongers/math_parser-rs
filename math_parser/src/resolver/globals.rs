@@ -33,7 +33,7 @@ impl<'a> Globals {
 
     pub fn set_source(&mut self, name: String, text: String) -> i32 {
         if let Some(source) = self.sources.iter_mut().find(|s| s.name == name) {
-            source.text = text;
+            source.set_text(text);
             source.index as i32
         } else  {
             self.sources.push(Source::new(name, text));
@@ -59,7 +59,7 @@ impl<'a> Globals {
     }
 
     pub fn get_text(&self, range: &Range) -> &str {
-        &self.sources[range.source_index as usize].text[range.start..range.end]
+        &self.sources[range.source_index as usize].get_text()[range.start..range.end]
     }
     
     fn fill_constants(&mut self) {

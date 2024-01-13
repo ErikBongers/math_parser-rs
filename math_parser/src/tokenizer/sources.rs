@@ -10,7 +10,7 @@ pub struct MultiByteChar {
 pub struct Source {
     pub name: String,
     pub index: usize,
-    pub text: String,
+    text: String,
     pub lines: Vec<usize>,
     pub multi_byte_chars: Vec<MultiByteChar>,
 }
@@ -20,7 +20,21 @@ impl Source {
         source.index_lines_and_multibytechars();
         source
     }
+
+    pub fn set_text(&mut self, text: String) {
+        self.text = text;
+        self.index_lines_and_multibytechars();
+    }
+
+    #[inline]
+    pub fn get_text(&self) -> &str {
+        &self.text
+    }
+
     fn index_lines_and_multibytechars(&mut self) {
+        self.lines.clear();
+        self.multi_byte_chars.clear();
+
         let scan_len = self.text.len();
         let mut i = 0;
         let src_bytes = self.text.as_bytes();
@@ -49,6 +63,7 @@ impl Source {
             i += char_len;
         }
     }
+
     pub fn bytepos_to_charpos(&self, bpos: usize) -> usize {
         // The number of extra bytes due to multibyte chars in the `SourceFile`.
         let mut total_extra_bytes = 0;

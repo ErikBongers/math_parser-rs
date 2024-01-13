@@ -1,12 +1,29 @@
 use std::fs;
-use math_parser::{get_math_version, parse_and_print_nodes};
+use math_parser::{Api, get_math_version, parse_2_files, parse_and_print_nodes};
 
 fn main() {
-test_resolver();
+// test_resolver();
+    let file_path = r"data/source1.txt";
+    let file_path2 = r"data/source3.txt";
+    let result = fs::read_to_string(file_path);
+    let Ok(text1) = result
+        else {
+            println!("File1 ni gevonne...");
+            return;
+        };
+    let result = fs::read_to_string(file_path2);
+    let Ok(text2) = result
+        else {
+            println!("File2 ni gevonne...");
+            return;
+        };
+    println!("{}", parse_2_files(text1, text2));
 }
 
 fn test_resolver() {
     let file_path = r"data/source1.txt";
+    let file_path2 = r"data/source3.txt";
+
     let result = fs::read_to_string(file_path);
     let Ok(text) = result
         else {
@@ -16,6 +33,8 @@ fn test_resolver() {
     println!("{0}", text);
     let json_string = parse_and_print_nodes(text);
     println!("{}", json_string);
+
+
 }
 
 

@@ -30,21 +30,28 @@ export function onSignedIn(googleUserToken) {
         });
 }
 
-async function promptAndUseServerFile(scriptId) {
-    if (!userSession)
-        return;
-    if (!userSession.sessionId)
-        return;
-    let cloudText = await downloadScript(scriptId);
-    if (cloudText == undefined)
-        return;
+async function promptServerFile(scriptId) {
     let localText = getLocalScript(scriptId);
+    if (!userSession)
+        return localText;
+    if (!userSession.sessionId)
+        return localText;
+    let cloudText = await downloadScript(scriptId);
+    if (cloudText === undefined)
+        return localText;
     if (cloudText === localText)
-        return;
+        return localText;
     if (confirm("Use server file : " + scriptId + "?")) {
-        let transaction = cm.editor.state.update({ changes: { from: 0, to: cm.editor.state.doc.length, insert: cloudText} });
-        cm.editor.update([transaction]);
+        return cloudText;
         }
+    return localText;
+}
+
+function promptAndUseServerFile(scriptId) {
+    promptServerFile(scriptId).then( text => {
+        let transaction = cm.editor.state.update({ changes: { from: 0, to: cm.editor.state.doc.length, insert: text} });
+        cm.editor.update([transaction]);
+    });
 }
 
 function uploadScript(scriptId, text) {
@@ -164,13 +171,12 @@ function parseAfterChange(scriptId) {
     if (scriptId !== "start") {
         if (!localStorage.savedStartCode)
             localStorage.savedStartCode = "";
-        uploadSource("start", localStorage.savedStartCode);
-        let theText = cm.editor.state.doc.toString();
-        sourceIndex = parserInstance.add_source(scriptId, theText);
-        result = parserInstance.parse(scriptId);
+        parserInstance.add_source("start", localStorage.savedStartCode);
+        sourceIndex = parserInstance.add_source(scriptId, cm.editor.state.doc.toString());//TODO: move this line up and de-duplicate it
+        result = parserInstance.parse("start", scriptId);
     } else {
-        sourceIndex = uploadSource(scriptId, cm.editor.state.doc.toString());
-        result = parseMath("", scriptId);
+        sourceIndex = parserInstance.add_source(scriptId, cm.editor.state.doc.toString());
+        result = parserInstance.parse("", scriptId);
     }
     mp.outputResult(result, sourceIndex);
 }
