@@ -1,3 +1,22 @@
+* #define
+ > extra defines: test them all!
+   > short/long date units
+   > test units_views
+   > function_views (probably not used yet)
+   > decimal dot
+
+* #undef
+
+* should def/undef be copied to scope?
+  > a function should compile, regardless of what the caller's scope is
+
+* copy tests from c++
+
+* aggregate functions (sum,...) should return result in the 1st args units. This is more intuitive.
+
+* google login: failes more than not.
+  > order of scripts?
+
 * document all unwraps.
   > just a comment to explain why unwrap() is safe.
 
@@ -5,9 +24,6 @@
   : let first = tok.peek();
     tok.next();
     first --> references the SECOND token!!
-
-* #define
- > extra defines:
 
 * Allow a block in the middle of an expression?
   > At least an assign expression?

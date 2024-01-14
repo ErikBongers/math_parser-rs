@@ -260,6 +260,16 @@ pub enum DefineType {
     Ymd,
     Mdy,
     Precision { number: Number },
+    DateUnits,
+    ShortDateUnits,
+    Trig,
+    Arithm,
+    Date,
+    All,
+    Electric,
+    Strict,
+    DecimalDot,
+    DecimalComma,
 }
 
 #[derive(CastAny, Node)]

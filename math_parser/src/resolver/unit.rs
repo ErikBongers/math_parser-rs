@@ -49,7 +49,7 @@ pub struct UnitsView {
 }
 
 impl UnitsView {
-    pub fn new(globals: &Globals) -> Self {
+    pub fn new() -> Self {
         UnitsView {
             units: HashSet::new(),
         }
@@ -62,11 +62,18 @@ impl UnitsView {
         None
     }
 
-    pub fn add_class(&mut self, property: &UnitProperty, globals: &Globals)
-    {
-        self.units.extend(globals.unit_defs
+    pub fn add_class(&mut self, property: &UnitProperty, unit_defs: &HashMap<String, UnitDef>) {
+        self.units.extend(unit_defs
             .values()
             .filter(|unit| &unit.property == property )
+            .map(|unit| unit.id.to_string())
+        );
+    }
+
+    pub fn add_tagged(&mut self, tag: &UnitTag, globals: &Globals) {
+        self.units.extend(globals.unit_defs
+            .values()
+            .filter(|unit| unit.tags.contains(&tag) )
             .map(|unit| unit.id.to_string())
         );
     }
@@ -75,18 +82,18 @@ impl UnitsView {
         self.units.retain(|unit| &globals.unit_defs[unit].property != property);
     }
 
-    pub fn remove_tagged(&mut self, globals: &Globals, tag: UnitTag) {
-        self.units.retain(|unit| globals.unit_defs[unit].tags.contains(&tag) == false);
+    pub fn remove_tagged(&mut self, unit_defs: &HashMap<String, UnitDef>, tag: UnitTag) {
+        self.units.retain(|unit| unit_defs[unit].tags.contains(&tag) == false);
     }
 
-    pub fn add_all_classes(&mut self, globals: &Globals) {
-        self.add_class(&UnitProperty::UNDEFINED, globals); //needed to include the empty unit.
-        self.add_class(&UnitProperty::ANGLE, globals);
-        self.add_class(&UnitProperty::LENGTH, globals);
-        self.add_class(&UnitProperty::TEMP, globals);
-        self.add_class(&UnitProperty::MassWeight, globals);
-        self.add_class(&UnitProperty::DURATION, globals);
-        self.add_class(&UnitProperty::VOLUME, globals);
+    pub fn add_all_classes(&mut self, unit_defs: &HashMap<String, UnitDef>) {
+        self.add_class(&UnitProperty::UNDEFINED, unit_defs); //needed to include the empty unit.
+        self.add_class(&UnitProperty::ANGLE, unit_defs);
+        self.add_class(&UnitProperty::LENGTH, unit_defs);
+        self.add_class(&UnitProperty::TEMP, unit_defs);
+        self.add_class(&UnitProperty::MassWeight, unit_defs);
+        self.add_class(&UnitProperty::DURATION, unit_defs);
+        self.add_class(&UnitProperty::VOLUME, unit_defs);
         //TODO: electricity
     }
 }
@@ -138,14 +145,14 @@ pub fn create_unit_defs() -> HashMap<String, UnitDef> {
         ( "lbs".to_string(), UnitDef { id: "lbs".to_string(), si_id: "kg", to_si_factor: 0.45359, property: UnitProperty::MassWeight, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
         ( "oz".to_string(), UnitDef { id: "oz".to_string(), si_id: "kg", to_si_factor: 1.0/ 35.2739619496, property: UnitProperty::MassWeight, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
 
-        ( "seconds".to_string(), UnitDef { id: "seconds".to_string(), si_id: "s", to_si_factor: 1.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::DateTime]}),
-        ( "minutes".to_string(), UnitDef { id: "minutes".to_string(), si_id: "s", to_si_factor: 60.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::DateTime]}),
-        ( "hours".to_string(), UnitDef { id: "hours".to_string(), si_id: "s", to_si_factor: 3600.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::DateTime]}),
-        ( "days".to_string(), UnitDef { id: "days".to_string(), si_id: "s", to_si_factor: 86400.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::DateTime]}),
-        ( "weeks".to_string(), UnitDef { id: "weeks".to_string(), si_id: "s", to_si_factor: (60 * 60 * 24 * 7) as f64, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::DateTime]}),
-        ( "months".to_string(), UnitDef { id: "months".to_string(), si_id: "s", to_si_factor: 2629746.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::DateTime]}),
-        ( "years".to_string(), UnitDef { id: "years".to_string(), si_id: "s", to_si_factor: 31556952.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::DateTime]}),
-        ( "milliseconds".to_string(), UnitDef { id: "milliseconds".to_string(), si_id: "s", to_si_factor: 1.0/1000.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::DateTime]}),
+        ( "seconds".to_string(), UnitDef { id: "seconds".to_string(), si_id: "s", to_si_factor: 1.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::LongDateTime, UnitTag::DateTime]}),
+        ( "minutes".to_string(), UnitDef { id: "minutes".to_string(), si_id: "s", to_si_factor: 60.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::LongDateTime, UnitTag::DateTime]}),
+        ( "hours".to_string(), UnitDef { id: "hours".to_string(), si_id: "s", to_si_factor: 3600.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::LongDateTime, UnitTag::DateTime]}),
+        ( "days".to_string(), UnitDef { id: "days".to_string(), si_id: "s", to_si_factor: 86400.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::LongDateTime, UnitTag::DateTime]}),
+        ( "weeks".to_string(), UnitDef { id: "weeks".to_string(), si_id: "s", to_si_factor: (60 * 60 * 24 * 7) as f64, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::LongDateTime, UnitTag::DateTime]}),
+        ( "months".to_string(), UnitDef { id: "months".to_string(), si_id: "s", to_si_factor: 2629746.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::LongDateTime, UnitTag::DateTime]}),
+        ( "years".to_string(), UnitDef { id: "years".to_string(), si_id: "s", to_si_factor: 31556952.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::LongDateTime, UnitTag::DateTime]}),
+        ( "milliseconds".to_string(), UnitDef { id: "milliseconds".to_string(), si_id: "s", to_si_factor: 1.0/1000.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::LongDateTime, UnitTag::DateTime]}),
 
         ( "s".to_string(), UnitDef { id: "s".to_string(), si_id: "s", to_si_factor: 1.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::ShortDateTime, UnitTag::DateTime]}),
         ( "min".to_string(), UnitDef { id: "min".to_string(), si_id: "s", to_si_factor: 60.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::ShortDateTime, UnitTag::DateTime]}),
@@ -174,24 +181,24 @@ pub fn create_unit_defs() -> HashMap<String, UnitDef> {
 #[cfg(test)]
 mod tests {
     use crate::resolver::globals::Globals;
-    use crate::resolver::unit::{create_unit_defs, UnitProperty, UnitsView};
+    use crate::resolver::unit::{UnitProperty, UnitsView};
 
     #[test]
     fn test_units() {
         let globals = Globals::new();
-        let mut view = UnitsView::new(&globals);
+        let mut view = UnitsView::new();
         view.units.clear();
-        view.add_class(&UnitProperty::ANGLE, &globals);
+        view.add_class(&UnitProperty::ANGLE, &globals.unit_defs);
         assert_eq!(view.units.len(), 2);
     }
 
     #[test]
     fn test_clone_units() {
         let globals = Globals::new();
-        let mut view = UnitsView::new(&globals);
+        let mut view = UnitsView::new();
         view.units.clear();
-        view.add_class(&UnitProperty::ANGLE, &globals);
-        view.add_class(&UnitProperty::TEMP, &globals);
+        view.add_class(&UnitProperty::ANGLE, &globals.unit_defs);
+        view.add_class(&UnitProperty::TEMP, &globals.unit_defs);
         assert_eq!(view.units.len(), 5);
 
         view.remove_class(&UnitProperty::ANGLE, &globals);

@@ -19,10 +19,14 @@ pub trait FunctionDef {
     fn get_name(&self) -> &str;
 }
 
+#[derive(PartialEq)]
+pub enum FunctionType { Trig, Arithm, Date}
+
 pub struct GlobalFunctionDef {
     pub name: String,
     pub min_args: usize,
     pub max_args: usize,
+    pub func_type: FunctionType,
     execute: fn(global_function_def: Option<&GlobalFunctionDef>, local_function_def: Option<&CustomFunctionDef>, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value,
 }
 
@@ -89,53 +93,73 @@ pub struct FunctionView {
 }
 
 impl FunctionView {
-    pub fn from_globals(globals: &Globals) -> Self {
-        let mut view = FunctionView {
-           ids: HashSet::new()
-        };
-        for f in globals.global_function_defs.keys() {
-            view.ids.insert(f.to_string());
+
+    pub fn new() -> Self {
+        FunctionView {
+            ids: HashSet::new()
         }
-        view
+    }
+
+    pub fn add_all(&mut self, function_defs: &HashMap<String, GlobalFunctionDef>) {
+        for f in function_defs.keys() { //TODO: add in one go? Functional?
+            self.ids.insert(f.to_string());
+        }
+    }
+
+    pub fn add_type(&mut self, function_type: FunctionType, globals: &Globals) {
+        self.ids.extend(
+            globals.global_function_defs
+                .values()
+                .filter(|f|
+                    f.func_type == function_type)
+                .map(|f| f.name.clone()));
+    }
+
+    pub fn remove_type(&mut self, function_type: FunctionType, globals: &Globals) {
+        self.ids.retain(|id|
+            globals.global_function_defs
+                .get(id)
+                .map_or_else(|| true, |f|
+                    f.func_type != function_type));
     }
 }
 
 pub fn create_global_function_defs() -> HashMap<String, GlobalFunctionDef> {
     let defs: HashMap<String, GlobalFunctionDef> = HashMap::from( [
-        ("abs".to_string(), GlobalFunctionDef { name: "abs".to_string(), min_args: 1, max_args: 1, execute: abs}),
-        ("inc".to_string(), GlobalFunctionDef { name: "inc".to_string(), min_args: 1, max_args: 1, execute: inc}),
-        ("dec".to_string(), GlobalFunctionDef { name: "dec".to_string(), min_args: 1, max_args: 1, execute: dec}),
-        ("sqrt".to_string(), GlobalFunctionDef { name: "sqrt".to_string(), min_args: 1, max_args: 1, execute: sqrt}),
+        ("abs".to_string(), GlobalFunctionDef { name: "abs".to_string(), min_args: 1, max_args: 1, execute: abs, func_type: FunctionType::Arithm}),
+        ("inc".to_string(), GlobalFunctionDef { name: "inc".to_string(), min_args: 1, max_args: 1, execute: inc, func_type: FunctionType::Arithm}),
+        ("dec".to_string(), GlobalFunctionDef { name: "dec".to_string(), min_args: 1, max_args: 1, execute: dec, func_type: FunctionType::Arithm}),
+        ("sqrt".to_string(), GlobalFunctionDef { name: "sqrt".to_string(), min_args: 1, max_args: 1, execute: sqrt, func_type: FunctionType::Arithm}),
 
-        ("round".to_string(), GlobalFunctionDef { name: "round".to_string(), min_args: 1, max_args: 1, execute: round}),
-        ("trunc".to_string(), GlobalFunctionDef { name: "trunc".to_string(), min_args: 1, max_args: 1, execute: trunc}),
-        ("floor".to_string(), GlobalFunctionDef { name: "floor".to_string(), min_args: 1, max_args: 1, execute: floor}),
-        ("ceil".to_string(), GlobalFunctionDef { name: "ceil".to_string(), min_args: 1, max_args: 1, execute: ceil}),
+        ("round".to_string(), GlobalFunctionDef { name: "round".to_string(), min_args: 1, max_args: 1, execute: round, func_type: FunctionType::Arithm}),
+        ("trunc".to_string(), GlobalFunctionDef { name: "trunc".to_string(), min_args: 1, max_args: 1, execute: trunc, func_type: FunctionType::Arithm}),
+        ("floor".to_string(), GlobalFunctionDef { name: "floor".to_string(), min_args: 1, max_args: 1, execute: floor, func_type: FunctionType::Arithm}),
+        ("ceil".to_string(), GlobalFunctionDef { name: "ceil".to_string(), min_args: 1, max_args: 1, execute: ceil, func_type: FunctionType::Arithm}),
 
-        ("factorial".to_string(), GlobalFunctionDef { name: "factors".to_string(), min_args: 1, max_args: 1, execute: factorial}),
+        ("factorial".to_string(), GlobalFunctionDef { name: "factors".to_string(), min_args: 1, max_args: 1, execute: factorial, func_type: FunctionType::Arithm}),
 
-        ("sin".to_string(), GlobalFunctionDef { name: "sin".to_string(), min_args: 1, max_args: 1, execute: sin}),
-        ("cos".to_string(), GlobalFunctionDef { name: "cos".to_string(), min_args: 1, max_args: 1, execute: cos}),
-        ("tan".to_string(), GlobalFunctionDef { name: "tan".to_string(), min_args: 1, max_args: 1, execute: tan}),
-        ("asin".to_string(), GlobalFunctionDef { name: "asin".to_string(), min_args: 1, max_args: 1, execute: asin}),
-        ("acos".to_string(), GlobalFunctionDef { name: "acos".to_string(), min_args: 1, max_args: 1, execute: acos}),
-        ("atan".to_string(), GlobalFunctionDef { name: "atan".to_string(), min_args: 1, max_args: 1, execute: atan}),
+        ("sin".to_string(), GlobalFunctionDef { name: "sin".to_string(), min_args: 1, max_args: 1, execute: sin, func_type: FunctionType::Trig}),
+        ("cos".to_string(), GlobalFunctionDef { name: "cos".to_string(), min_args: 1, max_args: 1, execute: cos, func_type: FunctionType::Trig}),
+        ("tan".to_string(), GlobalFunctionDef { name: "tan".to_string(), min_args: 1, max_args: 1, execute: tan, func_type: FunctionType::Trig}),
+        ("asin".to_string(), GlobalFunctionDef { name: "asin".to_string(), min_args: 1, max_args: 1, execute: asin, func_type: FunctionType::Trig}),
+        ("acos".to_string(), GlobalFunctionDef { name: "acos".to_string(), min_args: 1, max_args: 1, execute: acos, func_type: FunctionType::Trig}),
+        ("atan".to_string(), GlobalFunctionDef { name: "atan".to_string(), min_args: 1, max_args: 1, execute: atan, func_type: FunctionType::Trig}),
 
-        ("sum".to_string(), GlobalFunctionDef { name: "sum".to_string(), min_args: 1, max_args: 999, execute: sum}),
-        ("avg".to_string(), GlobalFunctionDef { name: "avg".to_string(), min_args: 1, max_args: 999, execute: avg}),
-        ("max".to_string(), GlobalFunctionDef { name: "max".to_string(), min_args: 1, max_args: 999, execute: max}),
-        ("min".to_string(), GlobalFunctionDef { name: "min".to_string(), min_args: 1, max_args: 999, execute: min}),
+        ("sum".to_string(), GlobalFunctionDef { name: "sum".to_string(), min_args: 1, max_args: 999, execute: sum, func_type: FunctionType::Arithm}),
+        ("avg".to_string(), GlobalFunctionDef { name: "avg".to_string(), min_args: 1, max_args: 999, execute: avg, func_type: FunctionType::Arithm}),
+        ("max".to_string(), GlobalFunctionDef { name: "max".to_string(), min_args: 1, max_args: 999, execute: max, func_type: FunctionType::Arithm}),
+        ("min".to_string(), GlobalFunctionDef { name: "min".to_string(), min_args: 1, max_args: 999, execute: min, func_type: FunctionType::Arithm}),
 
-        ("reverse".to_string(), GlobalFunctionDef { name: "reverse".to_string(), min_args: 1, max_args: 999, execute: reverse}),
-        ("sort".to_string(), GlobalFunctionDef { name: "sort".to_string(), min_args: 1, max_args: 999, execute: sort}),
-        ("first".to_string(), GlobalFunctionDef { name: "first".to_string(), min_args: 1, max_args: 999, execute: first}),
-        ("last".to_string(), GlobalFunctionDef { name: "last".to_string(), min_args: 1, max_args: 999, execute: last}),
+        ("reverse".to_string(), GlobalFunctionDef { name: "reverse".to_string(), min_args: 1, max_args: 999, execute: reverse, func_type: FunctionType::Arithm}),
+        ("sort".to_string(), GlobalFunctionDef { name: "sort".to_string(), min_args: 1, max_args: 999, execute: sort, func_type: FunctionType::Arithm}),
+        ("first".to_string(), GlobalFunctionDef { name: "first".to_string(), min_args: 1, max_args: 999, execute: first, func_type: FunctionType::Arithm}),
+        ("last".to_string(), GlobalFunctionDef { name: "last".to_string(), min_args: 1, max_args: 999, execute: last, func_type: FunctionType::Arithm}),
 
-        ("factors".to_string(), GlobalFunctionDef { name: "factors".to_string(), min_args: 1, max_args: 999, execute: factors}),
-        ("primes".to_string(), GlobalFunctionDef { name: "primes".to_string(), min_args: 1, max_args: 999, execute: primes}),
+        ("factors".to_string(), GlobalFunctionDef { name: "factors".to_string(), min_args: 1, max_args: 999, execute: factors, func_type: FunctionType::Arithm}),
+        ("primes".to_string(), GlobalFunctionDef { name: "primes".to_string(), min_args: 1, max_args: 999, execute: primes, func_type: FunctionType::Arithm}),
 
-        ("now".to_string(), GlobalFunctionDef { name: "now".to_string(), min_args: 0, max_args: 0, execute: now}),
-        ("date".to_string(), GlobalFunctionDef { name: "date".to_string(), min_args: 1, max_args: 3, execute: date_func}),
+        ("now".to_string(), GlobalFunctionDef { name: "now".to_string(), min_args: 0, max_args: 0, execute: now, func_type: FunctionType::Date}),
+        ("date".to_string(), GlobalFunctionDef { name: "date".to_string(), min_args: 1, max_args: 3, execute: date_func, func_type: FunctionType::Date}),
     ]);
     defs
 }

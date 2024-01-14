@@ -10,14 +10,14 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use macros::CastAny;
 use crate::errors::{Error, ErrorId};
-use crate::functions::FunctionDef;
+use crate::functions::{FunctionDef, FunctionType};
 use crate::parser::date::date::DateFormat;
 use crate::parser::formatted_date_parser::parse_date_string;
 use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, DefineExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, PostfixExpr, Statement, UnaryExpr, UnitExpr};
 use crate::resolver::globals::Globals;
 use crate::resolver::operator::{operator_id_from, OperatorType};
 use crate::resolver::scope::Scope;
-use crate::resolver::unit::{Unit, UnitsView};
+use crate::resolver::unit::{Unit, UnitProperty, UnitsView, UnitTag};
 use crate::resolver::value::{NumberFormat, Value, Variant};
 use crate::resolver::value::Variant::Numeric;
 use crate::tokenizer::cursor::{Number, Range};
@@ -103,7 +103,27 @@ impl<'g, 'a> Resolver<'g, 'a> {
                 Precision {ref number} => {
                     //TODO: test if integer!
                     self.scope.borrow_mut().precision = number.to_double() as i8;
-                }
+                },
+                DateUnits => self.scope.borrow_mut().units_view.add_tagged(&UnitTag::LongDateTime, self.globals),
+                ShortDateUnits => self.scope.borrow_mut().units_view.add_tagged(&UnitTag::ShortDateTime, self.globals),
+                Electric => {
+                    self.scope.borrow_mut().units_view.add_class(&UnitProperty::VOLTAGE, &self.globals.unit_defs);
+                    self.scope.borrow_mut().units_view.add_class(&UnitProperty::CURRENT, &self.globals.unit_defs);
+                    self.scope.borrow_mut().units_view.add_class(&UnitProperty::RESISTANCE, &self.globals.unit_defs);
+                },
+                Strict => self.scope.borrow_mut().strict = true,
+                DecimalDot => {
+                    self.scope.borrow_mut().decimal_char = '.';
+                    self.scope.borrow_mut().thou_char = ',';
+                },
+                DecimalComma => {
+                    self.scope.borrow_mut().decimal_char = ',';
+                    self.scope.borrow_mut().thou_char = '.';
+                },
+                Trig => self.scope.borrow_mut().function_view.add_type(FunctionType::Trig, self.globals),
+                Arithm => self.scope.borrow_mut().function_view.add_type(FunctionType::Arithm, self.globals),
+                Date => self.scope.borrow_mut().function_view.add_type(FunctionType::Date, self.globals),
+                All => self.scope.borrow_mut().function_view.add_all(&self.globals.global_function_defs),
             }
         }
     }
@@ -147,8 +167,15 @@ impl<'g, 'a> Resolver<'g, 'a> {
         if call_expr.node_data.has_errors {
             return Value::error(&call_expr.get_range());
         };
-        let global_function_def = self.globals.global_function_defs.contains_key(call_expr.function_name.as_str());
-        let local_function_def = self.scope.borrow().local_function_defs.contains_key(call_expr.function_name.as_str()); //TODO: replace with a recursove function over parent scopes.
+        let function_name = call_expr.function_name.as_str();
+        //is function 'in view'?
+        if self.scope.borrow().function_view.ids.contains(function_name) == false {
+            //TODO: error: distinguish between non-existent function and function "out of view" or "not enabled".
+            return self.add_error(ErrorId::FuncNotDef, call_expr.function_name_range.clone(), &[&call_expr.function_name], Value::error(&call_expr.function_name_range));
+        }
+
+        let global_function_def = self.globals.global_function_defs.contains_key(function_name);
+        let local_function_def = self.scope.borrow().local_function_defs.contains_key(function_name);//TODO: also find function in parent scope.
         if !global_function_def && !local_function_def {
             return self.add_error(ErrorId::FuncNotDef, call_expr.function_name_range.clone(), &[&call_expr.function_name], Value::error(&call_expr.function_name_range));
         };
@@ -158,13 +185,13 @@ impl<'g, 'a> Resolver<'g, 'a> {
         //TODO: try trait objects. (trait references, actually). Doesn't work in combination with RefCell<Scope> and I haven't found a way to get rid of the RefCell.
         let mut arg_count_wrong = false;
         if global_function_def {
-            if !self.globals.global_function_defs.get(call_expr.function_name.as_str()).unwrap().is_correct_arg_count(arguments.nodes.len()) {
+            if !self.globals.global_function_defs.get(function_name).unwrap().is_correct_arg_count(arguments.nodes.len()) {
                 arg_count_wrong = true;
             }
         }
         //TODO: if both global and local function exists, then what? Use local?
         if local_function_def {
-            if !self.scope.borrow().local_function_defs.get(call_expr.function_name.as_str()).unwrap().is_correct_arg_count(arguments.nodes.len()) {
+            if !self.scope.borrow().local_function_defs.get(function_name).unwrap().is_correct_arg_count(arguments.nodes.len()) {
                 arg_count_wrong = true;
             }
         }
@@ -182,11 +209,11 @@ impl<'g, 'a> Resolver<'g, 'a> {
         };
 
         let mut result = if global_function_def {
-            self.globals.global_function_defs.get(call_expr.function_name.as_str()).unwrap()
+            self.globals.global_function_defs.get(function_name).unwrap()
                 .call(&self.scope, &arg_values, &call_expr.function_name_range, &mut self.errors, self.globals)
         } else {
             if local_function_def {
-                self.scope.borrow().local_function_defs.get(call_expr.function_name.as_str()).unwrap()
+                self.scope.borrow().local_function_defs.get(function_name).unwrap()
                     .call(&self.scope, &arg_values, &call_expr.function_name_range, &mut self.errors, self.globals)
             } else {
                 panic!("TODO");

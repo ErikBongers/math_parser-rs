@@ -157,4 +157,8 @@ mod test {
         test_compiles("a=1; { a=2; "); //block not closed.
     }
 
+    #[test]
+    fn test_defines () {
+        test_error("#define short_date_units \n s=1;", ErrorId::WVarIsUnit);
+    }
 }

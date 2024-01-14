@@ -17,6 +17,9 @@ pub struct Scope {
     pub units_view: UnitsView,
     pub date_format: DateFormat,
     pub precision: i8,
+    pub strict: bool,
+    pub decimal_char: char,
+    pub thou_char: char,
 }
 
 impl Scope {
@@ -25,11 +28,14 @@ impl Scope {
             parent_scope: None,
             var_defs: HashSet::new(),
             variables: HashMap::new(),
-            function_view: FunctionView { ids: HashSet::new()},
+            function_view: globals.function_view.clone(),
             local_function_defs: HashMap::new(),
-            units_view: globals.units_view.as_ref().unwrap().clone(),
+            units_view: globals.units_view.clone(),
             date_format: DateFormat::YMD,
             precision: 5,
+            strict: false,
+            decimal_char: '.',
+            thou_char: ',',
         }
     }
 
@@ -42,6 +48,9 @@ impl Scope {
             units_view: scope.units_view.clone(),
             date_format: scope.date_format,
             precision: scope.precision,
+            strict: scope.strict,
+            decimal_char: scope.decimal_char,
+            thou_char: scope.thou_char,
 
             //don't copy variables.
             local_function_defs: HashMap::new(),

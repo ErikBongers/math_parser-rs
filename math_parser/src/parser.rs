@@ -122,7 +122,17 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 let number = self.tok.get_number();//TODO: document get_number: it get's the numericc value for the last next_token() ?
                 Precision {number}
             },
-            _ => { //todo: add defines.
+            "date_units" => DefineType::DateUnits,
+            "short_date_units" => DefineType::ShortDateUnits,
+            "trig" => DefineType::Trig,
+            "arithm" => DefineType::Arithm,
+            "date" => DefineType::Date,
+            "all" => DefineType::All,
+            "electric" => DefineType::Electric,
+            "strict" => DefineType::Strict,
+            "decimal_dot" => DefineType::DecimalDot,
+            "decimal_comma" => DefineType::DecimalComma,
+            _ => {
                 //TODO: add error for unknown define option.
                 return None;
             }
