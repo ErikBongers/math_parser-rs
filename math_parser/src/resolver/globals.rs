@@ -24,7 +24,7 @@ impl<'a> Globals {
         let constants = HashMap::new();
         let mut globals = Globals { operators: HashMap::new(), sources: Vec::new(), unit_defs, global_function_defs, constants, units_view: UnitsView::new(), function_view: FunctionView::new() };
         globals.units_view.add_all_classes(&globals.unit_defs);
-        globals.units_view.remove_tagged(&globals.unit_defs, UnitTag::ShortDateTime);
+        globals.units_view.remove_tagged(UnitTag::ShortDateTime, &globals.unit_defs);
         load_operators(&mut globals);
         globals.fill_constants();
         globals.function_view.add_all(&globals.global_function_defs);

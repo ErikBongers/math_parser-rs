@@ -82,7 +82,7 @@ impl UnitsView {
         self.units.retain(|unit| &globals.unit_defs[unit].property != property);
     }
 
-    pub fn remove_tagged(&mut self, unit_defs: &HashMap<String, UnitDef>, tag: UnitTag) {
+    pub fn remove_tagged(&mut self, tag: UnitTag, unit_defs: &HashMap<String, UnitDef>) {
         self.units.retain(|unit| unit_defs[unit].tags.contains(&tag) == false);
     }
 

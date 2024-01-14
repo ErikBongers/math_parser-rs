@@ -14,6 +14,7 @@ use crate::functions::{FunctionDef, FunctionType};
 use crate::parser::date::date::DateFormat;
 use crate::parser::formatted_date_parser::parse_date_string;
 use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, DefineExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, PostfixExpr, Statement, UnaryExpr, UnitExpr};
+use crate::parser::nodes::DefineType::{All, Arithm, Date, DateUnits, DecimalComma, DecimalDot, Dmy, Electric, Mdy, ShortDateUnits, Strict, Trig, Ymd};
 use crate::resolver::globals::Globals;
 use crate::resolver::operator::{operator_id_from, OperatorType};
 use crate::resolver::scope::Scope;
@@ -57,7 +58,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
         Some(result.clone())
     }
 
-    pub fn add_error(&mut self, id: ErrorId, range: Range, args: &[&str], mut value: Value) -> Value {
+    pub fn add_error(&mut self, id: ErrorId, range: Range, args: &[&str], mut value: Value) -> Value { //TODO: should this really take and return a value?
         value.has_errors = true;
         self.errors.push(Error::build(id, range, args));
         value
@@ -94,6 +95,14 @@ impl<'g, 'a> Resolver<'g, 'a> {
 
     fn resolve_define_expr(&mut self, expr: &Box<dyn Node>) {
         let define_expr = expr.as_any().downcast_ref::<DefineExpr>().unwrap();
+        if(define_expr.def_undef.kind == TokenType::Define) {
+            self.resolve_defines(&define_expr);
+        } else {
+            self.resolve_undefines(&define_expr);
+        }
+    }
+
+    fn resolve_defines(&mut self, define_expr: &DefineExpr) {
         for define in &define_expr.defines  {
             use crate::parser::nodes::DefineType::*;
             match &define.define_type {
@@ -124,6 +133,26 @@ impl<'g, 'a> Resolver<'g, 'a> {
                 Arithm => self.scope.borrow_mut().function_view.add_type(FunctionType::Arithm, self.globals),
                 Date => self.scope.borrow_mut().function_view.add_type(FunctionType::Date, self.globals),
                 All => self.scope.borrow_mut().function_view.add_all(&self.globals.global_function_defs),
+            }
+        }
+    }
+
+    fn resolve_undefines(&mut self, define_expr: &DefineExpr) {
+        for define in &define_expr.defines  {
+            use crate::parser::nodes::DefineType::*;
+            match &define.define_type {
+                DateUnits => self.scope.borrow_mut().units_view.remove_tagged(UnitTag::LongDateTime, &self.globals.unit_defs),
+                ShortDateUnits => self.scope.borrow_mut().units_view.remove_tagged(UnitTag::ShortDateTime, &self.globals.unit_defs),
+                Electric => {
+                    self.scope.borrow_mut().units_view.remove_class(&UnitProperty::VOLTAGE, self.globals);
+                    self.scope.borrow_mut().units_view.remove_class(&UnitProperty::CURRENT, self.globals);
+                    self.scope.borrow_mut().units_view.remove_class(&UnitProperty::RESISTANCE, self.globals);
+                },
+                Strict => self.scope.borrow_mut().strict = true,
+                Trig => self.scope.borrow_mut().function_view.remove_type(FunctionType::Trig, self.globals),
+                Arithm => self.scope.borrow_mut().function_view.remove_type(FunctionType::Arithm, self.globals),
+                Date => self.scope.borrow_mut().function_view.remove_type(FunctionType::Date, self.globals),
+                _ => { self.add_error(ErrorId::UndefNotOk, define.range.clone(), &[self.globals.get_text(&define.range)], Value::error(&define.range)); },
             }
         }
     }
