@@ -55,43 +55,43 @@ pub fn operator_id_from(type1: &Variant, op: OperatorType, type2: &Variant) -> u
 pub fn op_num_plus_num(globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
     let Variant::Numeric {number: ref n1, ..} = args[0].variant else { unreachable!(); }; //has been checked.
     let Variant::Numeric {number: ref n2, ..} = args[1].variant else { unreachable!(); };
-    Value::from_number( do_term(n1, true, n2, range, &globals), &range)
+    Value::from_number( do_term(n1, true, n2, range, &globals), range.clone())
 }
 
 pub fn op_num_min_num(globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
     let Variant::Numeric {number: ref n1, ..} = args[0].variant else { unreachable!(); };
     let Variant::Numeric {number: ref n2, ..} = args[1].variant else { unreachable!(); };
-    Value::from_number( do_term(n1, false, n2, range, &globals), &range)
+    Value::from_number( do_term(n1, false, n2, range, &globals), range.clone())
 }
 
 pub fn op_num_mult_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
     let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!(); };
     let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!(); };
-    Value::from_number(Number { significand: n1.significand * n2.significand, exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number { significand: n1.significand * n2.significand, exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range.clone())
 }
 
 pub fn op_num_div_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
     let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!(); };
     let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!(); };
-    Value::from_number(Number { significand: n1.significand / n2.significand, exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number { significand: n1.significand / n2.significand, exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range.clone())
 }
 
 pub fn op_num_rem_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
     let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!(); };
     let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!(); };
-    Value::from_number(Number { significand: n1.to_double() % n2.to_double(), exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number { significand: n1.to_double() % n2.to_double(), exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range.clone())
 }
 
 pub fn op_num_mod_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
     let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!(); };
     let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!(); };
-    Value::from_number(Number { significand: ((n1.to_double() % n2.to_double()) + n2.to_double()) % n2.to_double(), exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number { significand: ((n1.to_double() % n2.to_double()) + n2.to_double()) % n2.to_double(), exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range.clone())
 }
 
 pub fn op_num_pow_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
     let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!(); };
     let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!(); };
-    Value::from_number(Number { significand: n1.to_double().powf(n2.to_double()), exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number { significand: n1.to_double().powf(n2.to_double()), exponent: 0, unit : Unit { range: None, id: "".to_string() }, fmt: NumberFormat::Dec }, range.clone())
 }
 
 pub fn load_operators(globals: &mut Globals) {
@@ -146,5 +146,5 @@ pub fn op_date_min_date(_globals: &Globals, args: &Vec<Value>, range: &Range) ->
 
 
     let dur = d1.sub(d2);
-    Value::from_duration(dur, range)
+    Value::from_duration(dur, range.clone())
 }

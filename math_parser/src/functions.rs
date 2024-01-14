@@ -44,7 +44,7 @@ impl GlobalFunctionDef {
         if self.is_correct_arg_count(args.len()) {
             (self.execute)(Some(&self), None, scope, args, range, errors, globals)
         } else {
-            add_error(errors, ErrorId::FuncArgWrong, range.clone(), &[""], Value::error(range))
+            add_error(errors, ErrorId::FuncArgWrong, range.clone(), &[""], Value::error(range.clone()))
         }
     }
 }
@@ -81,7 +81,7 @@ impl CustomFunctionDef {
         if self.is_correct_arg_count(args.len()) {
             (self.execute)(None, Some(&self), scope, args, range, errors, globals)
         } else {
-            add_error(errors, ErrorId::FuncArgWrong, range.clone(), &[""], Value::error(range))
+            add_error(errors, ErrorId::FuncArgWrong, range.clone(), &[""], Value::error(range.clone()))
         }
     }
 }
@@ -166,28 +166,28 @@ pub fn create_global_function_defs() -> HashMap<String, GlobalFunctionDef> {
 
 
 fn abs(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
-    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
-    Value::from_number(Number {significand: number.significand.abs(), exponent: number.exponent, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
+    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range.clone()); };
+    Value::from_number(Number {significand: number.significand.abs(), exponent: number.exponent, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range.clone())
 }
 fn round(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
-    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
-    Value::from_number(Number {significand: number.to_double().round(), exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
+    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range.clone()); };
+    Value::from_number(Number {significand: number.to_double().round(), exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range.clone())
 }
 fn trunc(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
-    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
-    Value::from_number(Number {significand: number.to_double().trunc(), exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
+    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range.clone()); };
+    Value::from_number(Number {significand: number.to_double().trunc(), exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range.clone())
 }
 fn floor(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
-    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
-    Value::from_number(Number {significand: number.to_double().floor(), exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
+    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range.clone()); };
+    Value::from_number(Number {significand: number.to_double().floor(), exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range.clone())
 }
 fn ceil(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
-    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
-    Value::from_number(Number {significand: number.to_double().ceil(), exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
+    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range.clone()); };
+    Value::from_number(Number {significand: number.to_double().ceil(), exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range.clone())
 }
 fn sqrt(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
-    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
-    Value::from_number(Number {significand: number.to_double().sqrt(), exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
+    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range.clone()); };
+    Value::from_number(Number {significand: number.to_double().sqrt(), exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range.clone())
 }
 fn sum(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
     let mut exploded_args = Vec::new();
@@ -283,7 +283,7 @@ fn floats_to_values(range: &Range, factors: &Vec<f64>) -> Vec<Value> {
 }
 
 fn factors(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
-    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
+    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range.clone()); };
     let factors = build_factors(number.to_double());
     let list = floats_to_values(range, &factors);
     Value {
@@ -295,7 +295,7 @@ fn factors(global_function_def: Option<&GlobalFunctionDef>, _local_function_def:
 }
 
 fn primes(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
-    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
+    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range.clone()); };
     let factors = build_factors(number.to_double());
     let primez = factors.into_iter().filter(|&f| {
         PRIMES.binary_search(&(f as i32)).is_ok()
@@ -343,12 +343,12 @@ fn last(_global_function_def: Option<&GlobalFunctionDef>, _local_function_def: O
 
 fn with_num_vec(function_def: &dyn FunctionDef, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals, func: impl Fn(Vec<f64>) -> f64) -> Value {
     if let Some(num_vec) = to_num_vec(function_def, &args, range, errors, globals) {
-        let mut val = Value::from_number(Number {significand: func(num_vec), exponent: 0, unit: Unit::none(), fmt: NumberFormat::Dec }, range);
-        let Some(number) = match_arg_number(function_def, &args[0], range, errors) else { return Value::error(range) };
+        let mut val = Value::from_number(Number {significand: func(num_vec), exponent: 0, unit: Unit::none(), fmt: NumberFormat::Dec }, range.clone());
+        let Some(number) = match_arg_number(function_def, &args[0], range, errors) else { return Value::error(range.clone()) };
         let si_id = globals.unit_defs.get(&number.unit.id).unwrap().si_id;
         val.as_number_mut().unwrap().unit.id = si_id.to_string();
         val
-    } else { Value::error(range) }
+    } else { Value::error(range.clone()) }
 }
 
 fn to_num_vec(function_def: &dyn FunctionDef, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Option<Vec<f64>> {
@@ -357,7 +357,7 @@ fn to_num_vec(function_def: &dyn FunctionDef, args: &Vec<Value>, range: &Range, 
 
 fn match_arg_number<'a>(function_def: &dyn FunctionDef, args: &'a Value, range: &Range, errors: &mut Vec<Error>) -> Option<&'a Number> {
     let Variant::Numeric { number, .. } = &args.variant else {
-        add_error(errors, ErrorId::FuncArgWrongType, range.clone(), &[function_def.get_name()], Value::error(range));
+        add_error(errors, ErrorId::FuncArgWrongType, range.clone(), &[function_def.get_name()], Value::error(range.clone()));
         return None;
     };
     Some(number)
@@ -373,7 +373,7 @@ fn to_num_iter(function_name: &str, args: &Vec<Value>, range: &Range, errors: &m
                 if let Variant::Numeric { number, .. } = &value.variant {
                     number.to_si(globals)
                 } else {
-                    add_error(errors, ErrorId::FuncArgWrongType, range.clone(), &[function_name], Value::error(range));
+                    add_error(errors, ErrorId::FuncArgWrongType, range.clone(), &[function_name], Value::error(range.clone()));
                     0.0
                 }
             }).collect();
@@ -382,74 +382,74 @@ fn to_num_iter(function_name: &str, args: &Vec<Value>, range: &Range, errors: &m
 
 fn inc(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
     let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else {
-        return Value::error(range);
+        return Value::error(range.clone());
     };
-    Value::from_number(Number {significand: number.to_double()+1.0, exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number {significand: number.to_double()+1.0, exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range.clone())
 }
 
 fn dec(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
     let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else {
-        return Value::error(range);
+        return Value::error(range.clone());
     };
-    Value::from_number(Number {significand: number.to_double()-1.0, exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number {significand: number.to_double()-1.0, exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range.clone())
 }
 
 fn sin(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
-    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
+    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range.clone()); };
     let mut number = number.clone(); //Needed? Test it.
     if number.unit.id == "deg" {
         number.convert_to_unit(&Unit { range: None, id: "rad".to_string() }, &scope.borrow().units_view, range, errors, globals); //TODO: we don't need to make another number. Just convert units for a f64.
     }
-    Value::from_number(Number {significand: number.to_double().sin(), exponent: 0, unit: Unit::none(), fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number {significand: number.to_double().sin(), exponent: 0, unit: Unit::none(), fmt: NumberFormat::Dec }, range.clone())
 }
 
 fn cos(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
-    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
+    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range.clone()); };
     let mut number = number.clone(); //Needed? Test it.
     if number.unit.id == "deg" {
         number.convert_to_unit(&Unit { range: None, id: "rad".to_string() }, &scope.borrow().units_view, range, errors, globals);     }
-    Value::from_number(Number {significand: number.to_double().cos(), exponent: 0, unit: Unit::none(), fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number {significand: number.to_double().cos(), exponent: 0, unit: Unit::none(), fmt: NumberFormat::Dec }, range.clone())
 }
 
 fn tan(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
-    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
+    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range.clone()); };
     let mut number = number.clone(); //Needed? Test it.
     if number.unit.id == "deg" {
         number.convert_to_unit(&Unit { range: None, id: "rad".to_string() }, &scope.borrow().units_view, range, errors, globals);
     }
-    Value::from_number(Number {significand: number.to_double().tan(), exponent: 0, unit: Unit::none(), fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number {significand: number.to_double().tan(), exponent: 0, unit: Unit::none(), fmt: NumberFormat::Dec }, range.clone())
 }
 
 fn asin(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
-    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
-    Value::from_number(Number {significand: number.to_double().asin(), exponent: 0, unit: Unit { id: "rad".to_string(), range: Some(range.clone())}, fmt: NumberFormat::Dec }, range)
+    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range.clone()); };
+    Value::from_number(Number {significand: number.to_double().asin(), exponent: 0, unit: Unit { id: "rad".to_string(), range: Some(range.clone())}, fmt: NumberFormat::Dec }, range.clone())
 }
 fn acos(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
-    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
-    Value::from_number(Number {significand: number.to_double().acos(), exponent: 0, unit: Unit { id: "rad".to_string(), range: Some(range.clone())}, fmt: NumberFormat::Dec }, range)
+    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range.clone()); };
+    Value::from_number(Number {significand: number.to_double().acos(), exponent: 0, unit: Unit { id: "rad".to_string(), range: Some(range.clone())}, fmt: NumberFormat::Dec }, range.clone())
 }
 fn atan(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
-    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range); };
-    Value::from_number(Number {significand: number.to_double().atan(), exponent: 0, unit: Unit { id: "rad".to_string(), range: Some(range.clone())}, fmt: NumberFormat::Dec }, range)
+    let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else { return Value::error(range.clone()); };
+    Value::from_number(Number {significand: number.to_double().atan(), exponent: 0, unit: Unit { id: "rad".to_string(), range: Some(range.clone())}, fmt: NumberFormat::Dec }, range.clone())
 }
 
 
 fn factorial(global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
     let Some(number) = match_arg_number(global_function_def.unwrap(), &args[0], range, errors) else {
-        return Value::error(range);
+        return Value::error(range.clone());
     };
     let size = number.to_double();
     if size < 0.0 {
         errors.push(Error { id: ErrorId::Expected, message: "factorial argument should be a non-negative integer".to_string(), range: range.clone(), stack_trace: None,});
-        return Value::error(range);
+        return Value::error(range.clone());
     }
     if size !=  (size as i64) as f64 {
         errors.push(Error { id: ErrorId::Expected, message: "factorial argument should be an integer value".to_string(), range: range.clone(), stack_trace: None,});
-        return Value::error(range);
+        return Value::error(range.clone());
     }
     let size = size as i64;
     let val = (1..=size).reduce(|v, i| v*i).unwrap_or(1);
-    Value::from_number(Number {significand: val as f64, exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range)
+    Value::from_number(Number {significand: val as f64, exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range.clone())
 }
 
 pub fn execute_custom_function(_global_function_def: Option<&GlobalFunctionDef>, local_function_def: Option<&CustomFunctionDef>, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
@@ -465,8 +465,8 @@ pub fn execute_custom_function(_global_function_def: Option<&GlobalFunctionDef>,
     let mut resolver = Resolver {globals, scope: function_def.code_block.scope.clone(), results: Vec::new(), errors};
     let result = resolver.resolve(&function_def.code_block.statements);
     let Some(result) = result else {
-        add_error(errors, ErrorId::FuncNoBody, range.clone(),&[&function_def.name], Value::error(range));
-        return Value::error(range)
+        add_error(errors, ErrorId::FuncNoBody, range.clone(),&[&function_def.name], Value::error(range.clone()));
+        return Value::error(range.clone())
     };
     result
 }
@@ -491,7 +491,7 @@ fn now(_global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Op
     let month = current_date.month();
     let day = current_date.day();
 
-   Value::from_date(Date { month: month_from_int(month as i32), day: day as i8, year, range: range.clone(), errors: vec![], }, range)
+   Value::from_date(Date { month: month_from_int(month as i32), day: day as i8, year, range: range.clone(), errors: vec![], }, range.clone())
 }
 
 fn date_func(_global_function_def: Option<&GlobalFunctionDef>, _local_function_def: Option<&CustomFunctionDef>, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
@@ -501,7 +501,7 @@ fn date_func(_global_function_def: Option<&GlobalFunctionDef>, _local_function_d
     let mut exploded_args = Vec::<Value>::new();
     let args_list = explode_args(args, &mut exploded_args);
     if args_list.len() < 3 {
-        return Value::error(range); //TODO: provide error message?
+        return Value::error(range.clone()); //TODO: provide error message?
     }
     let mut day = &args_list[idx.day];
     let mut month = &args_list[idx.month];
@@ -523,5 +523,5 @@ fn date_func(_global_function_def: Option<&GlobalFunctionDef>, _local_function_d
     if !date.is_valid() {
         errors.push(Error::build(ErrorId::InvDate, range.clone(), &[]));
     }
-    Value::from_date(date, range)
+    Value::from_date(date, range.clone())
 }

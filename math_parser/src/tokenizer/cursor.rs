@@ -126,7 +126,7 @@ impl Number {
         if self.unit.is_empty() {
             self.unit = to.clone();
             if let None = units_view.get_def(&to.id, globals) {
-                add_error(errors, ErrorId::UnitNotDef, range.clone(), &[&to.id], Value::error(range));
+                add_error(errors, ErrorId::UnitNotDef, range.clone(), &[&to.id], Value::error(range.clone()));
             }
             return;
         }
@@ -134,11 +134,11 @@ impl Number {
             return; //should already have been detected.
         }
         if let None = units_view.get_def(&to.id, globals) {
-            add_error(errors, ErrorId::UnitNotDef, range.clone(), &[&to.id], Value::error(range));
+            add_error(errors, ErrorId::UnitNotDef, range.clone(), &[&to.id], Value::error(range.clone()));
             return;
         }
         if units_view.get_def(&self.unit.id, globals).unwrap().property != units_view.get_def(&to.id, globals).unwrap().property {
-            add_error(errors, ErrorId::UnitPropDiff, range.clone(), &[""], Value::error(range));
+            add_error(errors, ErrorId::UnitPropDiff, range.clone(), &[""], Value::error(range.clone()));
             return;
         }
         let to_si = units_view.get_def(&self.unit.id, globals).unwrap().to_si;

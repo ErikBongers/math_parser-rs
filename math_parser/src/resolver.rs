@@ -58,11 +58,22 @@ impl<'g, 'a> Resolver<'g, 'a> {
         Some(result.clone())
     }
 
-    pub fn add_error(&mut self, id: ErrorId, range: Range, args: &[&str], mut value: Value) -> Value { //TODO: should this really take and return a value?
-        value.has_errors = true;
+    pub fn add_error(&mut self, id: ErrorId, range: Range, args: &[&str]) {
         self.errors.push(Error::build(id, range, args));
+    }
+
+    pub fn return_error(&mut self, id: ErrorId, range: Range, args: &[&str], mut value: Value) -> Value {
+        value.has_errors = true;
+        self.add_error(id, range, args);
         value
-   }
+    }
+
+    pub fn add_error_value(&mut self, id: ErrorId, range: Range, args: &[&str]) -> Value {
+        let mut value = Value::error(range.clone());
+        value.has_errors = true;
+        self.add_error(id, range, args);
+        value
+    }
 
     pub fn resolve_node(&mut self, expr: &Box<dyn Node>) -> Value {
         match expr.as_any().type_id() {
@@ -78,7 +89,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
             t if TypeId::of::<ListExpr>() == t => { self.resolve_list_expr(expr) },
             t if TypeId::of::<CommentExpr>() == t => { self.resolve_comment_expr(expr) },
             t if TypeId::of::<FunctionDefExpr>() == t => { self.resolve_func_def_expr(expr) },
-            _ => { self.add_error(ErrorId::Expected, expr.get_range(), &["Unknown expression to resolve_node"], Value::error(&expr.get_range())) },
+            _ => self.add_error_value(ErrorId::Expected, expr.get_range(), &["Unknown expression to resolve_node"])
         }
     }
 
@@ -87,8 +98,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
         let mut resolver = Resolver {globals: self.globals, scope: code_block.scope.clone(), results: Vec::new(), errors: self.errors};
         let result = resolver.resolve(&code_block.statements);
         let Some(result) = result else {
-            self.add_error(ErrorId::FuncNoBody, code_block.get_range().clone(),&["anonymous block"], Value::error(&code_block.get_range()));
-            return Value::error(&code_block.get_range());
+            return self.add_error_value(ErrorId::FuncNoBody, code_block.get_range().clone(),&["anonymous block"]);
         };
         result
     }
@@ -152,7 +162,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
                 Trig => self.scope.borrow_mut().function_view.remove_type(FunctionType::Trig, self.globals),
                 Arithm => self.scope.borrow_mut().function_view.remove_type(FunctionType::Arithm, self.globals),
                 Date => self.scope.borrow_mut().function_view.remove_type(FunctionType::Date, self.globals),
-                _ => { self.add_error(ErrorId::UndefNotOk, define.range.clone(), &[self.globals.get_text(&define.range)], Value::error(&define.range)); },
+                _ => self.add_error(ErrorId::UndefNotOk, define.range.clone(), &[self.globals.get_text(&define.range)]),
             }
         }
     }
@@ -194,19 +204,19 @@ impl<'g, 'a> Resolver<'g, 'a> {
     fn resolve_call_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let call_expr = expr.as_any().downcast_ref::<CallExpr>().unwrap();
         if call_expr.node_data.has_errors {
-            return Value::error(&call_expr.get_range());
+            return Value::error(call_expr.get_range());
         };
         let function_name = call_expr.function_name.as_str();
         //is function 'in view'?
         if self.scope.borrow().function_view.ids.contains(function_name) == false {
             //TODO: error: distinguish between non-existent function and function "out of view" or "not enabled".
-            return self.add_error(ErrorId::FuncNotDef, call_expr.function_name_range.clone(), &[&call_expr.function_name], Value::error(&call_expr.function_name_range));
+            return self.add_error_value(ErrorId::FuncNotDef, call_expr.function_name_range.clone(), &[&call_expr.function_name]);
         }
 
         let global_function_def = self.globals.global_function_defs.contains_key(function_name);
         let local_function_def = self.scope.borrow().local_function_defs.contains_key(function_name);//TODO: also find function in parent scope.
         if !global_function_def && !local_function_def {
-            return self.add_error(ErrorId::FuncNotDef, call_expr.function_name_range.clone(), &[&call_expr.function_name], Value::error(&call_expr.function_name_range));
+            return self.add_error_value(ErrorId::FuncNotDef, call_expr.function_name_range.clone(), &[&call_expr.function_name]);
         };
 
         let arguments = call_expr.arguments.as_any().downcast_ref::<ListExpr>().unwrap();
@@ -226,13 +236,13 @@ impl<'g, 'a> Resolver<'g, 'a> {
         }
 
         if arg_count_wrong {
-            return self.add_error(ErrorId::FuncArgWrong, call_expr.function_name_range.clone(), &[&call_expr.function_name], Value::error(&call_expr.function_name_range));
+            return self.add_error_value(ErrorId::FuncArgWrong, call_expr.function_name_range.clone(), &[&call_expr.function_name]);
         };
         let mut arg_values: Vec<Value> = Vec::new();
         for arg in &arguments.nodes {
             let value = self.resolve_node(arg);
             if value.has_errors {
-                return Value::error(&value.stmt_range);
+                return Value::error(value.stmt_range.clone());
             }
             arg_values.push(value);
         };
@@ -293,7 +303,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
                     number.convert_to_unit(&unit, &self.scope.borrow().units_view, &pfix_expr.postfix_id.range, self.errors, self.globals);
                 }
             },
-            _ => return self.add_error(ErrorId::UnknownExpr, pfix_expr.postfix_id.range.clone(), &["Postfix expression not valid here."], result)
+            _ => return self.return_error(ErrorId::UnknownExpr, pfix_expr.postfix_id.range.clone(), &["Postfix expression not valid here."], result)
         };
         result
     }
@@ -308,14 +318,14 @@ impl<'g, 'a> Resolver<'g, 'a> {
                 _ => number.fmt.clone()
             }
         } else {
-            return self.add_error(ErrorId::InvFormat, pfix_expr.postfix_id.range.clone(), &[id.as_str()], result);
+            return self.return_error(ErrorId::InvFormat, pfix_expr.postfix_id.range.clone(), &[id.as_str()], result);
         }
         result
     }
 
     fn resolve_date_fragment(&mut self, pfix_expr: &PostfixExpr, mut result: Value, id: &str) -> Value {
         let Some(date) = result.as_date() else {
-            return self.add_error(ErrorId::InvFormat, pfix_expr.postfix_id.range.clone(), &[id], result);
+            return self.return_error(ErrorId::InvFormat, pfix_expr.postfix_id.range.clone(), &[id], result);
         };
         let val = match id {
             "day" => date.day as i32,
@@ -339,16 +349,16 @@ impl<'g, 'a> Resolver<'g, 'a> {
     }
 
     fn resolve_duration_fragment(&mut self, mut result: Value, id: &str, range: &Range) -> Value {
-        let Variant::Duration {mut duration} = result.variant else { return Value::error(range)};
+        let Variant::Duration {mut duration} = result.variant else { return Value::error(range.clone())};
         duration.normalize();
         let value = match id {
             "days" => duration.days,
             "months" => duration.months,
             "years" => duration.years,
             "to_days" => duration.to_days(),
-            _ => return Value::error(range)
+            _ => return Value::error(range.clone())
         };
-        Value::from_number(Number { significand: value as f64, exponent: 0, unit: Unit::from_id(id), fmt: NumberFormat::Dec }, range)
+        Value::from_number(Number { significand: value as f64, exponent: 0, unit: Unit::from_id(id), fmt: NumberFormat::Dec }, range.clone())
    }
 
     //in case of (x.km)m, both postfixId (km) and unit (m) are filled.
@@ -368,10 +378,10 @@ impl<'g, 'a> Resolver<'g, 'a> {
         if !self.scope.borrow().variables.contains_key(&id_str) {
             //TODO: test if id is function
             if self.globals.constants.contains_key(&id_str.as_str()) {
-                self.add_error(ErrorId::ConstRedef, expr.id.range.clone(), &[id_str.as_str()], Value::error(&expr.get_range()));
+                self.add_error(ErrorId::ConstRedef, expr.id.range.clone(), &[id_str.as_str()]);
             }
             if self.scope.borrow().units_view.units.contains(&id_str) {
-                self.add_error(ErrorId::WVarIsUnit, expr.id.range.clone(), &[id_str.as_str()], Value::error(&expr.get_range()));
+                self.add_error(ErrorId::WVarIsUnit, expr.id.range.clone(), &[id_str.as_str()]);
             }
             //TODO: disallow redefine of constant in case of `strict`
             self.scope.borrow_mut().variables.insert(id_str, value.clone());
@@ -387,7 +397,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
         if var_exists  {
             self.scope.borrow().get_var(&id, self.globals).clone()
         } else {
-            self.add_error(ErrorId::VarNotDef, expr.id.range.clone(), &[&id], Value::error(&expr.get_range()))
+            self.add_error_value(ErrorId::VarNotDef, expr.id.range.clone(), &[&id])
         }
     }
 
@@ -408,7 +418,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
             ConstType::Numeric { number } => {
                 let mut n = number.clone();
                 n.unit = expr.node_data.unit.clone();
-                Value::from_number(n, &expr.get_range())
+                Value::from_number(n, expr.get_range())
            },
             ConstType::FormattedString => {
                 //TODO: FormattedNumberParser
@@ -419,11 +429,11 @@ impl<'g, 'a> Resolver<'g, 'a> {
                 }
                 let string = self.globals.get_text(&trimmed_range);
                 if string == "last" {
-                    return Value::last_variant(&expr.range);
+                    return Value::last_variant(expr.range.clone());
                 }
                 let mut date = parse_date_string(string, &expr.range, self.scope.borrow().date_format);
                 self.errors.append(&mut date.errors);
-                Value::from_date(date, &expr.get_range())
+                Value::from_date(date, expr.get_range())
             }
         }
     }
@@ -452,7 +462,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
         if error_cnt_before != self.errors.len() {
             for error in &self.errors[error_cnt_before..] {
                 if error.id != ErrorId::None { //TODO: should be check if the error is a 'real' error and not a warning.
-                    return Value::error(&expr.get_range());
+                    return Value::error(expr.get_range());
                 }
             }
         }
@@ -463,7 +473,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
             let op_str = operator_type.to_string();
             let val_type1 = &expr1.variant.name();
             let val_type2 = &expr2.variant.name();
-            return self.add_error(ErrorId::NoOp, expr.get_range().clone(), &[&op_str, &val_type1, &val_type2], Value::error(&expr.get_range()));
+            return self.add_error_value(ErrorId::NoOp, expr.get_range().clone(), &[&op_str, &val_type1, &val_type2]);
         }
 
         let args = vec![expr1, expr2];
@@ -474,7 +484,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
             if let Some(id_expr) = expr.expr2.as_any().downcast_ref::<IdExpr>() {
                 let id_str = self.globals.get_text(&id_expr.id.range);
                 if self.scope.borrow().units_view.units.contains(id_str) {
-                    self.add_error(ErrorId::WUnitIsVar, expr.get_range().clone(), &[id_str], Value::error(&id_expr.id.range));
+                    self.add_error_value(ErrorId::WUnitIsVar, id_expr.id.range.clone(), &[id_str]);
                 }
             }
         }

@@ -57,46 +57,46 @@ pub struct Value {
 }
 
 impl Value {
-    pub fn error(range: &Range) -> Self {
+    pub fn error(range: Range) -> Self {
         Value {
             id: None,
-            stmt_range: range.clone(),
+            stmt_range: range,
             variant: Variant::Error,
             has_errors: true
         }
     }
 
-    pub fn last_variant(range: &Range) -> Self {
+    pub fn last_variant(range: Range) -> Self {
         Value {
             id: None,
-            stmt_range: range.clone(),
+            stmt_range: range,
             variant: Variant::Last,
             has_errors: false
         }
     }
 
-    pub fn from_number(value: Number, range: &Range) -> Self {
+    pub fn from_number(value: Number, range: Range) -> Self {
         Value {
             id: None,
-            stmt_range: range.clone(),
+            stmt_range: range,
             variant: Variant::Numeric {number: value},
             has_errors: false
         }
     }
 
-    pub fn from_date(date: Date, range: &Range) -> Self {
+    pub fn from_date(date: Date, range: Range) -> Self {
         Value {
             id: None,
-            stmt_range: range.clone(),
+            stmt_range: range,
             variant: Variant::Date {date },
             has_errors: false
         }
     }
 
-    pub fn from_duration(duration: Duration, range: &Range) -> Self {
+    pub fn from_duration(duration: Duration, range: Range) -> Self {
         Value {
             id: None,
-            stmt_range: range.clone(),
+            stmt_range: range,
             variant: Variant::Duration {duration},
             has_errors: false
         }
