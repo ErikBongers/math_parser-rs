@@ -145,3 +145,8 @@ impl Error {
         }
     }
 }
+
+#[inline]
+pub fn has_real_errors(errors: &Vec<Error>) -> bool {
+    errors.iter().find(|e| ERROR_MAP.get(&e.id).unwrap().error_type == ErrorType::E).is_some()
+}

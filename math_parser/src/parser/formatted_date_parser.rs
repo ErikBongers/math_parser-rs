@@ -1,4 +1,6 @@
-use crate::errors::{Error, ERROR_MAP, ErrorId, ErrorType};
+use errors::has_real_errors;
+use crate::errors;
+use crate::errors::{Error, ErrorId};
 use crate::parser::date::{Date, date};
 use crate::parser::date::date::{DateFormat, EMPTY_YEAR, LAST, Month, month_from_int, month_from_str};
 use crate::tokenizer::cursor::Range;
@@ -255,10 +257,5 @@ impl<'s, 'r> DateParserState<'s, 'r> {
         };
         date.month = month_from_int(n);
    }
-}
-
-//TODO: move this elsewhere
-fn has_real_errors(errors: &Vec<Error>) -> bool {
-    errors.iter().find(|e| ERROR_MAP.get(&e.id).unwrap().error_type == ErrorType::E).is_some()
 }
 
