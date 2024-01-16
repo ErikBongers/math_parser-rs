@@ -49,13 +49,16 @@ impl<'a> Serialize for ScopedValue<'a> {
     where
         S: Serializer
     {
-        let mut state = serializer.serialize_struct("Value", 5)?;
 
-        if let Some(id) = &self.value.id {
+        let mut state = if let Some(id) = &self.value.id {
+            let mut state = serializer.serialize_struct("Value", 5)?;
             state.serialize_field("id", &self.globals.get_text(id))?;
+            state
         } else {
-            state.serialize_field("id", "_")?; //TODO: replace with None? This will be output as `null` or better, DON'T output id -> shorter JSON
-        }
+            let mut state = serializer.serialize_struct("Value", 4)?;
+            //don't output id -> shorter JSON
+            state
+        };
 
         state.serialize_field("type", &&self.value.variant.name())?;
         state.serialize_field("src", &self.value.stmt_range.source_index)?;

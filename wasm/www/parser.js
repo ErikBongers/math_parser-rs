@@ -102,7 +102,7 @@ function lineToOutputString (line) {
 	let strFormatted = formatResult(line);
 
 	if (!line.mute)
-		strLine += (line.id === "_" ? "" : line.id + "=") + strFormatted;
+		strLine += (line.id ? line.id + "=" : "") + strFormatted;
 	strLine += strText;
 	strLine += strComment;
 	return strLine;
@@ -118,7 +118,7 @@ export function linetoResultString (line) {
 	let strLine = "";
 	if (window.innerWidth > 880) {
 		strLine += strComment;
-		strLine += (line.id === "_" ? "" : line.id + "=") + formatResult(line);
+		strLine += (line.id ? line.id + "=" : "") + formatResult(line);
 	}
 	else
 		strLine += formatResult(line);
