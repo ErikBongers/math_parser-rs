@@ -1,3 +1,12 @@
+* Resolver::resolve_call_expr:
+  > wrap everything on a single with_function() ?
+
+* Check this out for circular pointers:
+   > https://stackoverflow.com/questions/72663130/rust-recursive-reference-to-self-in-another-struct
+
+* add user defined functions to function_view
+  > add a test for this.
+
 * #define
  > extra defines: test them all!
    > short/long date units

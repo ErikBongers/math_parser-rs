@@ -207,35 +207,25 @@ impl<'g, 'a> Resolver<'g, 'a> {
             return Value::error(call_expr.get_range());
         };
         let function_name = call_expr.function_name.as_str();
-        //is function 'in view'?
-        if self.scope.borrow().function_view.ids.contains(function_name) == false {
-            //TODO: error: distinguish between non-existent function and function "out of view" or "not enabled".
+        if self.scope.borrow().function_accessible(function_name) == false {
+            //TODO: error: distinguish between non-existent function and function "inaccessible".
             return self.add_error_value(ErrorId::FuncNotDef, call_expr.function_name_range.clone(), &[&call_expr.function_name]);
         }
 
-        let global_function_def = self.globals.global_function_defs.contains_key(function_name);
-        let local_function_def = self.scope.borrow().local_function_defs.contains_key(function_name);//TODO: also find function in parent scope.
-        if !global_function_def && !local_function_def {
+        let Some(_) = self.scope.borrow().with_function(function_name, self.globals,|fd| ()) else {
             return self.add_error_value(ErrorId::FuncNotDef, call_expr.function_name_range.clone(), &[&call_expr.function_name]);
         };
 
         let arguments = call_expr.arguments.as_any().downcast_ref::<ListExpr>().unwrap();
 
-        //TODO: try trait objects. (trait references, actually). Doesn't work in combination with RefCell<Scope> and I haven't found a way to get rid of the RefCell.
-        let mut arg_count_wrong = false;
-        if global_function_def {
-            if !self.globals.global_function_defs.get(function_name).unwrap().is_correct_arg_count(arguments.nodes.len()) {
-                arg_count_wrong = true;
-            }
-        }
-        //TODO: if both global and local function exists, then what? Use local?
-        if local_function_def {
-            if !self.scope.borrow().local_function_defs.get(function_name).unwrap().is_correct_arg_count(arguments.nodes.len()) {
-                arg_count_wrong = true;
-            }
-        }
+        let expected_cnt = arguments.nodes.len();
+        let arg_count_ok = if let Some(is_ok) = self.scope.borrow().with_function(function_name, self.globals,|fd| fd.is_correct_arg_count(expected_cnt)) {
+            is_ok
+        } else {
+            false
+        };
 
-        if arg_count_wrong {
+        if !arg_count_ok {
             return self.add_error_value(ErrorId::FuncArgWrong, call_expr.function_name_range.clone(), &[&call_expr.function_name]);
         };
         let mut arg_values: Vec<Value> = Vec::new();
@@ -247,19 +237,12 @@ impl<'g, 'a> Resolver<'g, 'a> {
             arg_values.push(value);
         };
 
-        let mut result = if global_function_def {
-            self.globals.global_function_defs.get(function_name).unwrap()
-                .call(&self.scope, &arg_values, &call_expr.function_name_range, &mut self.errors, self.globals)
-        } else {
-            if local_function_def {
-                self.scope.borrow().local_function_defs.get(function_name).unwrap()
-                    .call(&self.scope, &arg_values, &call_expr.function_name_range, &mut self.errors, self.globals)
-            } else {
-                panic!("TODO");
-            }
-        };
-        Resolver::apply_unit(&mut result, expr, &self.scope.borrow().units_view, &expr.get_range(), self.errors, self.globals);
-        result
+        if let Some(mut result) = self.scope.borrow().with_function(function_name, self.globals,|fd| fd.call(&self.scope.clone(), &arg_values,  &call_expr.function_name_range, &mut self.errors, self.globals)) {
+            Resolver::apply_unit(&mut result, expr, &self.scope.borrow().units_view, &expr.get_range(), self.errors, self.globals);
+            result
+        }else {
+            panic!("TODO: function call failed to return a value.");
+        }
     }
 
     fn resolve_unit_expr(&mut self, expr: &Box<dyn Node>) -> Value {

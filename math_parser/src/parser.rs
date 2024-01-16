@@ -553,12 +553,8 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             TokenType::Id => {
                 let t = self.tok.next();
                 let id = self.globals.get_text(&t.range);
-                if self.code_block.scope.borrow().local_function_defs.contains_key(id) {
+                if self.code_block.scope.borrow().function_exists(id, self.globals) {
                     return self.parse_call_expr(t);
-                } else {
-                    if self.globals.global_function_defs.contains_key(id) {
-                        return self.parse_call_expr(t);
-                    }
                 }
                 Box::new(IdExpr {
                     id: t,

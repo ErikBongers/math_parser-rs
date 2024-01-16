@@ -1,12 +1,14 @@
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell};
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
-use crate::functions::{CustomFunctionDef, execute_custom_function, FunctionView};
+use crate::errors::Error;
+use crate::functions::{CustomFunctionDef, execute_custom_function, FunctionDef, FunctionView};
 use crate::parser::date::date::DateFormat;
 use crate::parser::nodes::{CodeBlock, FunctionDefExpr};
 use crate::resolver::globals::Globals;
 use crate::resolver::unit::UnitsView;
 use crate::resolver::value::Value;
+use crate::tokenizer::cursor::Range;
 
 pub struct Scope {
     pub parent_scope: Option<Rc<RefCell<Scope>>>,
@@ -52,25 +54,12 @@ impl Scope {
             decimal_char: scope.decimal_char,
             thou_char: scope.thou_char,
 
-            //don't copy variables.
+            //don't copy:
             local_function_defs: HashMap::new(),
             var_defs: HashSet::new(),
             variables: HashMap::new(),
         })
     }
-
-    // pub fn get_local_function(&self, id: &str) -> Option<&CustomFunctionDef> {
-    //     //TODO: filter the found function based on function_view
-    //     if self.local_function_defs.contains_key(id) {
-    //         self.local_function_defs.get(id)
-    //     } else {
-    //         if let Some(parent) = &self.parent_scope {
-    //             parent.borrow().get_local_function(id)
-    //         } else {
-    //             None
-    //         }
-    //     }
-    // }
 
     pub fn add_local_function(&mut self, code_block: CodeBlock, function_def_expr: &FunctionDefExpr) {
         let func = CustomFunctionDef {
@@ -82,6 +71,7 @@ impl Scope {
             execute: execute_custom_function
         };
         self.local_function_defs.insert(func.name.clone(), func);
+        self.function_view.ids.insert(function_def_expr.id.clone());
     }
 
     pub fn var_exists(&self, id: &str, globals: &Globals) -> bool {
@@ -96,5 +86,33 @@ impl Scope {
             return &self.variables[id];
         }
         &globals.constants[id]
+    }
+
+    #[inline]
+    pub fn function_accessible(&self, id: &str) -> bool {
+        self.function_view.ids.contains(id)
+        //don't check parent: functions can be hidden within a block.
+    }
+
+    pub fn with_function<TReturnValue> (&self, id: &str, globals: &Globals, mut f: impl FnMut(&dyn FunctionDef) -> TReturnValue) -> Option<TReturnValue> {
+        if self.local_function_defs.contains_key(id) {
+            Some(f(self.local_function_defs.get(id).unwrap()))
+        } else {
+            if self.parent_scope.is_some() {
+                let scope = self.parent_scope.as_ref().unwrap();
+                scope.borrow().with_function(id, globals, f)
+            } else {
+                if globals.global_function_defs.contains_key(id) {
+                    Some(f(&globals.global_function_defs[id]))
+                } else {
+                    None
+                }
+            }
+        }
+    }
+
+    #[inline]
+    pub fn function_exists(&self, function_name: &str, globals: &Globals) -> bool {
+        self.with_function(function_name, globals, |fd| ()).is_some()
     }
 }

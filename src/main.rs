@@ -160,5 +160,10 @@ mod test {
     #[test]
     fn test_defines () {
         test_error("#define short_date_units \n s=1;", ErrorId::WVarIsUnit);
+        test_error("#undef trig\n  sin(1);", ErrorId::FuncNotDef);
+        test_result("#undef trig\n#define trig\n  sin(30deg);", 0.5, "");
+        test_error("#undef date\n  now();", ErrorId::FuncNotDef);
+        //TODO: test dates or at least test_no_error()
+        // test_error("#undef date\n#define date\n  now();", ErrorId::FuncNotDef);
     }
 }
