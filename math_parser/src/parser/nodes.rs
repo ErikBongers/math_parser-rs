@@ -198,11 +198,12 @@ pub struct FunctionDefExpr {
     pub id: String, //Not a Token because id may be a decorated name in case of polymorphism.
     pub id_range: Range, //the undecorated functionname
     pub arg_names: Vec<String>,
+    pub range: Range,
 }
 
 impl HasRange for FunctionDefExpr {
     fn get_range(&self) -> Range {
-        self.id_range.clone() //TODO: the function def should have the full range of the definition.
+        self.range.clone()
     }
 }
 

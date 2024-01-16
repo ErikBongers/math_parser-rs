@@ -54,7 +54,7 @@ mod test {
         test_date("#define dmy \n date(1,2,2022)", 1, 2, 2022);
         test_error("#define ymd \n date(1,2,2022)", ErrorId::InvDate);
         test_date("#define dmy \n '1-2-2022'", 1, 2, 2022);
-        test_error("#define ymd \n '1-2-2022'", ErrorId::InvDateStr);
+        test_error("#define ymd \n '1-2-2022'", ErrorId::InvDateStrForFormat);
     }
 
     #[test]
@@ -141,7 +141,7 @@ mod test {
         test_result("(1.m)mm", 1000.0, "mm");
         test_result("1.m.mm", 1000.0, "mm");
         test_result("1m.mm", 1000.0, "mm");
-        test_result("sum(1mm, 2cm)", 0.021, "m");
+        test_result("sum(1mm, 2cm)", 21.0, "mm");
         test_result("sum(1mm, 2cm).mm", 21.0, "mm");
         test_result("sum(1mm, 2cm)mm", 21.0, "mm");
         test_result("1mm.", 1.0, "");

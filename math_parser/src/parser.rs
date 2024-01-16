@@ -186,17 +186,17 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         };
         let new_code_block = self.parse_block();
 
-        if !self.match_token(&TokenType::CurlClose) {
+        if self.tok.peek().kind != TokenType::CurlClose {
             return Some(Statement::error(&mut self.errors, ErrorId::Expected, self.tok.peek().clone(), "}"));
         };
-
+        let token_end = self.tok.next();
         let mut fun_def_expr = FunctionDefExpr {
             id: self.globals.get_text(&id.range).to_string(),
             id_range: id.range.clone(),
             arg_names: param_defs,
-            node_data: NodeData { unit: Unit::none(), has_errors: false }
+            node_data: NodeData { unit: Unit::none(), has_errors: false },
+            range: &self.statement_start + &token_end.range,
         };
-        //TODO add range
         if self.code_block.scope.borrow().local_function_defs.contains_key(&fun_def_expr.id) {
             fun_def_expr.node_data.has_errors = true;
             self.errors.push(Error::build(ErrorId::WFunctionOverride, id.range.clone(), &[&self.globals.get_text(&id.range)]));
