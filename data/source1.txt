@@ -1,9 +1,1 @@
-function fa(a, b)
-{
-a+b;
-}
-
-{
-fa(1,2);
-}
-abs(-123);
+sum(1mm, 2cm)

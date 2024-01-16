@@ -180,12 +180,14 @@ fn sqrt(global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, ar
     let Some(number) = match_arg_number(global_function_def, &args[0], range, errors) else { return Value::error(range.clone()); };
     Value::from_number(Number {significand: number.to_double().sqrt(), exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range.clone())
 }
-fn sum(global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
+fn sum(global_function_def: &GlobalFunctionDef, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
     let mut exploded_args = Vec::new();
     let args_ref = explode_args(args, &mut exploded_args);
-    with_num_vec(global_function_def, &args_ref, range, errors, globals, |num_vec| {
+    let mut res = with_num_vec(global_function_def, &args_ref, range, errors, globals, |num_vec| {
         num_vec.into_iter().reduce(|tot, num| tot+num).unwrap_or(0.0)
-    })
+    });
+    res.as_number_mut().unwrap().convert_to_unit(&args_ref[0].as_number().unwrap().unit, &scope.borrow().units_view, range, errors, globals);
+    res
 }
 
 fn max(global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {

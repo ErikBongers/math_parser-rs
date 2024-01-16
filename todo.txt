@@ -1,11 +1,5 @@
-* Resolver::resolve_call_expr:
-  > wrap everything on a single with_function() ?
-
 * Check this out for circular pointers:
    > https://stackoverflow.com/questions/72663130/rust-recursive-reference-to-self-in-another-struct
-
-* add user defined functions to function_view
-  > add a test for this.
 
 * #define
  > extra defines: test them all!
@@ -14,14 +8,7 @@
    > function_views (probably not used yet)
    > decimal dot
 
-* #undef
-
-* should def/undef be copied to scope?
-  > a function should compile, regardless of what the caller's scope is
-
 * copy tests from c++
-
-* aggregate functions (sum,...) should return result in the 1st args units. This is more intuitive.
 
 * google login: failes more than not.
   > order of scripts?
