@@ -121,7 +121,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
                 Mdy => self.scope.borrow_mut().date_format = DateFormat::MDY,
                 Precision {ref number} => {
                     //TODO: test if integer!
-                    self.scope.borrow_mut().precision = number.to_double() as i8;
+                    self.scope.borrow_mut().precision = 10.0_f64.powf(number.to_double());
                 },
                 DateUnits => self.scope.borrow_mut().units_view.add_tagged(&UnitTag::LongDateTime, self.globals),
                 ShortDateUnits => self.scope.borrow_mut().units_view.add_tagged(&UnitTag::ShortDateTime, self.globals),

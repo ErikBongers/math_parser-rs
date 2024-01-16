@@ -113,7 +113,7 @@ impl<'n> Serialize for NumberContext<'n> {
         state.serialize_field("exp", &self.number.exponent)?;
         state.serialize_field("u", &self.number.unit)?;
         state.serialize_field("fmt", &self.number.fmt)?;
-        let precision = 10.0_f64.powf(self.scope.borrow().precision as f64); //todo: expensive: put it in scope.
+        let precision = self.scope.borrow().precision;
         let reduced_precision = reduce_precision(self.number.to_double(), precision);
         let fmtd = match &self.number.fmt {
             NumberFormat::Dec => format!("{}", reduced_precision),

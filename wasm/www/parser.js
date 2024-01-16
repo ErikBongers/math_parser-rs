@@ -41,11 +41,7 @@ function addErrorsToLint (errors) {
 }
 
 function formatNumber (numb) {
-	let strFormatted = "";
-	if (numb.fmt == "Dec")
-		strFormatted = formatFloatString(numb.sig, numb.exp);
-	else
-		strFormatted = numb.fmtd;
+	let strFormatted = numb.fmtd;
 	strFormatted += numb.u;
 	return strFormatted;
 }
@@ -126,6 +122,7 @@ export function linetoResultString (line) {
 	return strLine;
 }
 
+/*
 function formatFloatString (floatString, exponent) {
 	var sFixed = parseFloat(floatString).toFixed(5);
 	if (sFixed.search(".") == -1)
@@ -148,6 +145,7 @@ function formatFloatString (floatString, exponent) {
 	}
 	return sResult;
 }
+*/
 
 export function outputResult(result, sourceIndex) {
 	activeDocumentIndex = sourceIndex;
