@@ -5,12 +5,19 @@ use crate::parser::Duration::date::Duration;
 use crate::tokenizer::cursor::Range;
 
 pub mod date {
+    use std::fmt;
     use serde::Serialize;
 
     #[derive(Clone, Copy, Debug, Serialize, PartialEq)]
     pub enum Month {JAN = 1, FEB = 2, MAR = 3, APR = 4, MAY = 5, JUN = 6, JUL = 7, AUG = 8, SEP = 9, OCT = 10, NOV = 11, DEC = 12, NONE = 0}
-    #[derive(Clone, Copy)]
+    #[derive(Clone, Copy, Debug)]
     pub enum DateFormat { YMD, DMY, MDY, Undefined}
+    impl fmt::Display for DateFormat {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fmt::Debug::fmt(self, f)
+        }
+    }
+
     pub const LAST: i8 = 99;
     pub const EMPTY_YEAR: i32 = i32::MIN; //TODO: magic value.
 

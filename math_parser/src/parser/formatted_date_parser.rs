@@ -226,7 +226,7 @@ impl<'s, 'r> DateParserState<'s, 'r> {
         self.parse_day(&mut tmp_date, self.slices[idx.day]);
 
         if !tmp_date.is_valid() {
-            tmp_date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), &["invalid date for format."])); //TODO specify the format.
+            tmp_date.errors.push(Error::build(ErrorId::InvDateStrForFormat, self.range.clone(), &[self.date_format.to_string().as_str()]));
         }
         self.date = tmp_date;
    }
