@@ -201,6 +201,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
         }
     }
 
+
     fn resolve_call_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let call_expr = expr.as_any().downcast_ref::<CallExpr>().unwrap();
         if call_expr.node_data.has_errors {
@@ -212,37 +213,33 @@ impl<'g, 'a> Resolver<'g, 'a> {
             return self.add_error_value(ErrorId::FuncNotDef, call_expr.function_name_range.clone(), &[&call_expr.function_name]);
         }
 
-        let Some(_) = self.scope.borrow().with_function(function_name, self.globals,|fd| ()) else {
-            return self.add_error_value(ErrorId::FuncNotDef, call_expr.function_name_range.clone(), &[&call_expr.function_name]);
-        };
-
+        //resolve the arguments.
+        //TODO: try an iter().map() instead? May fail due to the return half way.
         let arguments = call_expr.arguments.as_any().downcast_ref::<ListExpr>().unwrap();
-
-        let expected_cnt = arguments.nodes.len();
-        let arg_count_ok = if let Some(is_ok) = self.scope.borrow().with_function(function_name, self.globals,|fd| fd.is_correct_arg_count(expected_cnt)) {
-            is_ok
-        } else {
-            false
-        };
-
-        if !arg_count_ok {
-            return self.add_error_value(ErrorId::FuncArgWrong, call_expr.function_name_range.clone(), &[&call_expr.function_name]);
-        };
         let mut arg_values: Vec<Value> = Vec::new();
         for arg in &arguments.nodes {
             let value = self.resolve_node(arg);
             if value.has_errors {
-                return Value::error(value.stmt_range.clone());
+                return self.add_error_value(ErrorId::FuncArgWrong, arg.get_range(), &[&call_expr.function_name]);
             }
             arg_values.push(value);
         };
 
-        if let Some(mut result) = self.scope.borrow().with_function(function_name, self.globals,|fd| fd.call(&self.scope.clone(), &arg_values,  &call_expr.function_name_range, &mut self.errors, self.globals)) {
+        let Some(result) = self.scope.borrow().with_function(function_name, self.globals,|fd| {
+            if !fd.is_correct_arg_count(arguments.nodes.len()) {
+                return Err(Error::build(ErrorId::FuncArgWrong, call_expr.function_name_range.clone(), &[&call_expr.function_name]));
+            };
+            let mut result = fd.call(&self.scope.clone(), &arg_values,  &call_expr.function_name_range, &mut self.errors, self.globals);
             Resolver::apply_unit(&mut result, expr, &self.scope.borrow().units_view, &expr.get_range(), self.errors, self.globals);
-            result
-        }else {
-            panic!("TODO: function call failed to return a value.");
-        }
+            Ok(result)
+        }) else {
+            return self.add_error_value(ErrorId::FuncNotDef, call_expr.function_name_range.clone(), &[&call_expr.function_name]);
+        };
+        result.unwrap_or_else(|error| {
+            let error_value = Value::error(error.range.clone());
+            self.errors.push(error);
+            error_value
+        })
     }
 
     fn resolve_unit_expr(&mut self, expr: &Box<dyn Node>) -> Value {
