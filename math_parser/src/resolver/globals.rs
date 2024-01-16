@@ -8,7 +8,7 @@ use crate::tokenizer::sources::Source;
 
 pub struct Globals {
     pub operators: HashMap<u32, fn(&Globals, &Vec<Value>, &Range)-> Value>,
-    pub sources: Vec<Source>, //TODO: try to make private. Serializer may fail.
+    sources: Vec<Source>, //keep private. Sources should only be added through set_source()
     pub unit_defs: HashMap<String, UnitDef>,
     pub global_function_defs:  HashMap<String, GlobalFunctionDef>,
     pub constants: HashMap<&'static str, Value>,
@@ -61,7 +61,17 @@ impl<'a> Globals {
     pub fn get_text(&self, range: &Range) -> &str {
         &self.sources[range.source_index as usize].get_text()[range.start..range.end]
     }
-    
+
+    pub fn get_line_and_column(&self, range: &Range) -> (usize, usize) {
+        self.sources[range.source_index as usize].get_line_and_column(range.start)
+    }
+
+    pub fn get_lines_and_columns(&self, range: &Range) -> (usize, usize, usize, usize) {
+        let (l1, c1) = self.sources[range.source_index as usize].get_line_and_column(range.start);
+        let (l2, c2) = self.sources[range.source_index as usize].get_line_and_column(range.end);
+        (l1, c1, l2, c2)
+    }
+
     fn fill_constants(&mut self) {
         self.constants.insert("PI", Value {
             id: None,

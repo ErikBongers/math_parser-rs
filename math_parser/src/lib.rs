@@ -142,10 +142,10 @@ pub mod test {
     }
 
     pub fn get_results(text: &str) -> (Vec<Value>, Vec<Error>) {
-        let source = Source::new("TODO: name".to_string(), text.to_string());
         let mut globals = Globals::new();
-        globals.sources.push(source);//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
-        let mut tok = PeekingTokenizer::new(globals.sources.last().unwrap()); //unwrap ok: we just pushed a source.
+        let src_name = "src1";
+        globals.set_source(src_name.to_string(), text.to_string());//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
+        let mut tok = PeekingTokenizer::new(globals.get_source_by_name(src_name).unwrap()); //unwrap ok: we just pushed a source.
         let scope = Scope::new(&globals);
         let code_block = CodeBlock::new(RefCell::new(scope));
         let mut errors: Vec<Error> = Vec::new();

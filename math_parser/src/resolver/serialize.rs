@@ -52,15 +52,14 @@ impl<'a> Serialize for ScopedValue<'a> {
         let mut state = serializer.serialize_struct("Value", 5)?;
 
         if let Some(id) = &self.value.id {
-            state.serialize_field("id", &self.globals.sources[id.source_index as usize].get_text()[id.start..id.end])?;
+            state.serialize_field("id", &self.globals.get_text(id))?;
         } else {
             state.serialize_field("id", "_")?; //TODO: replace with None? This will be output as `null` or better, DON'T output id -> shorter JSON
         }
 
         state.serialize_field("type", &&self.value.variant.name())?;
         state.serialize_field("src", &self.value.stmt_range.source_index)?;
-        let source = &self.globals.sources[self.value.stmt_range.source_index as usize];
-        let (line, _) = source.get_line_and_column(self.value.stmt_range.start);
+        let (line, _) = self.globals.get_line_and_column(&self.value.stmt_range);
         state.serialize_field("line", &line)?;
 
         match &self.value.variant {
@@ -69,9 +68,9 @@ impl<'a> Serialize for ScopedValue<'a> {
             },
             Date { date } => state.serialize_field("date", date),
             Duration { duration } => state.serialize_field("duration", duration),
-            Comment  => state.serialize_field("comment", &source.get_text()[self.value.stmt_range.start..self.value.stmt_range.end]),
+            Comment  => state.serialize_field("comment", self.globals.get_text(&self.value.stmt_range)),
             FunctionDef => {
-                let function_name =  source.get_text()[self.value.stmt_range.start..self.value.stmt_range.end].to_string();
+                let function_name =  self.globals.get_text(&self.value.stmt_range).to_string();
                 state.serialize_field("function", &function_name)
             },
             List { values }=> {
@@ -160,9 +159,7 @@ impl<'a> Serialize for RangeContext<'a> {
         where
             S: Serializer
     {
-        let source = &self.globals.sources[self.range.source_index as usize];
-        let (start_line, start_pos) = source.get_line_and_column(self.range.start);
-        let (end_line, end_pos) = source.get_line_and_column(self.range.end);
+        let (start_line, start_pos, end_line, end_pos) = self.globals.get_lines_and_columns(&self.range);
 
         let mut state = serializer.serialize_struct("range", 5)?;
 

@@ -247,7 +247,7 @@ impl HasRange for CodeBlock {
     fn get_range(&self) -> Range {
         self.statements.iter()
             .map(|stmt| stmt.get_range())
-            .reduce(|sum, range| &sum + &range).unwrap_or(Range::none()) //TODO: add the range of the start point of the block, which may be the beginning of the text or the opening '{'.
+            .reduce(|sum, range| &sum + &range).unwrap_or(Range::none())
     }
 }
 
