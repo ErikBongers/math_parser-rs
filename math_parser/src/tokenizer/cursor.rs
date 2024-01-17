@@ -20,7 +20,7 @@ pub struct Cursor<'a> {
     pub ln_is_token: bool, //TODO: pub (super) ?
 }
 
-#[derive(Debug, Clone, Serialize)] //TODO: make Copy instead of Clone?
+#[derive(Debug, Clone, Serialize)]
 pub struct Range {
     pub source_index: u8, //TODO: try to use a ref, as an index is checked every time at runtime.
     pub start :usize,

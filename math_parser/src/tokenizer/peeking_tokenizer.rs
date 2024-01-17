@@ -4,9 +4,9 @@ use crate::tokenizer::Token;
 
 #[derive(Clone)]
 pub struct PeekingTokenizer<'a> {
-    pub cur: Cursor<'a>, //TODO: private?
-    pub prev_cur: Cursor<'a>,
-    pub peeked_token: Token,
+    cur: Cursor<'a>,
+    prev_cur: Cursor<'a>,
+    peeked_token: Token,
 }
 
 impl<'a> PeekingTokenizer<'a> {
