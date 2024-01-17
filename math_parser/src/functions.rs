@@ -240,7 +240,7 @@ fn sort(_global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, a
     }
 }
 
-fn build_factors(val: f64) -> Vec<f64> { //TODO: return an iterator instead of a vec?
+fn build_factors(val: f64) -> Vec<f64> { //generators not possible in rust.
     let int = val.trunc() as i32;
     let half = (val/2.0).trunc() as i32;
     let mut list = Vec::new();
