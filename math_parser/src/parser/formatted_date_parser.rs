@@ -186,10 +186,10 @@ impl<'s, 'r> DateParserState<'s, 'r> {
     }
 
     fn has_year_slice(&self) -> bool {
-        self.slices.iter().find(|s| s.parse::<i32>().unwrap_or(0) > 31).is_some() //TODO: first exclude the time slices!
+        self.slices.iter().find(|s| s.parse::<i32>().unwrap_or(0) > 31).is_some()
     }
     fn has_day_slice(&self) -> bool {
-        self.slices.iter()//TODO: first exclude the time slices!
+        self.slices.iter()
             .find(|s| {
                 if **s == "last" { return true; }
                 let n = s.parse::<i32>().unwrap_or(0);
@@ -204,16 +204,15 @@ impl<'s, 'r> DateParserState<'s, 'r> {
                 let lower = s.to_lowercase();
                 date::month_from_str(&lower) != Month::NONE
             })
-            .is_some() //TODO: first exclude the time slices!
+            .is_some()
     }
 
 
     fn count_date_slices(&self) -> usize {
-        self.slices.len() //TODO: exlcude time slices.
+        self.slices.len()
     }
 
     fn count_same_date_values(&self, n: i32) -> usize {
-        //TODO: exlcude time slices.
         self.slices.iter().filter(|s| s.parse::<i32>().unwrap_or(-n) == n).count()
     }
 
