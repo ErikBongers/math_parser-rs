@@ -1,2 +1,5 @@
-#define precision=3
-1.23456789
+function fu(a,b) {
+   a + b;
+}
+
+fu(1,2);

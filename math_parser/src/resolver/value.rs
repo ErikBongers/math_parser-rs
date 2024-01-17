@@ -17,7 +17,7 @@ pub enum Variant {
     FunctionDef,
     Comment, //echo comment
     Last, // used for dates.
-    Error //TODO
+    Error
 }
 
 impl Variant {
@@ -128,8 +128,8 @@ impl Value {
     /// converts a Value to an f64 where NaN is replaced with 0.0
     pub fn sortable_value(&self) -> f64 {
         if let Variant::Numeric { ref number, ..} = self.variant {
-            if number.significand.is_nan() { 0.0}  //TODO: use to_double()
-            else { number.significand }
+            if number.to_double().is_nan() { 0.0 }
+            else { number.to_double() }
         } else {
             todo!("no sortable value defined for this value type.")
         }
