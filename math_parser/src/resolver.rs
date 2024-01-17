@@ -1,6 +1,5 @@
 pub mod value;
 pub mod operator;
-pub mod globals;
 pub mod scope;
 mod serialize;
 pub mod unit;
@@ -15,7 +14,7 @@ use crate::parser::date::date::DateFormat;
 use crate::parser::formatted_date_parser::parse_date_string;
 use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, DefineExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, PostfixExpr, Statement, UnaryExpr, UnitExpr};
 use crate::parser::nodes::DefineType::{All, Arithm, Date, DateUnits, DecimalComma, DecimalDot, Dmy, Electric, Mdy, ShortDateUnits, Strict, Trig, Ymd};
-use crate::resolver::globals::Globals;
+use crate::globals::Globals;
 use crate::resolver::operator::{operator_id_from, OperatorType};
 use crate::resolver::scope::Scope;
 use crate::resolver::unit::{Unit, UnitProperty, UnitsView, UnitTag};

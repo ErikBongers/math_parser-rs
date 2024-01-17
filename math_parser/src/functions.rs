@@ -8,7 +8,7 @@ use crate::parser::date::Date;
 use crate::parser::date::date::{LAST, month_from_int};
 use crate::parser::nodes::{CodeBlock, FunctionDefExpr};
 use crate::resolver::{add_error, Resolver};
-use crate::resolver::globals::Globals;
+use crate::globals::Globals;
 use crate::resolver::unit::Unit;
 use crate::resolver::value::{NumberFormat, Value};
 use crate::resolver::value::Variant;

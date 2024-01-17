@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::f64::consts::PI;
-use crate::resolver::globals::Globals;
+use crate::globals::Globals;
 use crate::tokenizer::cursor::Range;
 
 #[derive(Clone)]

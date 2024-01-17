@@ -1,5 +1,5 @@
+use crate::globals::sources::Source;
 use crate::tokenizer::cursor::{Cursor, Number};
-use crate::tokenizer::sources::Source;
 use crate::tokenizer::Token;
 
 #[derive(Clone)]

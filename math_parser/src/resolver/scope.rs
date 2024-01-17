@@ -5,7 +5,7 @@ use crate::errors::Error;
 use crate::functions::{CustomFunctionDef, execute_custom_function, FunctionDef, FunctionView};
 use crate::parser::date::date::DateFormat;
 use crate::parser::nodes::{CodeBlock, FunctionDefExpr};
-use crate::resolver::globals::Globals;
+use crate::globals::Globals;
 use crate::resolver::unit::UnitsView;
 use crate::resolver::value::Value;
 use crate::tokenizer::cursor::Range;

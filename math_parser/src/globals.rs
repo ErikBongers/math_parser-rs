@@ -1,10 +1,12 @@
 use std::collections::HashMap;
 use crate::functions::{create_global_function_defs, FunctionView, GlobalFunctionDef};
+use crate::globals::sources::Source;
 use crate::resolver::operator::load_operators;
 use crate::resolver::unit::{create_unit_defs, Unit, UnitDef, UnitsView, UnitTag};
 use crate::resolver::value::{NumberFormat, Value, Variant};
 use crate::tokenizer::cursor::{Number, Range};
-use crate::tokenizer::sources::Source;
+
+pub mod sources;
 
 pub struct Globals {
     pub operators: HashMap<u32, fn(&Globals, &Vec<Value>, &Range)-> Value>,

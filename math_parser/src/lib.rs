@@ -2,17 +2,17 @@ use std::cell::RefCell;
 use crate::errors::Error;
 use crate::parser::{Parser};
 use crate::parser::nodes::{CodeBlock, print_nodes};
-use crate::resolver::globals::Globals;
+use crate::globals::Globals;
 use crate::resolver::Resolver;
 use crate::resolver::scope::Scope;
 use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
-use crate::tokenizer::sources::Source;
 
 mod tokenizer;
 mod parser;
 mod resolver;
 pub mod errors; //ErrorId is public
 mod functions;
+pub mod globals;
 
 
 pub struct Api {
@@ -103,9 +103,11 @@ pub mod test {
     use crate::{
         errors::{ Error, ErrorId },
         parser::{Parser},
-        resolver::{ globals::Globals, Resolver, scope::Scope, value::{Value, Variant} },
-        tokenizer::{ peeking_tokenizer::PeekingTokenizer, sources::Source }
+        resolver::{ Resolver, scope::Scope, value::{Value, Variant} },
+        tokenizer::{ peeking_tokenizer::PeekingTokenizer}
     };
+    use crate::globals::Globals;
+    use crate::globals::sources::Source;
     use crate::parser::nodes::CodeBlock;
 
     pub fn test_result(text: &str, expected_result: f64, unit: &str) {
@@ -144,7 +146,7 @@ pub mod test {
     pub fn get_results(text: &str) -> (Vec<Value>, Vec<Error>) {
         let mut globals = Globals::new();
         let src_name = "src1";
-        globals.set_source(src_name.to_string(), text.to_string());//TODO: this could be forgotten: allow only parsing and resolving of registered sources.
+        globals.set_source(src_name.to_string(), text.to_string());
         let mut tok = PeekingTokenizer::new(globals.get_source_by_name(src_name).unwrap()); //unwrap ok: we just pushed a source.
         let scope = Scope::new(&globals);
         let code_block = CodeBlock::new(RefCell::new(scope));

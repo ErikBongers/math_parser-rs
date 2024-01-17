@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter};
 use std::ops::Sub;
 use crate::parser::date::Date;
-use crate::resolver::globals::Globals;
+use crate::globals::Globals;
 use crate::resolver::unit::Unit;
 use crate::resolver::value::{NumberFormat, Value, Variant};
 use crate::tokenizer::cursor::{Number, Range};

@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use macros::{CastAny, Node};
 use crate::errors::{Error, ErrorId};
-use crate::resolver::globals::Globals;
+use crate::globals::Globals;
 use crate::resolver::scope::Scope;
 use crate::resolver::unit::Unit;
 use crate::tokenizer::cursor::{Number, Range};

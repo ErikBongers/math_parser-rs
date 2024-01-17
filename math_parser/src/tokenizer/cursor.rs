@@ -4,10 +4,10 @@ use std::str::Chars;
 use serde::Serialize;
 use crate::errors::{Error, ErrorId};
 use crate::resolver::add_error;
-use crate::resolver::globals::Globals;
+use crate::globals::Globals;
+use crate::globals::sources::Source;
 use crate::resolver::unit::{Unit, UnitsView};
 use crate::resolver::value::{NumberFormat, Value};
-use crate::tokenizer::sources::Source;
 
 #[derive(Clone)]
 pub struct Cursor<'a> {
@@ -409,8 +409,8 @@ pub fn is_id_continue(c: char) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use crate::globals::sources::Source;
     use crate::tokenizer::cursor::Cursor;
-    use crate::tokenizer::sources::Source;
 
     #[test]
     fn test_integer() {

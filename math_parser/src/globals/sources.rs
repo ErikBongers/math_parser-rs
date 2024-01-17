@@ -8,7 +8,7 @@ pub struct MultiByteChar {
     pub bytes: u8,
 }
 pub struct Source {
-    pub name: String,
+    pub(super) name: String,
     pub index: usize,
     text: String,
     pub lines: Vec<usize>,

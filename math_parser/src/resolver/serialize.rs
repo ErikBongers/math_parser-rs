@@ -6,7 +6,7 @@ use crate::errors;
 use crate::errors::ERROR_MAP;
 use crate::parser::date;
 use crate::parser::date::date::{EMPTY_YEAR, LAST};
-use crate::resolver::globals::Globals;
+use crate::globals::Globals;
 use crate::resolver::Resolver;
 use crate::resolver::scope::Scope;
 use crate::resolver::unit::Unit;
