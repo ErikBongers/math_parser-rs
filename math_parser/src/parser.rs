@@ -59,7 +59,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         if self.match_token(&TokenType::CurlOpen) {
             let block = self.parse_block();
             if !self.match_token(&TokenType::CurlClose) {
-                self.add_error(ErrorId::Expected, self.tok.peek().range.clone(), "}"); //TODO: add_error should take a [] of args.
+                self.add_error(ErrorId::Expected, self.tok.peek().range.clone(), &["}"]); //TODO: add_error should take a [] of args.
             }
             return Statement { node_data: NodeData::new(), node: Box::new(block) }
         }
@@ -109,13 +109,13 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             "precision" => {
                 let eq = self.tok.peek();
                 if eq.kind != TokenType::Eq {
-                    self.add_error(ErrorId::Expected, eq.range.clone(), "=");
+                    self.add_error(ErrorId::Expected, eq.range.clone(), &["="]);
                     return None;
                 }
                 let eq = self.tok.next();
                 let int = self.tok.peek();
                 if int.kind != TokenType::Number {
-                    self.add_error(ErrorId::Expected, int.range.clone(), "an integer"); //TODO: make arg1 a []
+                    self.add_error(ErrorId::Expected, int.range.clone(), &["an integer"]);
                     return None;
                 }
                 let int = self.tok.next();
@@ -340,7 +340,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                     let expr2 = self.parse_power_expr();
                     if op.kind == Div {
                         if expr2.is_implicit_mult() {
-                            self.add_error(ErrorId::WDivImplMult, expr2.get_range().clone(), "");
+                            self.add_error(ErrorId::WDivImplMult, expr2.get_range().clone(), &[""]);
                         }
                     }
                     expr1 = Box::new(BinExpr { expr1, op, expr2, node_data: NodeData { unit: Unit::none(), has_errors: false }, implicit_mult: false })
@@ -360,7 +360,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                     let expr2 = self.parse_power_expr(); //right associative!
                     let bin_expr = BinExpr { expr1, op, expr2, node_data: NodeData { unit: Unit::none(), has_errors: false }, implicit_mult: false };
                     if bin_expr.expr1.deref().is_implicit_mult() || bin_expr.expr2.deref().is_implicit_mult() {
-                        self.add_error(ErrorId::WPowImplMult, bin_expr.get_range().clone(), "");
+                        self.add_error(ErrorId::WPowImplMult, bin_expr.get_range().clone(), &[""]);
                     }
                     expr1 = Box::new(bin_expr);
 
@@ -532,7 +532,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             }
         }
         if !self.match_token(&TokenType::ParClose) {
-            self.add_error(ErrorId::Expected, self.tok.peek().range.clone(), ")");
+            self.add_error(ErrorId::Expected, self.tok.peek().range.clone(), &[")"]);
         }
         Box::new(CallExpr {
             node_data: NodeData { unit: Unit::none(), has_errors: false },
@@ -542,8 +542,8 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         })
     }
 
-    fn add_error(&mut self, id: ErrorId, range: Range, arg1: &str) {
-        let error = Error::build(id, range, &[arg1]);
+    fn add_error(&mut self, id: ErrorId, range: Range, args: &[&str]) {
+        let error = Error::build(id, range, args);
         self.errors.push(error);
     }
 
@@ -604,7 +604,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             arguments: list,
         });
         if !self.match_token(&TokenType::Pipe) {
-            self.add_error(ErrorId::Expected, self.tok.peek().range.clone(), "|");
+            self.add_error(ErrorId::Expected, self.tok.peek().range.clone(), &["|"]);
         }
         node
     }
