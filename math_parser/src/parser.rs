@@ -146,8 +146,8 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             return None;
         };
         Some( Statement {
-            node_data: NodeData { unit: Unit::none(), has_errors: false },
-            node: Box::new(CommentExpr { node_data: NodeData { unit: Unit::none(), has_errors: false }, token: self.tok.next() }),
+            node_data: NodeData::new(),
+            node: Box::new(CommentExpr { node_data: NodeData::new(), token: self.tok.next() }),
         })
     }
 
@@ -194,7 +194,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             id: self.globals.get_text(&id.range).to_string(),
             id_range: id.range.clone(),
             arg_names: param_defs,
-            node_data: NodeData { unit: Unit::none(), has_errors: false },
+            node_data: NodeData::new(),
             range: &self.statement_start + &token_end.range,
         };
         if self.code_block.scope.borrow().local_function_defs.contains_key(&fun_def_expr.id) {
@@ -205,7 +205,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         self.code_block.scope.borrow_mut().add_local_function(new_code_block, &fun_def_expr);
         Some(Statement {
             node: Box::new(fun_def_expr),
-            node_data: NodeData { unit: Unit::none(), has_errors: false }
+            node_data: NodeData::new(),
         })
     }
 
@@ -220,10 +220,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     fn parse_expr_statement(&mut self) -> Statement {
         let mut stmt = Statement {
             node: self.parse_assign_expr(),
-            node_data: NodeData {
-                unit: Unit::none(),
-                has_errors: false,
-            }
+            node_data: NodeData::new(),
         };
         match self.tok.peek().kind {
             TokenType::SemiColon => {
@@ -253,7 +250,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         if let Eq = op_type {
             self.tok.next(); //consume =
             let assign_expr = AssignExpr {
-                node_data: NodeData { has_errors: false, unit: Unit::none() },
+                node_data: NodeData::new(),
                 id,
                 expr: Parser::reduce_list(Box::new(self.parse_list_expr()))
             };
@@ -325,7 +322,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             TokenType::Plus | TokenType::Min => {
                 let op = self.tok.next().clone();
                 let expr2 = self.parse_mult_expr();
-                Box::new(BinExpr { expr1, op, expr2, node_data: NodeData { unit: Unit::none(), has_errors: false, }, implicit_mult: false })
+                Box::new(BinExpr { expr1, op, expr2, node_data: NodeData::new(), implicit_mult: false })
             },
             _ => expr1
         }
@@ -343,7 +340,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                             self.add_error(ErrorId::WDivImplMult, expr2.get_range().clone(), &[""]);
                         }
                     }
-                    expr1 = Box::new(BinExpr { expr1, op, expr2, node_data: NodeData { unit: Unit::none(), has_errors: false }, implicit_mult: false })
+                    expr1 = Box::new(BinExpr { expr1, op, expr2, node_data: NodeData::new(), implicit_mult: false })
                 }
                 _ => break
             }
@@ -358,7 +355,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 TokenType::Power => {
                     let op = self.tok.next().clone();
                     let expr2 = self.parse_power_expr(); //right associative!
-                    let bin_expr = BinExpr { expr1, op, expr2, node_data: NodeData { unit: Unit::none(), has_errors: false }, implicit_mult: false };
+                    let bin_expr = BinExpr { expr1, op, expr2, node_data: NodeData::new(), implicit_mult: false };
                     if bin_expr.expr1.deref().is_implicit_mult() || bin_expr.expr2.deref().is_implicit_mult() {
                         self.add_error(ErrorId::WPowImplMult, bin_expr.get_range().clone(), &[""]);
                     }
@@ -406,7 +403,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         let token = self.tok.peek();
         if token.kind == TokenType::Min {
             return Box::new( UnaryExpr {
-                node_data: NodeData { unit: Unit::none(), has_errors: false},
+                node_data: NodeData::new(),
                 op: self.tok.next(),
                 expr: self.parse_postfix_expr(),
             });
@@ -433,7 +430,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 self.tok.next();
                 let t = self.tok.peek();
                 let t_type = &t.kind.clone();
-                let mut postfix = PostfixExpr { postfix_id: t.clone(), node, node_data: NodeData{unit: Unit::none(),has_errors: false,} };
+                let mut postfix = PostfixExpr { postfix_id: t.clone(), node, node_data: NodeData::new() };
                 if t_type == &TokenType::Id {
                     self.tok.next();
                     // postfix.postfix_id already set!
@@ -464,11 +461,11 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
 
     fn create_call_for_operator(&mut self, function_name: &str, arg:  Box<dyn Node>, range: &Range) -> Box<dyn Node> {
         Box::new(CallExpr {
-            node_data: NodeData { unit: Unit::none(), has_errors: false},
+            node_data: NodeData::new(),
             function_name: function_name.to_string(),
             function_name_range: range.clone(),
             arguments: Box::new( ListExpr {
-                node_data: NodeData  { unit: Unit::none(), has_errors: false},
+                node_data: NodeData::new(),
                 nodes: vec![arg],
             }),
         })
@@ -535,7 +532,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             self.add_error(ErrorId::Expected, self.tok.peek().range.clone(), &[")"]);
         }
         Box::new(CallExpr {
-            node_data: NodeData { unit: Unit::none(), has_errors: false },
+            node_data: NodeData::new(),
             function_name: func_name_str.to_string(),
             function_name_range: function_name.range.clone(),
             arguments: Box::new(list_expr)
@@ -558,7 +555,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 }
                 Box::new(IdExpr {
                     id: t,
-                    node_data: NodeData {  unit: Unit::none(), has_errors: false }
+                    node_data: NodeData::new()
                 })
             }
             TokenType::ParOpen => {
@@ -587,18 +584,18 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 })
             }
             // if nothing meaningfull found, don't report an error yet as this will be too generic : "Unexpected..."
-            _ => Box::new(NoneExpr { node_data: NodeData { unit: Unit::none(), has_errors: false,}, token: self.tok.peek().clone()})
+            _ => Box::new(NoneExpr { node_data: NodeData::new(), token: self.tok.peek().clone()})
         }
     }
 
     fn parse_abs_operator(&mut self, token: Token) -> Box<dyn Node> {
         let expr = self.parse_add_expr();
         let list = Box::new( ListExpr {
-            node_data: NodeData {unit: Unit::none(), has_errors: false},
+            node_data: NodeData::new(),
             nodes: vec![expr],
         });
         let node = Box::new(CallExpr {
-            node_data: NodeData {unit: Unit::none(), has_errors: false}, //TODO: create a default for node_data, AFTER units have been implemented fully.
+            node_data: NodeData::new(),
             function_name: "abs".to_string(),
             function_name_range: token.range.clone(),
             arguments: list,
@@ -612,7 +609,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     fn parse_number_expr(&mut self) -> Box<dyn Node> {
         //assuming type of token already checked.
         let token = self.tok.next();
-        Box::new(ConstExpr { const_type: ConstType::Numeric { number: self.tok.get_number()}, node_data: NodeData { unit: Unit::none(),has_errors: false,}, range: token.range.clone()})
+        Box::new(ConstExpr { const_type: ConstType::Numeric { number: self.tok.get_number()}, node_data: NodeData::new(), range: token.range.clone()})
     }
 
     //TODO: try if this works with:
@@ -626,7 +623,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     }
 
     fn parse_list_expr(&mut self) -> ListExpr {
-        let mut list_expr = ListExpr { nodes: Vec::new(), node_data: NodeData {unit: Unit::none(), has_errors: false}};
+        let mut list_expr = ListExpr { nodes: Vec::new(), node_data: NodeData::new()};
         loop {
             let expr = self.parse_add_expr();
             list_expr.nodes.push(expr);
