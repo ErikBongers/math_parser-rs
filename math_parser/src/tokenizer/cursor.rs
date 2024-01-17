@@ -115,8 +115,7 @@ impl Number {
 
     pub fn to_si(&self, globals: &Globals) -> f64 {
         if globals.unit_defs.contains_key(&*self.unit.id) {
-            let to_si = globals.unit_defs[&*self.unit.id].to_si;
-            to_si(&globals.unit_defs[&*self.unit.id], self.to_double())
+            globals.unit_defs[&*self.unit.id].convert_to_si(self.to_double())
         } else {
             self.to_double()
         }
@@ -141,11 +140,10 @@ impl Number {
             add_error(errors, ErrorId::UnitPropDiff, range.clone(), &[""], Value::error(range.clone()));
             return;
         }
-        let to_si = units_view.get_def(&self.unit.id, globals).unwrap().to_si;
-        let from_si = units_view.get_def(&to.id, globals).unwrap().from_si;
-        let si_val = to_si(&units_view.get_def(&self.unit.id, globals).unwrap(), self.significand); //TODO: call this function directly on UnitDef?
-        let val = from_si(&units_view.get_def(&to.id, globals).unwrap(), si_val);
+        let si_val = units_view.get_def(&self.unit.id, globals).unwrap().convert_to_si(self.to_double());
+        let val = units_view.get_def(&to.id, globals).unwrap().convert_from_si(si_val);
         self.significand = val;
+        self.exponent = 0;
         self.unit = to.clone();
     }
 

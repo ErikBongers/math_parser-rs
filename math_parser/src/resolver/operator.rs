@@ -124,8 +124,8 @@ fn do_term(v1: &Number, adding: bool, v2: &Number, _range: &Range, globals: &Glo
         };
         let mut num = Number::from(result);
         if globals.unit_defs.contains_key(&*v1.unit.id) {
-            let from_si = globals.unit_defs[&*v1.unit.id].from_si;
-            num.significand = from_si(&globals.unit_defs[&*v1.unit.id], result);
+            num.significand = globals.unit_defs[&*v1.unit.id].convert_from_si(result);
+            num.exponent = 0;
             num.unit = v1.unit.clone();
             return num;
         }

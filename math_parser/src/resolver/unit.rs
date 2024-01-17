@@ -38,9 +38,31 @@ pub struct UnitDef {
     pub id: String,
     pub si_id: &'static str,
     pub property: UnitProperty,
-    pub to_si: fn(&UnitDef, f64) -> f64, //TODO: see if this works with self instead of explicit ref to UnitDef
-    pub from_si: fn(&UnitDef, f64) -> f64,
+    to_si_fn: fn(&UnitDef, f64) -> f64,
+    from_si_fn: fn(&UnitDef, f64) -> f64,
     pub tags: &'static [UnitTag],
+}
+
+impl UnitDef {
+    pub fn new(id: &str, si_id: &'static str, to_si_factor: f64, property: UnitProperty, tags: &'static [UnitTag]) -> UnitDef {
+        UnitDef {
+            to_si_factor,
+            id: id.to_string(),
+            si_id,
+            property,
+            to_si_fn: default_to_si,
+            from_si_fn: default_from_si,
+            tags,
+        }
+    }
+
+    pub fn convert_to_si(&self, value: f64) -> f64 {
+        (self.to_si_fn)(self, value)
+    }
+
+    pub fn convert_from_si(&self, value: f64) -> f64 {
+        (self.from_si_fn)(self, value)
+    }
 }
 
 #[derive(Clone)]
@@ -105,76 +127,80 @@ pub fn default_from_si(def: &UnitDef, from: f64) -> f64 {
     from / def.to_si_factor
 }
 
+#[inline]
+fn insert_def(defs: &mut HashMap<String, UnitDef>, id: &str, si_id: &'static str, to_si_factor: f64, property: UnitProperty, tags: &'static [UnitTag]) {
+    defs.insert(id.to_string(), UnitDef::new(id, si_id, to_si_factor, property, tags));
+}
+
 pub fn create_unit_defs() -> HashMap<String, UnitDef> {
+    let mut defs: HashMap<String, UnitDef> = HashMap::new();
 
-    let defs: HashMap<String, UnitDef> = HashMap::from( [
-        ("".to_string(), UnitDef {id: "".to_string(), si_id: "", to_si_factor: 1.0, property: UnitProperty::UNDEFINED, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "rad".to_string(), UnitDef { id: "rad".to_string(), si_id: "rad", to_si_factor: 1.0, property: UnitProperty::ANGLE, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "deg".to_string(), UnitDef { id: "deg".to_string(), si_id: "rad", to_si_factor: PI / 180.0, property: UnitProperty::ANGLE, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
+    insert_def(&mut defs, "", "", 1.0, UnitProperty::UNDEFINED, &[]);
+    insert_def(&mut defs, "rad", "rad", 1.0, UnitProperty::ANGLE, &[]);
+    insert_def(&mut defs, "deg", "rad", PI / 180.0, UnitProperty::ANGLE, &[]);
 
-        ( "m".to_string(), UnitDef { id: "m".to_string(), si_id: "m", to_si_factor: 1.0, property: UnitProperty::LENGTH, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "cm".to_string(), UnitDef { id: "cm".to_string(), si_id: "m", to_si_factor: 0.01, property: UnitProperty::LENGTH, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "km".to_string(), UnitDef { id: "km".to_string(), si_id: "m", to_si_factor: 1000.0, property: UnitProperty::LENGTH, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "mm".to_string(), UnitDef { id: "mm".to_string(), si_id: "m", to_si_factor: 0.001, property: UnitProperty::LENGTH, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "in".to_string(), UnitDef { id: "in".to_string(), si_id: "m", to_si_factor: 0.0254, property: UnitProperty::LENGTH, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "ft".to_string(), UnitDef { id: "ft".to_string(), si_id: "m", to_si_factor: 0.3048, property: UnitProperty::LENGTH, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "thou".to_string(), UnitDef { id: "thou".to_string(), si_id: "m", to_si_factor: 0.0254 / 1000.0, property: UnitProperty::LENGTH, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "yd".to_string(), UnitDef { id: "yd".to_string(), si_id: "m", to_si_factor: 0.9144, property: UnitProperty::LENGTH, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "mi".to_string(), UnitDef { id: "mi".to_string(), si_id: "m", to_si_factor: 1609.344, property: UnitProperty::LENGTH, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "micron".to_string(), UnitDef { id: "micron".to_string(), si_id: "m", to_si_factor: 0.000001, property: UnitProperty::LENGTH, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "um".to_string(), UnitDef { id: "um".to_string(), si_id: "m", to_si_factor: 0.000001, property: UnitProperty::LENGTH, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "ly".to_string(), UnitDef { id: "ly".to_string(), si_id: "m", to_si_factor: 9460730472580800.0, property: UnitProperty::LENGTH, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
+    insert_def(&mut defs, "m", "m", 1.0, UnitProperty::LENGTH, &[]);
+    insert_def(&mut defs, "cm", "m", 0.01, UnitProperty::LENGTH, &[]);
+    insert_def(&mut defs, "km", "m", 1000.0, UnitProperty::LENGTH, &[]);
+    insert_def(&mut defs, "mm", "m", 0.001, UnitProperty::LENGTH, &[]);
+    insert_def(&mut defs, "in", "m", 0.0254, UnitProperty::LENGTH, &[]);
+    insert_def(&mut defs, "ft", "m", 0.3048, UnitProperty::LENGTH, &[]);
+    insert_def(&mut defs, "thou", "m", 0.0254 / 1000.0, UnitProperty::LENGTH, &[]);
+    insert_def(&mut defs, "yd", "m", 0.9144, UnitProperty::LENGTH, &[]);
+    insert_def(&mut defs, "mi", "m", 1609.344, UnitProperty::LENGTH, &[]);
+    insert_def(&mut defs, "micron", "m", 0.000001, UnitProperty::LENGTH, &[]);
+    insert_def(&mut defs, "um", "m", 0.000001, UnitProperty::LENGTH, &[]);
+    insert_def(&mut defs, "ly", "m", 9460730472580800.0, UnitProperty::LENGTH, &[]);
 
-        ( "C".to_string(), UnitDef { id: "C".to_string(), si_id: "K", to_si_factor: 0.000001, property: UnitProperty::TEMP, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "K".to_string(), UnitDef { id: "K".to_string(), si_id: "K", to_si_factor: 1.0, property: UnitProperty::TEMP, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "F".to_string(), UnitDef { id: "F".to_string(), si_id: "K", to_si_factor: 0.000001, property: UnitProperty::TEMP, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
+    insert_def(&mut defs, "C", "K", 0.000001, UnitProperty::TEMP, &[]);
+    insert_def(&mut defs, "K", "K", 1.0, UnitProperty::TEMP, &[]);
+    insert_def(&mut defs, "F", "K", 0.000001, UnitProperty::TEMP, &[]);
 
-        ( "L".to_string(), UnitDef { id: "L".to_string(), si_id: "L", to_si_factor: 1.0, property: UnitProperty::VOLUME, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "mL".to_string(), UnitDef { id: "mL".to_string(), si_id: "L", to_si_factor: 0.001, property: UnitProperty::VOLUME, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
+    insert_def(&mut defs, "L", "L", 1.0, UnitProperty::VOLUME, &[]);
+    insert_def(&mut defs, "mL", "L", 0.001, UnitProperty::VOLUME, &[]);
         //ml, with lower case l is non standard
-        ( "ml".to_string(), UnitDef { id: "ml".to_string(), si_id: "L", to_si_factor: 0.001, property: UnitProperty::VOLUME, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "gal".to_string(), UnitDef { id: "gal".to_string(), si_id: "L", to_si_factor: 3.785411784, property: UnitProperty::VOLUME, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "pt".to_string(), UnitDef { id: "pt".to_string(), si_id: "L", to_si_factor: 0.473176473, property: UnitProperty::VOLUME, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
+    insert_def(&mut defs, "ml", "L", 0.001, UnitProperty::VOLUME, &[]);
+    insert_def(&mut defs, "gal", "L", 3.785411784, UnitProperty::VOLUME, &[]);
+    insert_def(&mut defs, "pt", "L", 0.473176473, UnitProperty::VOLUME, &[]);
 
-        ( "kg".to_string(), UnitDef { id: "kg".to_string(), si_id: "kg", to_si_factor: 1.0, property: UnitProperty::MassWeight, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "N".to_string(), UnitDef { id: "N".to_string(), si_id: "kg", to_si_factor: 1.0/9.80665, property: UnitProperty::MassWeight, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "g".to_string(), UnitDef { id: "g".to_string(), si_id: "kg", to_si_factor: 0.001, property: UnitProperty::MassWeight, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "mg".to_string(), UnitDef { id: "mg".to_string(), si_id: "kg", to_si_factor: 0.000001, property: UnitProperty::MassWeight, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "t".to_string(), UnitDef { id: "t".to_string(), si_id: "kg", to_si_factor: 1000.0, property: UnitProperty::MassWeight, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "lb".to_string(), UnitDef { id: "lb".to_string(), si_id: "kg", to_si_factor: 0.45359, property: UnitProperty::MassWeight, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "lbs".to_string(), UnitDef { id: "lbs".to_string(), si_id: "kg", to_si_factor: 0.45359, property: UnitProperty::MassWeight, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "oz".to_string(), UnitDef { id: "oz".to_string(), si_id: "kg", to_si_factor: 1.0/ 35.2739619496, property: UnitProperty::MassWeight, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
+    insert_def(&mut defs, "kg", "kg", 1.0, UnitProperty::MassWeight, &[]);
+    insert_def(&mut defs, "N", "kg", 1.0/9.80665, UnitProperty::MassWeight, &[]);
+    insert_def(&mut defs, "g", "kg", 0.001, UnitProperty::MassWeight, &[]);
+    insert_def(&mut defs, "mg", "kg", 0.000001, UnitProperty::MassWeight, &[]);
+    insert_def(&mut defs, "t", "kg", 1000.0, UnitProperty::MassWeight, &[]);
+    insert_def(&mut defs, "lb", "kg", 0.45359, UnitProperty::MassWeight, &[]);
+    insert_def(&mut defs, "lbs", "kg", 0.45359, UnitProperty::MassWeight, &[]);
+    insert_def(&mut defs, "oz", "kg", 1.0/ 35.2739619496, UnitProperty::MassWeight, &[]);
 
-        ( "seconds".to_string(), UnitDef { id: "seconds".to_string(), si_id: "s", to_si_factor: 1.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::LongDateTime, UnitTag::DateTime]}),
-        ( "minutes".to_string(), UnitDef { id: "minutes".to_string(), si_id: "s", to_si_factor: 60.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::LongDateTime, UnitTag::DateTime]}),
-        ( "hours".to_string(), UnitDef { id: "hours".to_string(), si_id: "s", to_si_factor: 3600.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::LongDateTime, UnitTag::DateTime]}),
-        ( "days".to_string(), UnitDef { id: "days".to_string(), si_id: "s", to_si_factor: 86400.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::LongDateTime, UnitTag::DateTime]}),
-        ( "weeks".to_string(), UnitDef { id: "weeks".to_string(), si_id: "s", to_si_factor: (60 * 60 * 24 * 7) as f64, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::LongDateTime, UnitTag::DateTime]}),
-        ( "months".to_string(), UnitDef { id: "months".to_string(), si_id: "s", to_si_factor: 2629746.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::LongDateTime, UnitTag::DateTime]}),
-        ( "years".to_string(), UnitDef { id: "years".to_string(), si_id: "s", to_si_factor: 31556952.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::LongDateTime, UnitTag::DateTime]}),
-        ( "milliseconds".to_string(), UnitDef { id: "milliseconds".to_string(), si_id: "s", to_si_factor: 1.0/1000.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::LongDateTime, UnitTag::DateTime]}),
+    insert_def(&mut defs, "seconds","s", 1.0, UnitProperty::DURATION, &[UnitTag::LongDateTime, UnitTag::DateTime]);
+    insert_def(&mut defs, "minutes", "s", 60.0, UnitProperty::DURATION, &[UnitTag::LongDateTime, UnitTag::DateTime]);
+    insert_def(&mut defs, "hours", "s", 3600.0, UnitProperty::DURATION, &[UnitTag::LongDateTime, UnitTag::DateTime]);
+    insert_def(&mut defs, "days", "s", 86400.0, UnitProperty::DURATION, &[UnitTag::LongDateTime, UnitTag::DateTime]);
+    insert_def(&mut defs, "weeks", "s", (60 * 60 * 24 * 7) as f64, UnitProperty::DURATION, &[UnitTag::LongDateTime, UnitTag::DateTime]);
+    insert_def(&mut defs, "months", "s", 2629746.0, UnitProperty::DURATION, &[UnitTag::LongDateTime, UnitTag::DateTime]);
+    insert_def(&mut defs, "years", "s", 31556952.0, UnitProperty::DURATION, &[UnitTag::LongDateTime, UnitTag::DateTime]);
+    insert_def(&mut defs, "milliseconds", "s", 1.0/1000.0, UnitProperty::DURATION, &[UnitTag::LongDateTime, UnitTag::DateTime]);
 
-        ( "s".to_string(), UnitDef { id: "s".to_string(), si_id: "s", to_si_factor: 1.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::ShortDateTime, UnitTag::DateTime]}),
-        ( "min".to_string(), UnitDef { id: "min".to_string(), si_id: "s", to_si_factor: 60.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::ShortDateTime, UnitTag::DateTime]}),
-        ( "h".to_string(), UnitDef { id: "h".to_string(), si_id: "s", to_si_factor: 3600.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::ShortDateTime, UnitTag::DateTime]}),
-        ( "d".to_string(), UnitDef { id: "d".to_string(), si_id: "s", to_si_factor: 86400.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::ShortDateTime, UnitTag::DateTime]}),
-        ( "w".to_string(), UnitDef { id: "w".to_string(), si_id: "s", to_si_factor: (60 * 60 * 24 * 7) as f64, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::ShortDateTime, UnitTag::DateTime]}),
-        ( "mon".to_string(), UnitDef { id: "mon".to_string(), si_id: "s", to_si_factor: 2629746.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::ShortDateTime, UnitTag::DateTime]}),
-        ( "y".to_string(), UnitDef { id: "y".to_string(), si_id: "s", to_si_factor: 31556952.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::ShortDateTime, UnitTag::DateTime]}),
-        ( "ms".to_string(), UnitDef { id: "ms".to_string(), si_id: "s", to_si_factor: 1.0/1000.0, property: UnitProperty::DURATION, from_si: default_from_si, to_si: default_to_si, tags: &[UnitTag::ShortDateTime, UnitTag::DateTime]}),
+    insert_def(&mut defs, "s", "s", 1.0, UnitProperty::DURATION, &[UnitTag::ShortDateTime, UnitTag::DateTime]);
+    insert_def(&mut defs, "min", "s", 60.0, UnitProperty::DURATION, &[UnitTag::ShortDateTime, UnitTag::DateTime]);
+    insert_def(&mut defs, "h", "s", 3600.0, UnitProperty::DURATION, &[UnitTag::ShortDateTime, UnitTag::DateTime]);
+    insert_def(&mut defs, "d", "s", 86400.0, UnitProperty::DURATION, &[UnitTag::ShortDateTime, UnitTag::DateTime]);
+    insert_def(&mut defs, "w", "s", (60 * 60 * 24 * 7) as f64, UnitProperty::DURATION, &[UnitTag::ShortDateTime, UnitTag::DateTime]);
+    insert_def(&mut defs, "mon", "s", 2629746.0, UnitProperty::DURATION, &[UnitTag::ShortDateTime, UnitTag::DateTime]);
+    insert_def(&mut defs, "y", "s", 31556952.0, UnitProperty::DURATION, &[UnitTag::ShortDateTime, UnitTag::DateTime]);
+    insert_def(&mut defs, "ms", "s", 1.0/1000.0, UnitProperty::DURATION, &[UnitTag::ShortDateTime, UnitTag::DateTime]);
 
-        ( "A".to_string(), UnitDef { id: "A".to_string(), si_id: "A", to_si_factor: 1.0, property: UnitProperty::CURRENT, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "mA".to_string(), UnitDef { id: "mA".to_string(), si_id: "A", to_si_factor: 0.001, property: UnitProperty::CURRENT, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
+    insert_def(&mut defs, "A", "A", 1.0, UnitProperty::CURRENT, &[]);
+    insert_def(&mut defs, "mA", "A", 0.001, UnitProperty::CURRENT, &[]);
 
-        ( "R".to_string(), UnitDef { id: "R".to_string(), si_id: "R", to_si_factor: 1.0, property: UnitProperty::RESISTANCE, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "mR".to_string(), UnitDef { id: "mR".to_string(), si_id: "R", to_si_factor: 0.001, property: UnitProperty::RESISTANCE, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "kR".to_string(), UnitDef { id: "kR".to_string(), si_id: "R", to_si_factor: 1000.0, property: UnitProperty::RESISTANCE, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "MR".to_string(), UnitDef { id: "MR".to_string(), si_id: "R", to_si_factor: 1000000.0, property: UnitProperty::RESISTANCE, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
+    insert_def(&mut defs, "R", "R", 1.0, UnitProperty::RESISTANCE, &[]);
+    insert_def(&mut defs, "mR", "R", 0.001, UnitProperty::RESISTANCE, &[]);
+    insert_def(&mut defs, "kR", "R", 1000.0, UnitProperty::RESISTANCE, &[]);
+    insert_def(&mut defs, "MR", "R", 1000000.0, UnitProperty::RESISTANCE, &[]);
 
-        ( "V".to_string(), UnitDef { id: "V".to_string(), si_id: "V", to_si_factor: 1.0, property: UnitProperty::VOLTAGE, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
-        ( "mV".to_string(), UnitDef { id: "mV".to_string(), si_id: "V", to_si_factor: 0.001, property: UnitProperty::VOLTAGE, from_si: default_from_si, to_si: default_to_si, tags: &[]}),
+    insert_def(&mut defs, "V", "V", 1.0, UnitProperty::VOLTAGE, &[]);
+    insert_def(&mut defs, "mV", "V", 0.001, UnitProperty::VOLTAGE, &[]);
 
-    ]);
     defs
 }
 

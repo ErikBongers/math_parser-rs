@@ -152,7 +152,7 @@ impl<'a> Serialize for ErrorContext<'a> {
     }
 }
 
-struct RangeContext<'a> { //TODO: lot of overhead. Perhaps create the inner struct directly in ErrorContext?
+struct RangeContext<'a> {
     range: &'a Range,
     globals: &'a Globals,
 }
