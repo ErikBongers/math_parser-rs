@@ -119,7 +119,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                     return None;
                 }
                 let int = self.tok.next();
-                let number = self.tok.get_number();//TODO: document get_number: it get's the numericc value for the last next_token() ?
+                let number = self.tok.get_number();
                 Precision {number}
             },
             "date_units" => DefineType::DateUnits,

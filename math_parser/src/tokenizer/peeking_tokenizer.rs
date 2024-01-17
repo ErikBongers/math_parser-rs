@@ -57,6 +57,7 @@ impl<'a> PeekingTokenizer<'a> {
         self.peeked_token = self.cur.next_token();
     }
 
+    /// Gets the last numeric value that has been found **_past_** the last next() or _**at**_ the current peek()
     pub fn get_number(&self) -> Number {
         self.cur.number.clone()
     }
