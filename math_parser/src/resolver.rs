@@ -8,7 +8,7 @@ use std::any::{Any, TypeId};
 use std::cell::RefCell;
 use std::rc::Rc;
 use macros::CastAny;
-use crate::errors::{Error, ErrorId};
+use crate::errors::{Error, ErrorId, has_real_errors};
 use crate::functions::{FunctionDef, FunctionType};
 use crate::parser::date::date::DateFormat;
 use crate::parser::formatted_date_parser::parse_date_string;
@@ -439,10 +439,8 @@ impl<'g, 'a> Resolver<'g, 'a> {
         let expr1 = self.resolve_node(&expr.expr1);
         let expr2 = self.resolve_node(&expr.expr2);
         if error_cnt_before != self.errors.len() {
-            for error in &self.errors[error_cnt_before..] {
-                if error.id != ErrorId::None { //TODO: should be check if the error is a 'real' error and not a warning.
-                    return Value::error(expr.get_range());
-                }
+            if has_real_errors(&self.errors[error_cnt_before..]) {
+                return Value::error(expr.get_range());
             }
         }
 

@@ -147,6 +147,8 @@ impl Error {
 }
 
 #[inline]
-pub fn has_real_errors(errors: &Vec<Error>) -> bool {
-    errors.iter().find(|e| ERROR_MAP.get(&e.id).unwrap().error_type == ErrorType::E).is_some()
+pub fn has_real_errors<'a, Iter>(mut errors: Iter) -> bool
+    where Iter: IntoIterator<Item=&'a Error>
+{
+    errors.into_iter().find(|e| ERROR_MAP.get(&e.id).unwrap().error_type == ErrorType::E).is_some()
 }
