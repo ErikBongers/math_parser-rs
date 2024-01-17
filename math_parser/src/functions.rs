@@ -92,9 +92,7 @@ impl FunctionView {
     }
 
     pub fn add_all(&mut self, function_defs: &HashMap<String, GlobalFunctionDef>) {
-        for f in function_defs.keys() { //TODO: add in one go? Functional?
-            self.ids.insert(f.to_string());
-        }
+        self.ids.extend(function_defs.keys().map(|k| k.clone()));
     }
 
     pub fn add_type(&mut self, function_type: FunctionType, globals: &Globals) {
