@@ -23,7 +23,7 @@ impl MathParser {
         }
     }
 
-    pub fn add_source(&mut self, name: String, text: String) -> i32 {//TODO: rename upload_source...although...confusing as it could meand upload to cloud storage.
+    pub fn add_source(&mut self, name: String, text: String) -> i32 {
         self.api.set_source(name, text)
     }
 

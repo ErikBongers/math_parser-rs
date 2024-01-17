@@ -161,15 +161,13 @@ export function afterEditorChange() {
 
 function parseAfterChange(scriptId) {
     let result = {};
-    let sourceIndex = -1;
+    let sourceIndex = parserInstance.add_source(scriptId, cm.editor.state.doc.toString());
     if (scriptId !== "start") {
         if (!localStorage.savedStartCode)
             localStorage.savedStartCode = "";
         parserInstance.add_source("start", localStorage.savedStartCode);
-        sourceIndex = parserInstance.add_source(scriptId, cm.editor.state.doc.toString());//TODO: move this line up and de-duplicate it
         result = parserInstance.parse("start", scriptId);
     } else {
-        sourceIndex = parserInstance.add_source(scriptId, cm.editor.state.doc.toString());
         result = parserInstance.parse("", scriptId);
     }
     mp.outputResult(result, sourceIndex);
