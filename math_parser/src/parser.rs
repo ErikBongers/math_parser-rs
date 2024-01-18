@@ -516,7 +516,6 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         self.tok.next();// eat `(`
         let mut list_expr = self.parse_list_expr();
         //first argument may be NONE, with a token EOT, which is an invalid argument list in this case.
-        //TODO: a function call with no parameters.
         if list_expr.nodes.len() == 1 {
             if let Some(none_expr) = list_expr.nodes.first().unwrap().as_any().downcast_ref::<NoneExpr>() {
                 if none_expr.token.kind == TokenType::Eot {
@@ -612,8 +611,6 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         Box::new(ConstExpr { const_type: ConstType::Numeric { number: self.tok.get_number()}, node_data: NodeData::new(), range: token.range.clone()})
     }
 
-    //TODO: try if this works with:
-    // reduce_list(mut node: Box<dyn ListExpr>)...
     fn reduce_list(mut node: Box<dyn Node>) -> Box<dyn Node> {
         let list_expr = node.as_any_mut().downcast_mut::<ListExpr>().unwrap();
         if list_expr.nodes.len() == 1 {

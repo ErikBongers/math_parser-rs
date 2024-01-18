@@ -1,5 +1,1 @@
-function fu(a,b) {
-   a + b;
-}
-
-fu(1,2);
+a=

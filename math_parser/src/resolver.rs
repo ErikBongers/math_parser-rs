@@ -213,7 +213,6 @@ impl<'g, 'a> Resolver<'g, 'a> {
         }
 
         //resolve the arguments.
-        //TODO: try an iter().map() instead? May fail due to the return half way.
         let arguments = call_expr.arguments.as_any().downcast_ref::<ListExpr>().unwrap();
         let mut arg_values: Vec<Value> = Vec::new();
         for arg in &arguments.nodes {
