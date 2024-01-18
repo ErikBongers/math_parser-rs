@@ -1,8 +1,9 @@
 use errors::has_real_errors;
 use crate::errors;
 use crate::errors::{Error, ErrorId};
-use crate::parser::date::{Date, date};
-use crate::parser::date::date::{DateFormat, EMPTY_YEAR, LAST, Month, month_from_int, month_from_str};
+use crate::date::{Date};
+use crate::date::{DateFormat, Month, month_from_int, month_from_str};
+use crate::date;
 use crate::tokenizer::cursor::Range;
 
 
@@ -85,7 +86,7 @@ impl<'s, 'r> DateParserState<'s, 'r> {
             return;
         }
         if n > 31 {
-            if self.date.year != EMPTY_YEAR {
+            if self.date.year != date::EMPTY_YEAR {
                 self.date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), &["multiple values for year."]));
                 return ;
             } else {
@@ -161,7 +162,7 @@ impl<'s, 'r> DateParserState<'s, 'r> {
     fn parse_ymd_slice_number(&mut self, slice_no: usize, n: i32) {
         match slice_no {
             0 => {
-                if self.date.year == EMPTY_YEAR {
+                if self.date.year == date::EMPTY_YEAR {
                 self.date.year = n
                 } else {
                 self.date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), & ["assuming ymd format, but day is already filled."]));
@@ -202,7 +203,7 @@ impl<'s, 'r> DateParserState<'s, 'r> {
         self.slices.iter()
             .find(|s| {
                 let lower = s.to_lowercase();
-                date::month_from_str(&lower) != Month::NONE
+                month_from_str(&lower) != Month::NONE
             })
             .is_some()
     }
@@ -234,14 +235,14 @@ impl<'s, 'r> DateParserState<'s, 'r> {
 
     fn parse_day(&self, date: &mut Date, slice: &str) {
         if slice == "last" {
-            date.day = LAST;
+            date.day = date::LAST;
             return;
         }
         date.day = slice.parse::<i8>().unwrap_or(0);
     }
 
     fn parse_year(&self, date: &mut Date, slice: &str) {
-        date.year = slice.parse::<i32>().unwrap_or(EMPTY_YEAR);
+        date.year = slice.parse::<i32>().unwrap_or(date::EMPTY_YEAR);
     }
 
     fn parse_month(&self, date: &mut Date, slice: &str) {

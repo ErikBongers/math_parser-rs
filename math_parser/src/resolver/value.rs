@@ -1,6 +1,5 @@
 use serde::Serialize;
-use crate::parser::date::Date;
-use crate::parser::Duration::date::Duration;
+use crate::date::{Date, Duration};
 use crate::tokenizer::cursor::{Number, Range};
 
 #[derive(Clone, Serialize)]

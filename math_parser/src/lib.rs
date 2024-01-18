@@ -13,6 +13,7 @@ mod resolver;
 pub mod errors; //ErrorId is public
 mod functions;
 pub mod globals;
+mod date;
 
 
 pub struct Api {

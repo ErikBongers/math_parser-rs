@@ -2,10 +2,9 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use serde::{Serialize, Serializer};
 use serde::ser::{SerializeStruct};
-use crate::errors;
+use crate::{date, errors};
 use crate::errors::ERROR_MAP;
-use crate::parser::date;
-use crate::parser::date::date::{EMPTY_YEAR, LAST};
+use crate::date::{EMPTY_YEAR, LAST};
 use crate::globals::Globals;
 use crate::resolver::Resolver;
 use crate::resolver::scope::Scope;
@@ -234,7 +233,7 @@ impl Serialize for date::Date {
         state.end()
     }
 }
-impl Serialize for crate::parser::Duration::date::Duration {
+impl Serialize for date::Duration {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where
             S: Serializer
