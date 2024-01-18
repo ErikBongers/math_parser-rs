@@ -6,6 +6,7 @@ fn main() {
     // parse_two_files();
 }
 
+#[allow(unused)]
 fn parse_two_files() {
     let file_path = r"data/source1.txt";
     let file_path2 = r"data/source3.txt";
@@ -24,6 +25,7 @@ fn parse_two_files() {
     println!("{}", parse_2_files(text1, text2));
 }
 
+#[allow(unused)]
 fn parse_one_file() {
     let file_path = r"data/source1.txt";
 

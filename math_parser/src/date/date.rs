@@ -9,7 +9,7 @@ use crate::date::Duration;
 #[derive(Clone, Copy, Debug, Serialize, PartialEq)]
 pub enum Month {JAN = 1, FEB = 2, MAR = 3, APR = 4, MAY = 5, JUN = 6, JUL = 7, AUG = 8, SEP = 9, OCT = 10, NOV = 11, DEC = 12, NONE = 0}
 #[derive(Clone, Copy, Debug)]
-pub enum DateFormat { YMD, DMY, MDY, Undefined}
+pub enum DateFormat { YMD, DMY, MDY}
 impl fmt::Display for DateFormat {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Debug::fmt(self, f)
@@ -31,7 +31,6 @@ impl DateFormat {
             DateFormat::DMY => (0,1,2),
             DateFormat::MDY => (1,0,2),
             DateFormat::YMD => (2,1,0),
-            DateFormat::Undefined => (2,1,0) //default.
         };
         DateFormatIndices { day, month, year }
     }
