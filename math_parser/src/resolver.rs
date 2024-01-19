@@ -11,7 +11,7 @@ use macros::CastAny;
 use crate::date::{DateFormat, parse_date_string};
 use crate::errors::{Error, ErrorId, has_real_errors};
 use crate::functions::{FunctionDef, FunctionType};
-use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, DefineExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, PostfixExpr, Statement, UnaryExpr, UnitExpr};
+use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, DefineExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NoneExpr, PostfixExpr, Statement, UnaryExpr, UnitExpr};
 use crate::parser::nodes::DefineType::{All, Arithm, Date, DateUnits, DecimalComma, DecimalDot, Dmy, Electric, Mdy, ShortDateUnits, Strict, Trig, Ymd};
 use crate::globals::Globals;
 use crate::resolver::operator::{operator_id_from, OperatorType};
@@ -94,7 +94,8 @@ impl<'g, 'a> Resolver<'g, 'a> {
             t if TypeId::of::<CommentExpr>() == t => { self.resolve_comment_expr(expr) },
             t if TypeId::of::<FunctionDefExpr>() == t => { self.resolve_func_def_expr(expr) },
             t if TypeId::of::<DefineExpr>() == t => { self.resolve_define_expr(expr) },
-            _ => self.add_error_value(ErrorId::Expected, expr.get_range(), &["Unknown expression to resolve_node"])
+            t if TypeId::of::<NoneExpr>() == t => { Value::none(expr.get_range()) },
+            _ => self.add_error_value(ErrorId::ValueError, expr.get_range(), &["Unknown expression to resolve_node"])
         }
     }
 

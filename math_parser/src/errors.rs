@@ -60,11 +60,11 @@ pub enum ErrorId
 #[derive(Serialize, PartialEq)]
 pub enum ErrorType { E, W}
 
-pub struct ErrorDef<'a> {
+pub struct ErrorDef{
     pub id: ErrorId,
     pub error_type: ErrorType,
-    pub name: &'a str,
-    pub message: &'a str,
+    pub name: &'static str,
+    pub message: &'static str,
 }
 
 #[derive(Clone, Serialize)]
@@ -75,9 +75,8 @@ pub struct Error {
     pub stack_trace: Option<Vec<Error>>,
 }
 
-
 pub static ERROR_MAP: Lazy<HashMap<ErrorId, ErrorDef>>  = Lazy::new(|| HashMap::from( [
-(ErrorId::UnknownExpr, ErrorDef{id: ErrorId::UnknownExpr, error_type: ErrorType::E, name: "UnknownExpr", message: "Unknown expression.{0}"}),
+(ErrorId::UnknownExpr, ErrorDef{id: ErrorId::UnknownExpr, error_type: ErrorType::E, name: "UnknownExpr", message: "Unknown expression `{0}`."}),
 (ErrorId::NoOp, ErrorDef{id: ErrorId::NoOp, error_type: ErrorType::E, name: "NoOp", message: "No operator `{0}` defined for `{1}` and `{2}`."}),
 (ErrorId::Eos, ErrorDef{id: ErrorId::Eos, error_type: ErrorType::E, name: "EOS", message: "Unexpected end of file."}),
 

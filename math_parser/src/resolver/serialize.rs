@@ -82,6 +82,9 @@ impl<'a> Serialize for ScopedValue<'a> {
             Last => {
                 state.serialize_field("Last", "last")
             },
+            None => {
+                state.serialize_field("range", &self.value.stmt_range)
+            },
             _ => state.serialize_field("todo", "No serialization for this Value.Variant.")
         }?;
         state.end()

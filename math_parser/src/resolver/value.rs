@@ -18,6 +18,7 @@ pub enum Variant {
     Last, // used for dates.
     Error,
     Define,
+    None,
 }
 
 impl Variant {
@@ -32,6 +33,7 @@ impl Variant {
             Variant::Last  => "Last",
             Variant::Error  => "Error",
             Variant::Define  => "Define",
+            Variant::None  => "None",
         }
     }
 
@@ -46,6 +48,7 @@ impl Variant {
             Variant::Last  => 7,
             Variant::Error  => 8,
             Variant::Define  => 9,
+            Variant::None  => 10,
         }
     }
 }
@@ -64,7 +67,15 @@ impl Value {
             id: None,
             stmt_range: range,
             variant: Variant::Error,
-            has_errors: true
+            has_errors: true,
+        }
+    }
+    pub fn none(range: Range) -> Self {
+        Value {
+            id: None,
+            stmt_range: range,
+            variant: Variant::None,
+            has_errors: false,
         }
     }
 
@@ -73,7 +84,7 @@ impl Value {
             id: None,
             stmt_range: range,
             variant: Variant::Last,
-            has_errors: false
+            has_errors: false,
         }
     }
 
@@ -82,7 +93,7 @@ impl Value {
             id: None,
             stmt_range: range,
             variant: Variant::Numeric {number: value},
-            has_errors: false
+            has_errors: false,
         }
     }
 
@@ -91,7 +102,7 @@ impl Value {
             id: None,
             stmt_range: range,
             variant: Variant::Date {date },
-            has_errors: false
+            has_errors: false,
         }
     }
 
@@ -100,7 +111,7 @@ impl Value {
             id: None,
             stmt_range: range,
             variant: Variant::Duration {duration},
-            has_errors: false
+            has_errors: false,
         }
     }
 

@@ -47,8 +47,13 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         while self.tok.peek().kind != TokenType::Eot {
             let stmt = self.parse_statement();
             self.code_block.statements.push(stmt);
-            if for_block && self.tok.peek().kind == TokenType::CurlClose {
-                return;
+            if self.tok.peek().kind == TokenType::CurlClose {
+                if for_block {
+                    return;
+                } else {
+                    self.add_error(ErrorId::UnknownExpr, self.tok.peek().range.clone(), &["}"]);
+                    self.tok.next();//avoid deadloop
+                }
             }
         }
     }
@@ -240,6 +245,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 self.tok.next();
             },
             TokenType::Eot => (),
+            TokenType::CurlClose => (), //possible end of block
             _ => {
                 let t = self.tok.next(); //avoid dead loop!
                 self.errors.push(Error::build(ErrorId::Expected, t.range.clone(), &[";"]));
