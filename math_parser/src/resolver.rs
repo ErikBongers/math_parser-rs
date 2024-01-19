@@ -39,10 +39,9 @@ pub fn add_error(errors: &mut Vec<Error>, id: ErrorId, range: Range, args: &[&st
 
 impl<'g, 'a> Resolver<'g, 'a> {
 
-    pub fn resolve(&mut self, statements: &Vec<Box<Statement>>) -> Option<Value> {
+    pub fn resolve(&mut self, statements: &Vec<Statement>) -> Option<Value> {
         let mut last_result = None;
         for stmt in statements {
-            let stmt = stmt.as_any().downcast_ref::<Statement>().unwrap();
             if TypeId::of::<DefineExpr>() == stmt.node.as_any().type_id() {
                 self.resolve_define_expr(&stmt.node);
             } else {

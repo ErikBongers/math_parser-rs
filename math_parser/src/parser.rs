@@ -46,7 +46,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         self.mute_block = inherited_mute;
         while self.tok.peek().kind != TokenType::Eot {
             let stmt = self.parse_statement();
-            self.code_block.statements.push(Box::new(stmt));
+            self.code_block.statements.push(stmt);
             if for_block && self.tok.peek().kind == TokenType::CurlClose {
                 return;
             }
