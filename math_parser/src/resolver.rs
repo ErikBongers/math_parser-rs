@@ -39,21 +39,27 @@ pub fn add_error(errors: &mut Vec<Error>, id: ErrorId, range: Range, args: &[&st
 
 impl<'g, 'a> Resolver<'g, 'a> {
 
-    pub fn resolve(&mut self, statements: &Vec<Statement>) -> Option<Value> {
-        let mut last_result = None;
+    pub fn resolve(&mut self, statements: &Vec<Statement>) {
         for stmt in statements {
-            if TypeId::of::<DefineExpr>() == stmt.node.as_any().type_id() {
-                self.resolve_define_expr(&stmt.node);
-            } else {
-                let mut result = self.resolve_node(&stmt.node);
-                result.stmt_range = stmt.get_range();
-                last_result = Some(result.clone()); //since muted results are not added to the vec, we need to store the last result separately. But this is rather expensive: resolt.clone() veery time.
-                if !stmt.mute {
-                    self.results.push(result);
-                }
+            let value = self.resolve_one_statement(stmt);
+            if !stmt.mute {
+                self.results.push(value);
             }
         };
-        last_result
+    }
+    pub fn resolve_to_result(&mut self, statements: &Vec<Statement>) -> Option<Value> {
+        let mut result = None;
+        for stmt in statements {
+            result = Some(self.resolve_one_statement(stmt));
+        };
+        result
+    }
+
+    #[inline(always)]
+    fn resolve_one_statement(&mut self, stmt: &Statement) -> Value {
+        let mut value = self.resolve_node(&stmt.node);
+        value.stmt_range = stmt.get_range();
+        value
     }
 
     pub fn add_error(&mut self, id: ErrorId, range: Range, args: &[&str]) {
@@ -87,6 +93,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
             t if TypeId::of::<ListExpr>() == t => { self.resolve_list_expr(expr) },
             t if TypeId::of::<CommentExpr>() == t => { self.resolve_comment_expr(expr) },
             t if TypeId::of::<FunctionDefExpr>() == t => { self.resolve_func_def_expr(expr) },
+            t if TypeId::of::<DefineExpr>() == t => { self.resolve_define_expr(expr) },
             _ => self.add_error_value(ErrorId::Expected, expr.get_range(), &["Unknown expression to resolve_node"])
         }
     }
@@ -94,19 +101,25 @@ impl<'g, 'a> Resolver<'g, 'a> {
     fn resolve_codeblock_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let code_block = expr.as_any().downcast_ref::<CodeBlock>().unwrap();
         let mut resolver = Resolver {globals: self.globals, scope: code_block.scope.clone(), results: Vec::new(), errors: self.errors};
-        let result = resolver.resolve(&code_block.statements);
+        let result = resolver.resolve_to_result(&code_block.statements);
         let Some(result) = result else {
             return self.add_error_value(ErrorId::FuncNoBody, code_block.get_range().clone(),&["anonymous block"]);
         };
         result
     }
 
-    fn resolve_define_expr(&mut self, expr: &Box<dyn Node>) {
+    fn resolve_define_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let define_expr = expr.as_any().downcast_ref::<DefineExpr>().unwrap();
         if(define_expr.def_undef.kind == TokenType::Define) {
             self.resolve_defines(&define_expr);
         } else {
             self.resolve_undefines(&define_expr);
+        }
+        Value {
+            id: None,
+            stmt_range: define_expr.get_range(),
+            variant: Variant::Define,
+            has_errors: false,
         }
     }
 

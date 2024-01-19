@@ -16,7 +16,8 @@ pub enum Variant {
     FunctionDef,
     Comment, //echo comment
     Last, // used for dates.
-    Error
+    Error,
+    Define,
 }
 
 impl Variant {
@@ -30,10 +31,11 @@ impl Variant {
             Variant::Comment  => "Comment",
             Variant::Last  => "Last",
             Variant::Error  => "Error",
+            Variant::Define  => "Define",
         }
     }
 
-    pub fn to_u32(&self) -> u32 {
+    pub fn to_u32(&self) -> u32 { //implemeent a cast to numeric value?
         match self {
             Variant::Numeric {..} => 1,
             Variant::Date {..} => 2,
@@ -43,6 +45,7 @@ impl Variant {
             Variant::Comment  => 6,
             Variant::Last  => 7,
             Variant::Error  => 8,
+            Variant::Define  => 9,
         }
     }
 }

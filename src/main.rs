@@ -27,7 +27,7 @@ fn parse_two_files() {
 
 #[allow(unused)]
 fn parse_one_file() {
-    let file_path = r"data/source3.txt";
+    let file_path = r"data/source1.txt";
 
     let result = fs::read_to_string(file_path);
     let Ok(text) = result
