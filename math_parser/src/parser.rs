@@ -20,6 +20,7 @@ pub struct Parser<'g, 'a, 't> {
     errors: &'a mut Vec<Error>,
     statement_start: Range,
     code_block: CodeBlock,
+    mute_block: bool
 }
 
 impl<'g, 'a, 't> Into<CodeBlock> for Parser<'g, 'a, 't> {
@@ -36,11 +37,13 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             tok,
             errors,
             code_block,
-            statement_start: Range { start: 0, end: 0, source_index }
+            statement_start: Range { start: 0, end: 0, source_index },
+            mute_block: false,
         }
     }
 
-    pub fn parse(&mut self, for_block: bool) {
+    pub fn parse(&mut self, for_block: bool, inherited_mute: bool) {
+        self.mute_block = inherited_mute;
         while self.tok.peek().kind != TokenType::Eot {
             let stmt = self.parse_statement();
             self.code_block.statements.push(Box::new(stmt));
@@ -51,23 +54,35 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     }
 
     fn parse_statement(&mut self) -> Statement {
+        let mut mute_line = false;
+        if self.match_token(&TokenType::MuteLine) {
+            mute_line = true;
+        } else {
+            if self.match_token(&TokenType::MuteStart) {
+                self.mute_block = true;
+            } else {
+                if self.match_token(&TokenType::MuteEnd) {
+                    self.mute_block = false;
+                }
+            }
+        }
         if self.match_token(&TokenType::CurlOpen) {
             let block = self.parse_block();
             if !self.match_token(&TokenType::CurlClose) {
-                self.add_error(ErrorId::Expected, self.tok.peek().range.clone(), &["}"]); //TODO: add_error should take a [] of args.
+                self.add_error(ErrorId::Expected, self.tok.peek().range.clone(), &["}"]);
             }
-            return Statement { node_data: NodeData::new(), node: Box::new(block) }
+            return Statement { node_data: NodeData::new(), node: Box::new(block), mute: mute_line | self.mute_block }
         }
         if let Some(stmt) = self.parse_echo_comment() {
-            return stmt;
+            return stmt.set_mute(mute_line | self.mute_block);
         }
         if let Some(stmt) = self.parse_defines() {
-            return stmt;
+            return stmt.set_mute(mute_line | self.mute_block);
         }
         if let Some(stmt) = self.parse_function_def() {
-            return stmt;
+            return stmt.set_mute(mute_line | self.mute_block);
         }
-        self.parse_expr_statement()
+        self.parse_expr_statement().set_mute(mute_line | self.mute_block)
     }
 
     fn parse_defines(&mut self) -> Option<Statement> {
@@ -85,7 +100,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 }
             }
             self.tok.set_ln_is_token(false);
-            return Some(Statement { node_data: NodeData::new(), node: Box::new(DefineExpr {
+            return Some(Statement { mute: false, node_data: NodeData::new(), node: Box::new(DefineExpr {
                 node_data: NodeData::new(),
                 def_undef: t,
                 defines,
@@ -143,6 +158,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         Some( Statement {
             node_data: NodeData::new(),
             node: Box::new(CommentExpr { node_data: NodeData::new(), token: self.tok.next() }),
+            mute: false,
         })
     }
 
@@ -201,6 +217,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         Some(Statement {
             node: Box::new(fun_def_expr),
             node_data: NodeData::new(),
+            mute: false,
         })
     }
 
@@ -208,7 +225,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         let new_scope = Scope::copy_for_block(&self.code_block.scope);
         let new_code_block = CodeBlock::new(new_scope);
         let mut parser = Parser::new(&self.globals, &mut self.tok, &mut self.errors, new_code_block);
-        parser.parse(true);
+        parser.parse(true, self.mute_block);
         parser.into()
     }
 
@@ -216,6 +233,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         let mut stmt = Statement {
             node: self.parse_assign_expr(),
             node_data: NodeData::new(),
+            mute: false,
         };
         match self.tok.peek().kind {
             TokenType::SemiColon => {

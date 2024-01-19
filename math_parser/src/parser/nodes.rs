@@ -159,6 +159,7 @@ impl HasRange for PostfixExpr {
 pub struct Statement {
     pub node_data: NodeData,
     pub node: Box<dyn Node>,
+    pub mute: bool
 }
 
 impl HasRange for Statement {
@@ -172,8 +173,14 @@ impl Statement {
         errors.push( Error::build(id, token.range.clone(), &[arg1]) );
         Statement {
             node: Box::new(NoneExpr { token, node_data: NodeData { has_errors: true, unit: Unit::none()}}),
-            node_data: NodeData { has_errors: true, unit: Unit::none()}
+            node_data: NodeData { has_errors: true, unit: Unit::none()},
+            mute: false
         }
+    }
+
+    pub fn set_mute(mut self, mute: bool) -> Self {
+        self.mute = mute;
+        self
     }
 }
 
@@ -289,6 +296,7 @@ impl HasRange for DefineExpr {
 }
 
 
+#[allow(unused)]
 pub fn print_nodes(expr: &Box<dyn Node>, indent: usize, globals: &Globals) {
     print!("{: <1$}", "", indent);
     let indent= indent+5;

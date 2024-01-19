@@ -46,7 +46,7 @@ impl Api {
 
             //parse
             let mut parser = Parser::new(&self.globals, &mut tok, &mut errors, code_block);
-            parser.parse(false);
+            parser.parse(false, false);
             code_block = parser.into();
         }
 
@@ -57,7 +57,7 @@ impl Api {
 
         //parse
         let mut parser = Parser::new(&self.globals, &mut tok, &mut errors, code_block);
-        parser.parse(false);
+        parser.parse(false, false);
         code_block = parser.into();
 
         //resolve
@@ -154,7 +154,7 @@ pub mod test {
         let mut errors: Vec<Error> = Vec::new();
         //parse
         let mut parser = Parser::new(&globals, &mut tok, &mut errors, code_block);
-        parser.parse(false);
+        parser.parse(false, false);
         let code_block: CodeBlock = parser.into();
 
         //resolve

@@ -27,7 +27,7 @@ fn parse_two_files() {
 
 #[allow(unused)]
 fn parse_one_file() {
-    let file_path = r"data/source1.txt";
+    let file_path = r"data/source3.txt";
 
     let result = fs::read_to_string(file_path);
     let Ok(text) = result
@@ -57,6 +57,13 @@ mod test {
         test_error("#define ymd \n date(1,2,2022)", ErrorId::InvDate);
         test_date("#define dmy \n '1-2-2022'", 1, 2, 2022);
         test_error("#define ymd \n '1-2-2022'", ErrorId::InvDateStrForFormat);
+    }
+
+    #[test]
+    fn test_mute (){
+        test_result("a=1;#a=2", 1.0, ""); //since the last result is muted, thus not returned.
+        test_result("a=1;/#a=2;a=3;a=4;", 1.0, "");
+        test_result("a=1;/#a=2;a=3;a=4;#/a=5", 5.0, "");
     }
 
     #[test]
@@ -157,6 +164,7 @@ mod test {
         test_compiles("-");
         test_compiles("date(2022, 'sdf', 31)"); //fales in c++!
         test_compiles("a=1; { a=2; "); //block not closed.
+        test_compiles("a=");
     }
 
     #[test]

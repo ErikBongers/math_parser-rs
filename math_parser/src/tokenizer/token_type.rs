@@ -34,11 +34,7 @@ pub enum TokenType {
     Ellipsis, //...
     Pipe,
     Exclam,
-    CommentLine,
     EchoCommentLine,
-    EchoStart,
-    EchoEnd,
-    EchoDouble,
     MuteLine,
     MuteStart,
     MuteEnd,

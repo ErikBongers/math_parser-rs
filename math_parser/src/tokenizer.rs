@@ -108,17 +108,19 @@ impl Cursor<'_> {
                 }
             },
             '#' => {
-                self.next();
-                if is_id_start(self.peek()) {
-                    self.eat_while(is_id_continue);
-                    let id = &self.source.get_text()[(start_pos+1)..self.get_pos()];
-                    match id {
-                        "define" => Define,
-                        "undef" => Undef,
-                        _ => Unknown
-                    }
+                if self.match_word("define") {
+                    Define
                 } else {
-                    Unknown
+                    if self.match_word("undef") {
+                        Undef
+                    } else {
+                        if self.peek() == '/' {
+                            self.next();
+                            MuteEnd
+                        } else {
+                            MuteLine
+                        }
+                    }
                 }
             },
             '/' => {
@@ -135,7 +137,11 @@ impl Cursor<'_> {
                     '*' => {
                         self.get_to_end_of_comment();
                         return self.next_token();
-                    }
+                    },
+                    '#' => {
+                        self.next();
+                        MuteStart
+                    },
                     _ => Div
                 }
             },
@@ -167,5 +173,20 @@ impl Cursor<'_> {
         };
         let res = Token::new(token_type, self.source.index as u8, start_pos, self.get_pos(), self.source.get_text()[start_pos..self.get_pos()].to_string());
         res
+    }
+
+    fn match_word(&mut self, word: &str) -> bool{
+        let mut chars2 = self.chars.clone();
+        if chars2.as_str().starts_with(word) {
+            chars2.nth(word.len()-1);
+            //next should not be an id character.
+            if let Some(c) = chars2.next() {
+                if is_id_continue(c) == false {
+                    self.chars.nth(word.len()-1);
+                    return true
+                }
+            }
+        }
+        false
     }
 }

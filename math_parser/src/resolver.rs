@@ -40,6 +40,7 @@ pub fn add_error(errors: &mut Vec<Error>, id: ErrorId, range: Range, args: &[&st
 impl<'g, 'a> Resolver<'g, 'a> {
 
     pub fn resolve(&mut self, statements: &Vec<Box<Statement>>) -> Option<Value> {
+        let mut last_result = None;
         for stmt in statements {
             let stmt = stmt.as_any().downcast_ref::<Statement>().unwrap();
             if TypeId::of::<DefineExpr>() == stmt.node.as_any().type_id() {
@@ -47,13 +48,13 @@ impl<'g, 'a> Resolver<'g, 'a> {
             } else {
                 let mut result = self.resolve_node(&stmt.node);
                 result.stmt_range = stmt.get_range();
-                self.results.push(result);
+                last_result = Some(result.clone()); //since muted results are not added to the vec, we need to store the last result separately. But this is rather expensive: resolt.clone() veery time.
+                if !stmt.mute {
+                    self.results.push(result);
+                }
             }
         };
-        let Some(result) = self.results.last() else {
-            return None
-        };
-        Some(result.clone())
+        last_result
     }
 
     pub fn add_error(&mut self, id: ErrorId, range: Range, args: &[&str]) {
