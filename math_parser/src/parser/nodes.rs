@@ -236,7 +236,7 @@ impl HasRange for CallExpr {
 #[derive(CastAny, Node)]
 pub struct CodeBlock {
     pub node_data: NodeData,
-    pub statements: Vec<Box<Statement>>,
+    pub statements: Vec<Statement>,
     pub scope: Rc<RefCell<Scope>>,
 }
 
