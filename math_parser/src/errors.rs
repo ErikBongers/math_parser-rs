@@ -44,6 +44,7 @@ pub enum ErrorId
     InvList,
     InvNumberStr,
     InvFormat,
+    ValueError,
 
     WDivImplMult,
     WPowImplMult,
@@ -112,6 +113,7 @@ pub static ERROR_MAP: Lazy<HashMap<ErrorId, ErrorDef>>  = Lazy::new(|| HashMap::
 (ErrorId::Expected, ErrorDef{id: ErrorId::Expected, error_type: ErrorType::E, name: "Expected", message: "Expected `{0}`."}),
 (ErrorId::ExpectedId, ErrorDef{id: ErrorId::ExpectedId, error_type: ErrorType::E, name: "ExpectedId", message: "Expected identifier."}),
 (ErrorId::ExpectedNumericValue, ErrorDef{id: ErrorId::ExpectedNumericValue, error_type: ErrorType::E, name: "ExpectedNumericValue", message: "Expected numeric value."}),
+(ErrorId::ValueError, ErrorDef{id: ErrorId::ValueError, error_type: ErrorType::E, name: "ValueError", message: "{0}"}),
 
 (ErrorId::DateInvFrag, ErrorDef{id: ErrorId::DateInvFrag, error_type: ErrorType::E, name: "DateInvFrag", message: "Invalid fragment `0}`for date."}),
 (ErrorId::DurInvFrag, ErrorDef{id: ErrorId::DurInvFrag, error_type: ErrorType::E, name: "DurInvFrag", message: "Invalid fragment `{0}` for duration."}),

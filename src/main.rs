@@ -81,8 +81,9 @@ mod test {
         test_result("1!", 1.0, "");
         test_result("2!", 2.0, "");
         test_result("5!", 120.0, "");
-        test_error("5.3!", ErrorId::Expected);
-        test_error("(-5)!", ErrorId::Expected);
+        test_error("5.3!", ErrorId::ValueError);
+        test_error("(-5)!", ErrorId::ValueError);
+        test_error("21!", ErrorId::ValueError);
 
         test_result("2*2*3", 12.0, "");
         test_result("7-2*3", 1.0, "");

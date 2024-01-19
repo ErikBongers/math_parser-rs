@@ -1,11 +1,3 @@
-* resolve: split?
-  > for block: it doesn't need to build a vec of results, just return the last one.
-  > for main: build vec, don't keep last one.
-
-* factorial crashes in 2 ways:
-  > 2!! is a too big number; --> panic
-  > this panic seems to case a deadloop in WASM.
-
 * block comment makes a block seem empty even if it has statements in it.
     > the results are not added to the block's result
 

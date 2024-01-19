@@ -431,11 +431,15 @@ fn factorial(global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>
     };
     let size = number.to_double();
     if size < 0.0 {
-        errors.push(Error { id: ErrorId::Expected, message: "factorial argument should be a non-negative integer".to_string(), range: range.clone(), stack_trace: None,});
+        errors.push(Error { id: ErrorId::ValueError, message: "Factorial argument should be a non-negative integer".to_string(), range: range.clone(), stack_trace: None,});
         return Value::error(range.clone());
     }
     if size !=  (size as i64) as f64 {
-        errors.push(Error { id: ErrorId::Expected, message: "factorial argument should be an integer value".to_string(), range: range.clone(), stack_trace: None,});
+        errors.push(Error { id: ErrorId::ValueError, message: "Factorial argument should be an integer value".to_string(), range: range.clone(), stack_trace: None,});
+        return Value::error(range.clone());
+    }
+    if size > 20.0 {
+        errors.push(Error { id: ErrorId::ValueError, message: "Factorial argument should not be larger than 20 or it will produce a too large number.".to_string(), range: range.clone(), stack_trace: None,});
         return Value::error(range.clone());
     }
     let size = size as i64;
