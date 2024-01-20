@@ -71,8 +71,9 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 }
             }
         }
-        if self.match_token(&TokenType::CurlOpen) {
-            let block = self.parse_block();
+        if self.tok.peek().kind == TokenType::CurlOpen {
+            let curl_open = self.tok.next();
+            let block = self.parse_block(curl_open.range.clone());
             if !self.match_token(&TokenType::CurlClose) {
                 self.add_error(ErrorId::Expected, self.tok.peek().range.clone(), &["}"]);
             }
@@ -197,10 +198,11 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         if !self.match_token(&TokenType::ParClose) {
             return Some(Statement::error(&mut self.errors, ErrorId::Expected, self.tok.peek().clone(), ")"));
         };
-        if !self.match_token(&TokenType::CurlOpen) {
+        if self.tok.peek().kind != TokenType::CurlOpen {
             return Some(Statement::error(&mut self.errors, ErrorId::Expected, self.tok.peek().clone(), "{"));
         };
-        let new_code_block = self.parse_block();
+        let curl_open = self.tok.next();
+        let new_code_block = self.parse_block(curl_open.range.clone());
 
         if self.tok.peek().kind != TokenType::CurlClose {
             return Some(Statement::error(&mut self.errors, ErrorId::Expected, self.tok.peek().clone(), "}"));
@@ -226,9 +228,9 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         })
     }
 
-    fn parse_block(&mut self) -> CodeBlock {
+    fn parse_block(&mut self, block_start: Range) -> CodeBlock {
         let new_scope = Scope::copy_for_block(&self.code_block.scope);
-        let new_code_block = CodeBlock::new(new_scope);
+        let new_code_block = CodeBlock::new(new_scope, block_start);
         let mut parser = Parser::new(&self.globals, &mut self.tok, &mut self.errors, new_code_block);
         parser.parse(true, self.mute_block);
         parser.into()

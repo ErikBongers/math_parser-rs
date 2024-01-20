@@ -39,14 +39,16 @@ pub fn add_error(errors: &mut Vec<Error>, id: ErrorId, range: Range, args: &[&st
 
 impl<'g, 'a> Resolver<'g, 'a> {
 
-    pub fn resolve(&mut self, statements: &Vec<Statement>) {
+    pub fn resolve(&mut self, statements: &Vec<Statement>) -> Option<Value> {
         for stmt in statements {
             let value = self.resolve_one_statement(stmt);
             if !stmt.mute {
                 self.results.push(value);
             }
         };
+        self.results.last().cloned()
     }
+
     pub fn resolve_to_result(&mut self, statements: &Vec<Statement>) -> Option<Value> {
         let mut result = None;
         for stmt in statements {
@@ -102,10 +104,12 @@ impl<'g, 'a> Resolver<'g, 'a> {
     fn resolve_codeblock_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let code_block = expr.as_any().downcast_ref::<CodeBlock>().unwrap();
         let mut resolver = Resolver {globals: self.globals, scope: code_block.scope.clone(), results: Vec::new(), errors: self.errors};
-        let result = resolver.resolve_to_result(&code_block.statements);
-        let Some(result) = result else {
+        let mut result = resolver.resolve(&code_block.statements);
+        self.results.extend(resolver.results);
+        let Some(mut result) = result else {
             return self.add_error_value(ErrorId::FuncNoBody, code_block.get_range().clone(),&["anonymous block"]);
         };
+        result.stmt_range = code_block.get_range();
         result
     }
 

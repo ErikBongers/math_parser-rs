@@ -236,14 +236,16 @@ impl HasRange for CallExpr {
 #[derive(CastAny, Node)]
 pub struct CodeBlock {
     pub node_data: NodeData,
+    pub block_start: Range,
     pub statements: Vec<Statement>,
     pub scope: Rc<RefCell<Scope>>,
 }
 
 impl CodeBlock {
-    pub fn new(scope: RefCell<Scope>) -> Self {
+    pub fn new(scope: RefCell<Scope>, block_start: Range) -> Self {
         CodeBlock {
             node_data: NodeData::new(),
+            block_start,
             scope: Rc::new(scope),
             statements: Vec::new(),
         }
@@ -252,9 +254,9 @@ impl CodeBlock {
 
 impl HasRange for CodeBlock {
     fn get_range(&self) -> Range {
-        self.statements.iter()
+        &self.block_start +  &self.statements.iter()
             .map(|stmt| stmt.get_range())
-            .reduce(|sum, range| &sum + &range).unwrap_or(Range::none())
+            .reduce(|sum, range| &sum + &range).unwrap_or(self.block_start.clone())
     }
 }
 
@@ -350,6 +352,13 @@ pub fn print_nodes(expr: &Box<dyn Node>, indent: usize, globals: &Globals) {
         },
         t if TypeId::of::<DefineExpr>() == t => {
             println!("{0}", "DefineExpr");
+        },
+        t if TypeId::of::<CodeBlock>() == t => {
+            println!("{0}", "CodeBlock");
+            let code_block = expr.as_any().downcast_ref::<CodeBlock>().unwrap();
+            for stmt in &code_block.statements {
+                print_nodes(&stmt.node, indent, globals);
+            }
         },
         _ => {
             println!("{0}", "It's a dunno...");

@@ -1,5 +1,6 @@
-* block comment makes a block seem empty even if it has statements in it.
-    > the results are not added to the block's result
+* block comment inside a block:
+    > strange output.
+    > should mute all statements (also the one that is returned.
 
 * Dates:
   : lastDay=now().year, 12, 'last'; //31, 30 28 or 29?
