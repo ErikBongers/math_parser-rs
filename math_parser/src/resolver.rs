@@ -40,13 +40,18 @@ pub fn add_error(errors: &mut Vec<Error>, id: ErrorId, range: Range, args: &[&st
 impl<'g, 'a> Resolver<'g, 'a> {
 
     pub fn resolve(&mut self, statements: &Vec<Statement>) -> Option<Value> {
+        let mut last_result = None;
+
         for stmt in statements {
             let value = self.resolve_one_statement(stmt);
-            if !stmt.mute {
+            if stmt.mute {
+                last_result = Some(value);
+            } else {
                 self.results.push(value);
+                last_result = None; //this just sets a flag. Not that expensive.
             }
         };
-        self.results.last().cloned()
+        last_result.or(self.results.last().cloned())
     }
 
     pub fn resolve_to_result(&mut self, statements: &Vec<Statement>) -> Option<Value> {
