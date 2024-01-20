@@ -58,7 +58,7 @@ impl Api {
         };
         resolver.resolve(&code_block.statements);
 
-        resolver.results.sort_by(|v1, v2| v1.stmt_range.start.cmp(&v2.stmt_range.start));//TODO: sort is expensive. Perhaps find a way to put block's internal results BEFORE end result? Pass result vec to deeper resolver?
+        resolver.results.sort_by(|v1, v2| v1.stmt_range.start.cmp(&v2.stmt_range.start)); //fast if list is nearly sorted, which it is.
 
         serde_json::to_string_pretty(&resolver).unwrap()
     }
