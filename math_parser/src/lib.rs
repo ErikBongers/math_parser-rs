@@ -55,6 +55,8 @@ impl Api {
             results: Vec::new(),
             errors: &mut errors,
             globals: &self.globals,
+            muted: false,
+            current_statement_muted: false
         };
         resolver.resolve(&code_block.statements);
 
@@ -184,6 +186,8 @@ pub mod test {
             results: Vec::new(),
             errors: &mut errors,
             globals: &globals,
+            muted: false,
+            current_statement_muted: false
         };
         resolver.resolve(&code_block.statements);
         (resolver.results, errors)

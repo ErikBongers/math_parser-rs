@@ -1,6 +1,5 @@
-* block comment inside a block:
-    > strange output.
-    > should mute all statements (also the one that is returned.
+* Muted block doesn't work
+    > only the end result is muted, not the content.
 
 * Dates:
   : lastDay=now().year, 12, 'last'; //31, 30 28 or 29?

@@ -456,7 +456,7 @@ pub fn execute_custom_function(local_function_def: &CustomFunctionDef, _scope: &
     }
 
     local_function_def.code_block.scope.borrow_mut().variables.extend(param_variables);
-    let mut resolver = Resolver {globals, scope: local_function_def.code_block.scope.clone(), results: Vec::new(), errors};
+    let mut resolver = Resolver {globals, scope: local_function_def.code_block.scope.clone(), results: Vec::new(), errors, muted: true, current_statement_muted: false};
     let result = resolver.resolve_to_result(&local_function_def.code_block.statements);
     let Some(result) = result else {
         add_error(errors, ErrorId::FuncNoBody, range.clone(),&[&local_function_def.name], Value::error(range.clone()));

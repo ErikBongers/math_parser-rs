@@ -28,6 +28,8 @@ pub struct Resolver<'g, 'a> {
     pub results: Vec<Value>,
     pub errors: &'a mut Vec<Error>,
     //date_format: DateFormat,
+    pub muted: bool,
+    pub current_statement_muted: bool,
 }
 
 pub fn add_error(errors: &mut Vec<Error>, id: ErrorId, range: Range, args: &[&str], mut value: Value) -> Value {
@@ -44,7 +46,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
 
         for stmt in statements {
             let value = self.resolve_one_statement(stmt);
-            if stmt.mute {
+            if stmt.mute || self.muted {
                 last_result = Some(value);
             } else {
                 self.results.push(value);
@@ -64,6 +66,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
 
     #[inline(always)]
     fn resolve_one_statement(&mut self, stmt: &Statement) -> Value {
+        self.current_statement_muted = stmt.mute;
         let mut value = self.resolve_node(&stmt.node);
         value.stmt_range = stmt.get_range();
         value
@@ -108,7 +111,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
 
     fn resolve_codeblock_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let code_block = expr.as_any().downcast_ref::<CodeBlock>().unwrap();
-        let mut resolver = Resolver {globals: self.globals, scope: code_block.scope.clone(), results: Vec::new(), errors: self.errors};
+        let mut resolver = Resolver {globals: self.globals, scope: code_block.scope.clone(), results: Vec::new(), errors: self.errors, muted: self.muted || self.current_statement_muted, current_statement_muted: false};
         let mut result = resolver.resolve(&code_block.statements);
         self.results.extend(resolver.results);
         let Some(mut result) = result else {
