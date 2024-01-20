@@ -289,9 +289,8 @@ impl<'g, 'a> Resolver<'g, 'a> {
                 if pfix_expr.postfix_id.kind == TokenType::ClearUnit {
                     number.unit = Unit::none();
                 } else {
-                    let postfix_id = self.globals.get_text(&pfix_expr.postfix_id.range);
-                    let unit = if self.scope.borrow().var_exists(postfix_id, self.globals) {
-                        Unit { range: Some(pfix_expr.postfix_id.range.clone()), id: self.scope.borrow().get_var(postfix_id, self.globals).as_number().unwrap().unit.id.clone() }
+                   let unit = if self.scope.borrow().var_exists(id, self.globals) {
+                        Unit { range: Some(pfix_expr.postfix_id.range.clone()), id: self.scope.borrow().get_var(id, self.globals).as_number().unwrap().unit.id.clone() }
                     } else {
                         Unit { range: Some(pfix_expr.postfix_id.range.clone()), id: id.clone() }
                     };
