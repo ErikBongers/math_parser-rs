@@ -1,3 +1,7 @@
+* implement strict
+  > no overload of constants
+  > trig functions require unit and do not assume rad.
+
 * number strings.
   > allow underscores? Currency signs? Minus? Exponential?
   > merge with the normal parse_decimal function?

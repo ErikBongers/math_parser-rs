@@ -378,15 +378,20 @@ impl<'g, 'a> Resolver<'g, 'a> {
         let id_str = self.globals.get_text(&expr.id.range).to_string();
         if !self.scope.borrow().variables.contains_key(&id_str) {
             //TODO: test if id is function
-            if self.globals.constants.contains_key(&id_str.as_str()) {
-                self.add_error(ErrorId::ConstRedef, expr.id.range.clone(), &[id_str.as_str()]);
-            }
             if self.scope.borrow().units_view.units.contains(&id_str) {
                 self.add_error(ErrorId::WVarIsUnit, expr.id.range.clone(), &[id_str.as_str()]);
             }
-            //TODO: disallow redefine of constant in case of `strict`
-            self.scope.borrow_mut().variables.insert(id_str, value.clone());
         }
+        //disallow redefine of constant in case of `strict`. Error has already been added
+        if self.globals.constants.contains_key(&id_str.as_str()) {
+            if self.scope.borrow().strict {
+                self.add_error(ErrorId::ConstRedef, expr.id.range.clone(), &[id_str.as_str()]);
+                return value;
+            } else {
+                self.add_error(ErrorId::WConstRedef, expr.id.range.clone(), &[id_str.as_str()]);
+            }
+        }
+        self.scope.borrow_mut().variables.insert(id_str, value.clone());
         value.id = Some(expr.id.range.clone()); //add id here to avoid adding id to the self.scope.variables.
         value
     }

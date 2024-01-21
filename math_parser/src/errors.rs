@@ -25,6 +25,7 @@ pub enum ErrorId
     FuncFailed,
     UnitPropDiff,
     ConstRedef,
+    WConstRedef,
     ExpHasUnit,
 
     DateFragNoDate,
@@ -104,7 +105,8 @@ pub static ERROR_MAP: Lazy<HashMap<ErrorId, ErrorDef>>  = Lazy::new(|| HashMap::
 (ErrorId::EExplicitUnitsExpected, ErrorDef{id: ErrorId::EExplicitUnitsExpected, error_type: ErrorType::E, name: "EExplicitUnitsExpected", message: "Explicit unit expected: `{0}`"}),
 
 (ErrorId::UnitPropDiff, ErrorDef{id: ErrorId::UnitPropDiff, error_type: ErrorType::E, name: "UnitPropDiff", message: "The units are not for the same property (lenght, temperature,...)."}),
-(ErrorId::ConstRedef, ErrorDef{id: ErrorId::ConstRedef, error_type: ErrorType::E, name: "ConstRedef", message: "Warning: redefinition of constant `{0}`."}),
+(ErrorId::ConstRedef, ErrorDef{id: ErrorId::ConstRedef, error_type: ErrorType::E, name: "ConstRedef", message: "Redefinition of constant `{0}` not allowed."}),
+(ErrorId::WConstRedef, ErrorDef{id: ErrorId::WConstRedef, error_type: ErrorType::W, name: "WConstRedef", message: "Warning: redefinition of constant `{0}`."}),
 (ErrorId::DateFragNoDate, ErrorDef{id: ErrorId::DateFragNoDate, error_type: ErrorType::E, name: "DateFragNoDate", message: "Cannot get `{0}` fragment. Value is not a date."}),
 (ErrorId::DateFragNoDuration, ErrorDef{id: ErrorId::DateFragNoDuration, error_type: ErrorType::E, name: "DateFragNoDuration", message: "Cannot get `{0}` fragment. Value is not a duration."}),
 

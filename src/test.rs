@@ -1,4 +1,4 @@
-use math_parser::test_api::{test_compiles, test_result, test_error, test_date};
+use math_parser::test_api::{test_compiles, test_result, test_error, test_date, test_no_error};
 use math_parser::errors::ErrorId;
 
 #[test]
@@ -67,6 +67,7 @@ fn test_assign_expr () {
     test_result("a=1;b=2;c=a+b", 3.0, "");
     test_result("a=1;a+=2", 3.0, "");
     test_result("a=1mm;a.=", 1.0, "");
+    test_result("a=1;a=2;a;", 2.0, "");
 }
 
 #[test]
@@ -83,6 +84,7 @@ fn test_global_funcs () {
     test_result("last(1,2,3)", 3.0, "");
     test_result("first(reverse(1,2,3))", 3.0, "");
     test_result("first(sort(3,1, 2))", 1.0, "");
+    test_result("a=30deg; sin(a)", 0.5, "");
     test_compiles("now()");
 }
 
@@ -138,6 +140,10 @@ fn test_defines () {
     test_error("#undef trig\n  sin(1);", ErrorId::FuncNotDef);
     test_result("#undef trig\n#define trig\n  sin(30deg);", 0.5, "");
     test_error("#undef date\n  now();", ErrorId::FuncNotDef);
-    //TODO: test dates or at least test_no_error()
-    // test_error("#undef date\n#define date\n  now();", ErrorId::FuncNotDef);
+    //strict and constants
+    test_error("#define strict\n  PI=1;", ErrorId::ConstRedef);
+    test_error("PI=1;", ErrorId::WConstRedef);
+    test_result("PI=1;", 1.0, "");
+
+    test_no_error("#undef date\n#define date\n  now();");
 }

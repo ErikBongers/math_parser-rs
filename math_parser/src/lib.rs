@@ -163,10 +163,12 @@ pub mod test_api {
 
     pub fn test_error(text: &str, error_id: ErrorId) {
         let (_results, errors) = get_results(text);
-        // let cnt = errors.len();
-        // let cnt2 = errors.iter().count();
-        // assert_ne!(cnt, 0);
         assert_ne!(errors.iter().filter(|&e| e.id == error_id).count(), 0);
+    }
+
+    pub fn test_no_error(text: &str) {
+        let (_results, errors) = get_results(text);
+        assert_eq!(errors.len(), 0);
     }
 
     pub fn get_results(text: &str) -> (Vec<Value>, Vec<Error>) {
