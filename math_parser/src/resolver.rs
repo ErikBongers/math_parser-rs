@@ -219,7 +219,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
 
     fn resolve_func_def_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let func_expr = expr.as_any().downcast_ref::<FunctionDefExpr>().unwrap();
-        Value { //TODO: add id and full range of function.
+        Value {
             id: Some(func_expr.id_range.clone()),
             has_errors: false,
             stmt_range: func_expr.get_range(),
