@@ -1,16 +1,17 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use serde::{Serialize, Serializer};
-use serde::ser::{SerializeStruct};
+use serde::ser::SerializeStruct;
 use crate::{date, errors};
 use crate::errors::ERROR_MAP;
 use crate::date::{EMPTY_YEAR, LAST};
 use crate::globals::Globals;
+use crate::number::Number;
 use crate::resolver::Resolver;
 use crate::resolver::scope::Scope;
 use crate::resolver::unit::Unit;
 use crate::resolver::value::{NumberFormat, Value, Variant::*};
-use crate::tokenizer::cursor::{Number, Range};
+use crate::tokenizer::cursor::Range;
 
 struct ScopedValue<'a> {
     scope: Rc<RefCell<Scope>>,

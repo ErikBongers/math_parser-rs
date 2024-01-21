@@ -4,9 +4,10 @@ use std::rc::Rc;
 use macros::{CastAny, Node};
 use crate::errors::{Error, ErrorId};
 use crate::globals::Globals;
+use crate::number::Number;
 use crate::resolver::scope::Scope;
 use crate::resolver::unit::Unit;
-use crate::tokenizer::cursor::{Number, Range};
+use crate::tokenizer::cursor::Range;
 use crate::tokenizer::Token;
 
 #[derive(Clone)]

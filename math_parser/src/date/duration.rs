@@ -1,5 +1,6 @@
     use crate::errors::{Error, ErrorId};
-    use crate::tokenizer::cursor::{Number, Range};
+    use crate::number::Number;
+    use crate::tokenizer::cursor::Range;
 
 #[derive(Clone, Copy)]
 pub struct Duration {

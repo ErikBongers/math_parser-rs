@@ -1,3 +1,13 @@
+* number strings.
+
+* post-build
+  > revisit this as it's dependent on this inc_version tool, but that's not in the tool_chain.
+  > check out https://crates.io/crates/cargo-post
+  > also check how to include dev dependencies in cargo.
+  > perhaps create a github repo so version_inc can be downloaded?
+     > now version_inc path is hard coded and is a separate project.
+  > test a clean clone repo from github. ideally it should run.
+
 * Dates:
   : lastDay=now().year, 12, 'last'; //31, 30 28 or 29?
     date(lastDay).day; --> returns 99 !

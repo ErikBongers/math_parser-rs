@@ -3,9 +3,10 @@ use std::ops::Sub;
 use crate::globals::Globals;
 use crate::resolver::unit::Unit;
 use crate::resolver::value::{NumberFormat, Value, Variant};
-use crate::tokenizer::cursor::{Number, Range};
+use crate::tokenizer::cursor::Range;
 use crate::tokenizer::token_type::TokenType;
 use crate::date::Date;
+use crate::number::Number;
 
 #[repr(u8)]
 #[derive(Copy, Clone)]

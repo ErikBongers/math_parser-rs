@@ -4,20 +4,21 @@ pub mod scope;
 mod serialize;
 pub mod unit;
 
-use std::any::{TypeId};
+use std::any::TypeId;
 use std::cell::RefCell;
 use std::rc::Rc;
 use crate::date::{DateFormat, parse_date_string};
 use crate::errors::{Error, ErrorId, has_real_errors};
-use crate::functions::{FunctionType};
+use crate::functions::FunctionType;
 use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, DefineExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NoneExpr, PostfixExpr, Statement, UnaryExpr, UnitExpr};
 use crate::globals::Globals;
+use crate::number::Number;
 use crate::resolver::operator::{operator_id_from, OperatorType};
 use crate::resolver::scope::Scope;
 use crate::resolver::unit::{Unit, UnitProperty, UnitsView, UnitTag};
 use crate::resolver::value::{NumberFormat, Value, Variant};
 use crate::resolver::value::Variant::Numeric;
-use crate::tokenizer::cursor::{Number, Range};
+use crate::tokenizer::cursor::Range;
 use crate::tokenizer::token_type::TokenType;
 
 pub struct Resolver<'g, 'a> {

@@ -1,7 +1,6 @@
 use std::fs;
 
 fn main() {
-    //TODDO: get version number
     let version_str = fs::read_to_string(r"D:\Documents\Programming\Rust\math_parser-rs\data\version.no").expect("Cannot find the version.no file.");
     let (major, minor, build) = create_or_update(version_str.as_str());
 

@@ -9,10 +9,11 @@ use crate::date::{LAST, month_from_int};
 use crate::parser::nodes::{CodeBlock, FunctionDefExpr};
 use crate::resolver::{add_error, Resolver};
 use crate::globals::Globals;
+use crate::number::Number;
 use crate::resolver::unit::Unit;
 use crate::resolver::value::{NumberFormat, Value};
 use crate::resolver::value::Variant;
-use crate::tokenizer::cursor::{Number, Range};
+use crate::tokenizer::cursor::Range;
 
 pub trait FunctionDef {
     fn is_correct_arg_count(&self, cnt: usize) -> bool;

@@ -17,6 +17,7 @@ pub mod errors; //ErrorId is public
 mod functions;
 pub mod globals;
 mod date;
+mod number;
 
 
 pub struct Api {
