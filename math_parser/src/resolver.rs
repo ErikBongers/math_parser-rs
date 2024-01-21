@@ -304,7 +304,14 @@ impl<'g, 'a> Resolver<'g, 'a> {
                     number.convert_to_unit(&unit, &self.scope.borrow().units_view, &pfix_expr.postfix_id.range, self.errors, self.globals);
                 }
             },
-            _ => return self.return_error(ErrorId::UnknownExpr, pfix_expr.postfix_id.range.clone(), &["Postfix expression not valid here."], result)
+            _ => {
+                let range = if pfix_expr.postfix_id.kind == TokenType::ClearUnit {
+                    pfix_expr.get_range()
+                } else {
+                    pfix_expr.postfix_id.range.clone()
+                };
+                return self.return_error(ErrorId::UnknownExpr, range, &["Postfix expression not valid here."], result);
+            }
         };
         result
     }
