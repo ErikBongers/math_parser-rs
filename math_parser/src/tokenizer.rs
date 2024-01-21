@@ -102,6 +102,7 @@ impl Cursor<'_> {
             },
             '*' => {
                 if self.peek() == '=' {
+                    self.next();
                     EqMult
                 } else {
                     Mult

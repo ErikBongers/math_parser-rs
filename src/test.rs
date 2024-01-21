@@ -68,6 +68,10 @@ fn test_assign_expr () {
     test_result("a=1;a+=2", 3.0, "");
     test_result("a=1mm;a.=", 1.0, "");
     test_result("a=1;a=2;a;", 2.0, "");
+    test_result("a=2;a*=3;", 6.0, "");
+    test_result("a=6;a/=3;", 2.0, "");
+    test_result("a=1;a+=3;", 4.0, "");
+    test_result("a=5;a-=3;", 2.0, "");
 }
 
 #[test]

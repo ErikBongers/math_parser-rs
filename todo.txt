@@ -1,5 +1,4 @@
 * implement strict
-  > no overload of constants
   > trig functions require unit and do not assume rad.
 
 * number strings.

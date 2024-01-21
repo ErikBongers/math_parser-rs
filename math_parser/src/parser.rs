@@ -292,7 +292,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 let bin_op = match op_type {
                     EqPlus => Plus,
                     EqMin => Min,
-                    EqMult => Min,
+                    EqMult => Mult,
                     EqDiv => Div,
                     _ => unreachable!()
                 };
