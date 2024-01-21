@@ -12,7 +12,7 @@ use crate::errors::{Error, ErrorId, has_real_errors};
 use crate::functions::FunctionType;
 use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, DefineExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NoneExpr, PostfixExpr, Statement, UnaryExpr, UnitExpr};
 use crate::globals::Globals;
-use crate::number::Number;
+use crate::number::{Number, parse_formatted_number};
 use crate::resolver::operator::{operator_id_from, OperatorType};
 use crate::resolver::scope::Scope;
 use crate::resolver::unit::{Unit, UnitProperty, UnitsView, UnitTag};
@@ -422,12 +422,20 @@ impl<'g, 'a> Resolver<'g, 'a> {
                 Value::from_number(n, expr.get_range())
            },
             ConstType::FormattedString => {
-                //TODO: FormattedNumberParser
                 let mut trimmed_range = expr.range.clone();
                 if (trimmed_range.end - trimmed_range.start) >=2 {
                     trimmed_range.start += 1;
                     trimmed_range.end -= 1;
                 }
+                match parse_formatted_number(self.globals.get_text(&trimmed_range), &trimmed_range, &self.scope.borrow()) {
+                    Ok(number) => {
+                       return Value::from_number(number, trimmed_range);
+                    }
+                    Err(error) => {
+                        self.errors.push(error);
+                    }
+                };
+
                 let string = self.globals.get_text(&trimmed_range);
                 if string == "last" {
                     return Value::last_variant(expr.range.clone());
@@ -438,22 +446,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
             }
         }
     }
-/*            {
-            FormattedNumberParser numberParser;
-            auto number = numberParser.parse(*codeBlock.scope, codeBlock.scope->getText(constExpr.value.range), constExpr.range());
-            if (number.errors.empty())
-                {
-                return number;
-                }
 
-            FormattedDateParser dateParser;
-            dateParser.dateFormat = this->dateFormat;
-            auto date = dateParser.parse(codeBlock.scope->getText(constExpr.value.range), constExpr.range());
-            if(!date.errors.empty())
-                date.errors.insert(date.errors.begin(), number.errors.begin(), number.errors.end());
-            return Value(date);
-            }
-*/
     fn resolve_bin_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let expr = expr.as_any().downcast_ref::<BinExpr>().unwrap();
 

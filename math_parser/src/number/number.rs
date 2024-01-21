@@ -1,6 +1,7 @@
 use crate::errors::{Error, ErrorId};
 use crate::globals::Globals;
 use crate::resolver::add_error;
+use crate::resolver::scope::Scope;
 use crate::resolver::unit::{Unit, UnitsView};
 use crate::resolver::value::{NumberFormat, Value};
 use crate::tokenizer::cursor::Range;
@@ -93,4 +94,58 @@ impl Number {
         let base: f64 = 10.0;
         self.significand * base.powf(self.exponent as f64)
     }
+}
+
+pub fn parse_formatted_number(stream: &str, range: &Range, scope: &Scope) -> Result<Number, Error> {
+    let mut decimal_divider = 1.0;
+    let chars = stream.chars();
+    let mut d: f64 = 0.0;
+    for c in chars {
+        if c >= '0' && c <= '9' {
+            if decimal_divider == 1.0 {
+                d = d * 10.0 + (c as i32 - '0' as i32) as f64;
+            } else {
+                d += (c as i32 - '0' as i32) as f64/ decimal_divider;
+                decimal_divider *= 10.0;
+            }
+        } else {
+            if c == scope.thou_char {
+                if decimal_divider != 1.0 {
+                    return Err(Error{
+                        id: ErrorId::InvNumberStr,
+                        message: "thousands divider char not allowed after decimal point".to_string(),
+                        range: range.clone(),
+                        stack_trace: None,
+                    });
+                }
+                //note that the thou_char is currently allowed everywhere before the decimal_char !
+            } else {
+                if c == scope.decimal_char {
+                    if decimal_divider == 1.0 {
+                        decimal_divider = 10.0;
+                    } else {
+                        return Err(Error{
+                            id: ErrorId::InvNumberStr,
+                            message: "decimal point encountered more than once".to_string(),
+                            range: range.clone(),
+                            stack_trace: None,
+                        });
+                    }
+                } else {
+                    return Err(Error{
+                        id: ErrorId::InvNumberStr,
+                        message: "unexpected character".to_string(),
+                        range: range.clone(),
+                        stack_trace: None,
+                    });
+                }
+            }
+        }
+    }
+    Ok(Number {
+        significand: d,
+        exponent: 0,
+        unit: Unit::none(),
+        fmt: NumberFormat::Dec,
+    })
 }

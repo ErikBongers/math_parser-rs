@@ -1,4 +1,6 @@
 * number strings.
+  > allow underscores? Currency signs? Minus? Exponential?
+  > merge with the normal parse_decimal function?
 
 * post-build
   > revisit this as it's dependent on this inc_version tool, but that's not in the tool_chain.
@@ -13,10 +15,6 @@
     date(lastDay).day; --> returns 99 !
 
 * NodeData: needed?
-
-* #define
- > extra defines: test them all!
-   > decimal dot
 
 * copy tests from c++
 
