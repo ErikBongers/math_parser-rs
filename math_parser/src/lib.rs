@@ -1,7 +1,9 @@
 use std::cell::RefCell;
 use crate::errors::Error;
 use crate::parser::{Parser};
-use crate::parser::nodes::{CodeBlock, print_nodes};
+use crate::parser::nodes::CodeBlock;
+#[cfg(feature="print_nodes")]
+use crate::parser::nodes::print_nodes;
 use crate::globals::Globals;
 use crate::resolver::Resolver;
 use crate::resolver::scope::Scope;

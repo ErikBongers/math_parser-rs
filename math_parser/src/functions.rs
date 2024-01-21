@@ -389,7 +389,7 @@ fn sin(global_function_def: &GlobalFunctionDef, scope: &Rc<RefCell<Scope>>, args
     let Some(number) = match_arg_number(global_function_def, &args[0], range, errors) else { return Value::error(range.clone()); };
     let mut number = number.clone(); //Needed? Test it.
     if number.unit.id == "deg" {
-        number.convert_to_unit(&Unit { range: None, id: "rad".to_string() }, &scope.borrow().units_view, range, errors, globals); //TODO: we don't need to make another number. Just convert units for a f64.
+        number.convert_to_unit(&Unit { range: None, id: "rad".to_string() }, &scope.borrow().units_view, range, errors, globals);
     }
     Value::from_number(Number {significand: number.to_double().sin(), exponent: 0, unit: Unit::none(), fmt: NumberFormat::Dec }, range.clone())
 }
@@ -452,7 +452,7 @@ pub fn execute_custom_function(local_function_def: &CustomFunctionDef, _scope: &
 
     //Note that number of args has already been checked in call()
     for (i, arg) in args.iter().enumerate() {
-        param_variables.insert(local_function_def.function_def_expr.arg_names[i].clone(), arg.clone()); //TODO: clone or move?
+        param_variables.insert(local_function_def.function_def_expr.arg_names[i].clone(), arg.clone());
     }
 
     local_function_def.code_block.scope.borrow_mut().variables.extend(param_variables);

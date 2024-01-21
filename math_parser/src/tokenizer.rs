@@ -14,10 +14,10 @@ pub struct Token {
     pub text: String,
 }
 impl Token {
-    fn new(kind: TokenType, source_index :u8, start: usize, end :usize, text: String) -> Token {
+    fn new(kind: TokenType, source_index :u8, start: usize, end :usize, _text: String) -> Token {
         Token { kind, range: Range { source_index, start, end },
             #[cfg(debug_assertions)]
-            text
+            text: _text
         }
     }
 }

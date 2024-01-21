@@ -1,5 +1,3 @@
-enum NumFormat { DEC, BIN, HEX }
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
     BracOpen,

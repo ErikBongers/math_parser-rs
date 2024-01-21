@@ -94,7 +94,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     fn parse_defines(&mut self) -> Option<Statement> {
         if self.tok.peek().kind == TokenType::Define || self.tok.peek().kind == TokenType::Undef {
             let t = self.tok.next();
-            self.tok.set_ln_is_token(true);
+            self.tok.set_nl_is_token(true);
             let mut defines: Vec<Define> = Vec::new();
             while self.tok.peek().kind != TokenType::Eot {
                 if self.tok.peek().kind == TokenType::Newline || self.tok.peek().kind == TokenType::SemiColon {
@@ -105,7 +105,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                     defines.push(define);
                 }
             }
-            self.tok.set_ln_is_token(false);
+            self.tok.set_nl_is_token(false);
             return Some(Statement { mute: false, node_data: NodeData::new(), node: Box::new(DefineExpr {
                 node_data: NodeData::new(),
                 def_undef: t,
@@ -149,7 +149,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             "decimal_dot" => DefineType::DecimalDot,
             "decimal_comma" => DefineType::DecimalComma,
             _ => {
-                //TODO: add error for unknown define option.
+                self.add_error(ErrorId::DefineNotDef, token.range.clone(), &[&txt]);
                 return None;
             }
         };

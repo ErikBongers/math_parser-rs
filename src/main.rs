@@ -42,7 +42,7 @@ fn parse_one_file() {
 
 #[cfg(test)]
 mod test {
-    use math_parser::test::{test_compiles, test_result, test_error, test_date};
+    use math_parser::test_api::{test_compiles, test_result, test_error, test_date};
     use math_parser::errors::ErrorId;
     #[test]
     fn test_numbers (){
