@@ -305,11 +305,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
                 }
             },
             _ => {
-                let range = if pfix_expr.postfix_id.kind == TokenType::ClearUnit {
-                    pfix_expr.get_range()
-                } else {
-                    pfix_expr.postfix_id.range.clone()
-                };
+                let range = pfix_expr.postfix_id.range.clone();
                 return self.return_error(ErrorId::UnknownExpr, range, &["Postfix expression not valid here."], result);
             }
         };
@@ -439,12 +435,12 @@ impl<'g, 'a> Resolver<'g, 'a> {
                     trimmed_range.start += 1;
                     trimmed_range.end -= 1;
                 }
-                match parse_formatted_number(self.globals.get_text(&trimmed_range), &trimmed_range, &self.scope.borrow()) {
+                let num_error = match parse_formatted_number(self.globals.get_text(&trimmed_range), &trimmed_range, &self.scope.borrow()) {
                     Ok(number) => {
                        return Value::from_number(number, trimmed_range);
                     }
                     Err(error) => {
-                        self.errors.push(error);
+                        error
                     }
                 };
 
@@ -453,7 +449,11 @@ impl<'g, 'a> Resolver<'g, 'a> {
                     return Value::last_variant(expr.range.clone());
                 }
                 let mut date = parse_date_string(string, &expr.range, self.scope.borrow().date_format);
-                self.errors.append(&mut date.errors);
+                if date.errors.is_empty() == false {
+                    self.errors.append(&mut date.errors);
+                    //only add the num_error if the date parsing failed.
+                    self.errors.push(num_error);
+                }
                 Value::from_date(date, expr.get_range())
             }
         }

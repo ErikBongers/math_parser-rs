@@ -1,5 +1,6 @@
 * implement strict
   > trig functions require unit and do not assume rad.
+  > no unit overrides or function overrides.
 
 * number strings.
   > allow underscores? Currency signs? Minus? Exponential?

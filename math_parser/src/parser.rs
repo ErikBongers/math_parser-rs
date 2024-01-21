@@ -269,13 +269,19 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
 
         let id = self.tok.next();
         if let Eq = op_type {
-            self.tok.next(); //consume =
+            let eq = self.tok.next();
             let assign_expr = AssignExpr {
                 node_data: NodeData::new(),
                 id,
                 expr: Parser::reduce_list(Box::new(self.parse_list_expr()))
             };
-            //TODO: check EOT
+
+            if let Some(none_expr) = assign_expr.expr.as_any().downcast_ref::<NoneExpr>() {
+                if none_expr.token.kind == TokenType::Eot {
+                    self.add_error(ErrorId::Eos, Range { start: eq.range.end, ..eq.range }, &[]);
+                }
+            }
+
             let txt = self.globals.get_text(&assign_expr.id.range).to_string();
             self.code_block.scope.borrow_mut().var_defs.insert(txt);
             return Box::new(assign_expr);
@@ -448,7 +454,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     fn parse_one_postfix(&mut self, node: Box<dyn Node>) -> Box<dyn Node> {
         match self.tok.peek().kind {
             TokenType::Dot => {
-                self.tok.next();
+                let dot = self.tok.next();
                 let t = self.tok.peek();
                 let t_type = &t.kind.clone();
                 let mut postfix = PostfixExpr { postfix_id: t.clone(), node, node_data: NodeData::new() };
@@ -456,10 +462,10 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                     self.tok.next();
                     // postfix.postfix_id already set!
                 } else {
-                    postfix.postfix_id = Token { kind: TokenType::ClearUnit, range : Range { start: 0, end: 0, source_index: self.tok.source_index()},
+                    postfix.postfix_id = Token { kind: TokenType::ClearUnit, range : Range { end: dot.range.end, ..dot.range}, //range: zero length, right behind dot.
                         #[cfg(debug_assertions)]
                         text: "".to_string()
-                    } //TODO: since range can be empty: use Option?
+                    }
                 }
                 Box::new(postfix)
             },
@@ -495,26 +501,23 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     // if an id is 'glued' to a primary expr, without a dot in between, it should be a unit.
     fn parse_unit_expr(&mut self) -> Box<dyn Node> {
         let mut expr = self.parse_primary_expr();
-        match self.tok.peek().kind {
-            TokenType::Id => {
-                let id = self.tok.peek();
-                let id_str = self.globals.get_text(&id.range).to_string();
-                if self.code_block.scope.borrow().var_defs.contains(&id_str) {
-                    return expr; //ignore this id - it's probably an implicit mult.
-                }
-                let id = self.tok.next();
-                let it = expr.deref_mut();
-                let nd = &mut it.get_node_data_mut();
-                if nd.unit.is_empty() {
-                    nd.unit.id = id_str;
-                } else { //there's a 2nd unit glued to the expr as in: `(1m)mm`, so wrap the original expr in a UnitExpr.
-                    return Box::new( UnitExpr {
-                        node_data: NodeData { unit: Unit {id: id_str, range: Some(id.range.clone())}, has_errors: false},
-                        node: expr,
-                    })
-                }
-            },
-            _ => () //TODO: perhaps not use a match statement.
+        if let TokenType::Id = self.tok.peek().kind {
+            let id = self.tok.peek();
+            let id_str = self.globals.get_text(&id.range).to_string();
+            if self.code_block.scope.borrow().var_defs.contains(&id_str) {
+                return expr; //ignore this id - it's probably an implicit mult.
+            }
+            let id = self.tok.next();
+            let it = expr.deref_mut();
+            let nd = &mut it.get_node_data_mut();
+            if nd.unit.is_empty() {
+                nd.unit.id = id_str;
+            } else { //there's a 2nd unit glued to the expr as in: `(1m)mm`, so wrap the original expr in a UnitExpr.
+                return Box::new(UnitExpr {
+                    node_data: NodeData { unit: Unit { id: id_str, range: Some(id.range.clone()) }, has_errors: false },
+                    node: expr,
+                })
+            }
         }
         expr
     }
