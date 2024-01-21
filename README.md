@@ -62,14 +62,30 @@ An exclamation mark `!` is used to echo the full expression to the output.
 A hashtag `#` is used to mute the result.
 ```
 #c=sin(30deg); //suppress output, but still execute the code.
-!#d=a+b; //execute the statement, echo the code, but mute the result
-/# //suppress output for the next 4 lines, with intermediate results
+/# //suppress output for the next 4 lines
 a+=1;
 a+=3;
 a+=PI;
 a+=7;
 #/
 a; //finally, the result will be output
+//alternatively, you can comment a block of code::
+#{
+a+=1;
+a+=3;
+a+=PI;
+a+=7;
+}
+//...or only mute the content of the block, not the final result:
+{
+/#    
+a+=1;
+a+=3;
+a+=PI;
+a+=7;
+       // note that the closing `#/` is optional and is implied at the end of the block.
+}
+
 ```
 
 ### Units
@@ -240,7 +256,9 @@ theDot = '1,234.56';
 ```
 
 ## Technical
-The main parser project is **MathParserDll** and is written in C++. It is a homebrew recursive descent parser with 2 look-aheads. Advantages of this parser type are that it's intuitive to read and mimicks the grammar definition (EBNF).
+
+### Previous version
+Theprevi project is **MathParserDll** and is written in C++. It is a homebrew recursive descent parser with 2 look-aheads. Advantages of this parser type are that it's intuitive to read and mimicks the grammar definition (EBNF).
 
 ### Projects
 * **MathParserDll** main parser project.

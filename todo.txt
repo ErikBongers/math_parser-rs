@@ -1,6 +1,3 @@
-* Muted block doesn't work
-    > only the end result is muted, not the content.
-
 * Dates:
   : lastDay=now().year, 12, 'last'; //31, 30 28 or 29?
     date(lastDay).day; --> returns 99 !
@@ -9,9 +6,6 @@
 
 * #define
  > extra defines: test them all!
-   > short/long date units
-   > test units_views
-   > function_views (probably not used yet)
    > decimal dot
 
 * copy tests from c++
@@ -45,24 +39,12 @@
 
 * exponents
 
-* WASM dealing with strings and persistent storage:
-  1. No persisten state, but pass all strings as byte arrays (see js_sys)
-    > on JS side, pre-convert UUTF-16 -> UTF8 and pass them as byte arrays
-    > for now, just pass the strings.
-  2. Use unsafe global storage for the source array at the Rust side.
-    > This does use unsafe...
-    > It's the fastes, the start script(s) are passed only once.
-    > But...it currently already works quite fast!
-      ...or is that only for the C++ version?
-
-
 * to examine TokenStream for macros:
   > https://github.com/dtolnay/proc-macro-workshop
   > https://dev.to/dandyvica/rust-procedural-macros-step-by-step-tutorial-36n8
 
 * Range: replace { start, end } with &str? It's essentially the same and it's safer.
   > byte indexes can probably still be calculated -> see cursor?
-* all lists that have values referenced everywhere like units or so: Vec<Rc<Unit>>
 
 * rethink echo comments
   > only allowed on a separate line and in between statements!
@@ -78,11 +60,7 @@
   > `a+b` ==> executed and the result is output.
   > !`a+b` ==> executed and the code is output.
 
-* CodeMirror uses CHARpos for multibytechars!
-  > convert bytePos to charPos.
-  > use the generated line indexes and multibytechar indexes.
-
-* source_index is a 'pointer': replace with a life-timed value?
+ source_index is a 'pointer': replace with a life-timed value?
 
 * add tests to cursor.rs
   > move the tests from main.rs.
