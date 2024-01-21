@@ -49,11 +49,11 @@ impl<'a> PeekingTokenizer<'a> {
         return t;
     }
 
-    pub fn set_ln_is_token(&mut self, is_token: bool) {
-        if self.cur.ln_is_token == is_token { return; }
+    pub fn set_nl_is_token(&mut self, is_token: bool) {
+        if self.cur.nl_is_token == is_token { return; }
 
         self.cur = self.prev_cur.clone();
-        self.cur.ln_is_token = is_token;
+        self.cur.nl_is_token = is_token;
         self.peeked_token = self.cur.next_token();
     }
 

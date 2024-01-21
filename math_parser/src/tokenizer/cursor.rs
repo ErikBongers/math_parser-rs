@@ -17,7 +17,7 @@ pub struct Cursor<'a> {
     pub newline_found: bool,
     pub number: Number,
     pub is_beginning_of_text: bool,
-    pub ln_is_token: bool, //TODO: pub (super) ?
+    pub (in crate::tokenizer) nl_is_token: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -165,7 +165,7 @@ impl<'a> Cursor<'a> {
             newline_found: true, //first line is also a new line!
             number: Number::new(0.0, 0),
             is_beginning_of_text: true,
-            ln_is_token: false,
+            nl_is_token: false,
         }
     }
 
@@ -250,7 +250,7 @@ impl<'a> Cursor<'a> {
             // Dedicated whitespace characters from Unicode
             | '\u{2028}' // LINE SEPARATOR
             | '\u{2029}' => true, // PARAGRAPH SEPARATOR
-            '\n' => if self.ln_is_token { false }  else { true },
+            '\n' => if self.nl_is_token { false }  else { true },
             _ => false
         }
     }
