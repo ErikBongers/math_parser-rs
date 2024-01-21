@@ -54,7 +54,7 @@ impl<'a> Serialize for ScopedValue<'a> {
             state.serialize_field("id", &self.globals.get_text(id))?;
             state
         } else {
-            let mut state = serializer.serialize_struct("Value", 4)?;
+            let state = serializer.serialize_struct("Value", 4)?;
             //don't output id -> shorter JSON
             state
         };

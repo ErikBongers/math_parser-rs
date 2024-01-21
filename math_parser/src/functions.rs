@@ -497,9 +497,9 @@ fn date_func(_global_function_def: &GlobalFunctionDef, scope: &Rc<RefCell<Scope>
     if args_list.len() < 3 {
         return Value::error(range.clone()); //TODO: provide error message?
     }
-    let mut day = &args_list[idx.day];
-    let mut month = &args_list[idx.month];
-    let mut year = &args_list[idx.year];
+    let day = &args_list[idx.day];
+    let month = &args_list[idx.month];
+    let year = &args_list[idx.year];
 
     if let Some(day_num) = &day.as_number() {
         date.day = day_num.to_double() as i8;

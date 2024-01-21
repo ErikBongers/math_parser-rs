@@ -151,7 +151,7 @@ pub struct PostfixExpr {
 
 impl HasRange for PostfixExpr {
     fn get_range(&self) -> Range {
-        if(self.postfix_id.range.is_none()) {
+        if self.postfix_id.range.is_none() {
             self.node.get_range()
         } else {
             &self.node.get_range() + &self.postfix_id.range.clone()

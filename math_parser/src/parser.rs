@@ -128,13 +128,13 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                     self.add_error(ErrorId::Expected, eq.range.clone(), &["="]);
                     return None;
                 }
-                let eq = self.tok.next();
+                self.tok.next(); //eq
                 let int = self.tok.peek();
                 if int.kind != TokenType::Number {
                     self.add_error(ErrorId::Expected, int.range.clone(), &["an integer"]);
                     return None;
                 }
-                let int = self.tok.next();
+                self.tok.next();
                 let number = self.tok.get_number();
                 Precision {number}
             },

@@ -1,6 +1,4 @@
 use std::fs;
-// taken from https://stackoverflow.com/questions/43753491/include-git-commit-hash-as-string-into-rust-program
-use std::process::Command;
 
 fn main() {
     //TODDO: get version number

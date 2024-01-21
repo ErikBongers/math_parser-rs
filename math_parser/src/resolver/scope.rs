@@ -1,4 +1,4 @@
-use std::cell::{Ref, RefCell};
+use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 use crate::date::DateFormat;
@@ -111,6 +111,6 @@ impl Scope {
 
     #[inline]
     pub fn function_exists(&self, function_name: &str, globals: &Globals) -> bool {
-        self.with_function(function_name, globals, |fd| ()).is_some()
+        self.with_function(function_name, globals, |_fd| ()).is_some()
     }
 }

@@ -4,15 +4,13 @@ pub mod scope;
 mod serialize;
 pub mod unit;
 
-use std::any::{Any, TypeId};
+use std::any::{TypeId};
 use std::cell::RefCell;
 use std::rc::Rc;
-use macros::CastAny;
 use crate::date::{DateFormat, parse_date_string};
 use crate::errors::{Error, ErrorId, has_real_errors};
-use crate::functions::{FunctionDef, FunctionType};
+use crate::functions::{FunctionType};
 use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, DefineExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NoneExpr, PostfixExpr, Statement, UnaryExpr, UnitExpr};
-use crate::parser::nodes::DefineType::{All, Arithm, Date, DateUnits, DecimalComma, DecimalDot, Dmy, Electric, Mdy, ShortDateUnits, Strict, Trig, Ymd};
 use crate::globals::Globals;
 use crate::resolver::operator::{operator_id_from, OperatorType};
 use crate::resolver::scope::Scope;
@@ -112,7 +110,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
     fn resolve_codeblock_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let code_block = expr.as_any().downcast_ref::<CodeBlock>().unwrap();
         let mut resolver = Resolver {globals: self.globals, scope: code_block.scope.clone(), results: Vec::new(), errors: self.errors, muted: self.muted || self.current_statement_muted, current_statement_muted: false};
-        let mut result = resolver.resolve(&code_block.statements);
+        let result = resolver.resolve(&code_block.statements);
         self.results.extend(resolver.results);
         let Some(mut result) = result else {
             return self.add_error_value(ErrorId::FuncNoBody, code_block.get_range().clone(),&["anonymous block"]);
@@ -123,7 +121,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
 
     fn resolve_define_expr(&mut self, expr: &Box<dyn Node>) -> Value {
         let define_expr = expr.as_any().downcast_ref::<DefineExpr>().unwrap();
-        if(define_expr.def_undef.kind == TokenType::Define) {
+        if define_expr.def_undef.kind == TokenType::Define {
             self.resolve_defines(&define_expr);
         } else {
             self.resolve_undefines(&define_expr);
@@ -350,7 +348,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
         }
     }
 
-    fn resolve_duration_fragment(&mut self, mut result: Value, id: &str, range: &Range) -> Value {
+    fn resolve_duration_fragment(&mut self, result: Value, id: &str, range: &Range) -> Value {
         let Variant::Duration {mut duration} = result.variant else { return Value::error(range.clone())};
         duration.normalize();
         let value = match id {

@@ -37,7 +37,7 @@ impl Api {
         let mut errors = Vec::<Error>::new();
         let scope = RefCell::new(Scope::new(&self.globals));
 
-        let code_block = if(start_script_id != "") {
+        let code_block = if start_script_id != "" {
             let code_block = self.parse_file(&start_script_id, &mut errors, Either::Scope(scope));
             self.parse_file(&main_script_id, &mut errors, Either::CodeBlock(code_block))
         } else {
@@ -121,7 +121,7 @@ enum Either {
 }
 /// Public api with test functions to use in external tests.
 /// Having the tests external speeds up rebuilding as the tests are not part of the math_parser lib crate.
-pub mod test {
+pub mod test_api {
     use std::cell::RefCell;
     use crate::{
         errors::{ Error, ErrorId },
@@ -130,7 +130,6 @@ pub mod test {
         tokenizer::{ peeking_tokenizer::PeekingTokenizer}
     };
     use crate::globals::Globals;
-    use crate::globals::sources::Source;
     use crate::parser::nodes::CodeBlock;
     use crate::tokenizer::cursor::Range;
 

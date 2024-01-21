@@ -50,7 +50,7 @@ impl<'a> PeekingTokenizer<'a> {
     }
 
     pub fn set_ln_is_token(&mut self, is_token: bool) {
-        if(self.cur.ln_is_token == is_token) { return; }
+        if self.cur.ln_is_token == is_token { return; }
 
         self.cur = self.prev_cur.clone();
         self.cur.ln_is_token = is_token;
