@@ -149,5 +149,7 @@ fn test_defines () {
     test_error("PI=1;", ErrorId::WConstRedef);
     test_result("PI=1;", 1.0, "");
 
+    test_error("#define precision=1.2", ErrorId::Expected);
+    test_no_error("#define precision=2");
     test_no_error("#undef date\n#define date\n  now();");
 }

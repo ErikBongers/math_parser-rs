@@ -90,9 +90,16 @@ impl Number {
         self.unit = to.clone();
     }
 
+    #[inline]
     pub fn to_double(&self) -> f64 {
         let base: f64 = 10.0;
         self.significand * base.powf(self.exponent as f64)
+    }
+
+    #[inline]
+    pub fn is_int(&self) -> bool {
+        let d = self.to_double();
+        d == d.trunc()
     }
 }
 

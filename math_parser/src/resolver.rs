@@ -143,7 +143,10 @@ impl<'g, 'a> Resolver<'g, 'a> {
                 Dmy => self.scope.borrow_mut().date_format = DateFormat::DMY,
                 Mdy => self.scope.borrow_mut().date_format = DateFormat::MDY,
                 Precision {ref number} => {
-                    //TODO: test if integer!
+                    if ! number.is_int() {
+                        self.add_error(ErrorId::Expected, define.range.clone(), &["integer value, but found float"]);
+                        continue;
+                    }
                     self.scope.borrow_mut().precision = 10.0_f64.powf(number.to_double());
                 },
                 DateUnits => self.scope.borrow_mut().units_view.add_tagged(&UnitTag::LongDateTime, self.globals),
