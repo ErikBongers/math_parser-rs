@@ -37,7 +37,7 @@ a;
   ToothAnge=360/Z;
   p=1.5mm;
   m=p/PI;
-  3m; //TODO: should give warning: ambiguous: m is both a variable and a unit.
+  3m; //should give warning: ambiguous: m is both a variable and a unit.
   c=p*Z;
   pitchD=c/PI;
   fullD=pitchD+2*m;

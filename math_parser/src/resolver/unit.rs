@@ -210,7 +210,7 @@ pub fn create_unit_defs() -> HashMap<String, UnitDef> {
 
 #[cfg(test)]
 mod tests {
-    use crate::resolver::globals::Globals;
+    use crate::globals::Globals;
     use crate::resolver::unit::{UnitProperty, UnitsView};
 
     #[test]

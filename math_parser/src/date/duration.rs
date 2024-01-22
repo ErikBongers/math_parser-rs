@@ -18,6 +18,23 @@ impl Duration {
         }
     }
 
+    pub fn from_days(days: i32) -> Duration {
+        let mut duration = Duration::new();
+        duration.years = (days as f64 / 365.2425).trunc() as i32;
+        duration.days = (days as f64 % 365.2425) as i32;
+        duration.months = (duration.days as f64 / 30.437) as i32;
+        duration.days = (duration.days as f64 % 30.437) as i32;
+        duration
+    }
+
+    pub fn from_months(months: i32) -> Duration {
+        let mut duration = Duration::new();
+        duration.days = 0;
+        duration.years = (months as f64 / 12.0) as i32;
+        duration.months = (months as f64 % 12.0) as i32;
+        duration
+    }
+
     //assumes 1 month = 30 days
     pub fn normalize(&mut self) {
         if self.days >= 0 && self.days <= 31 &&
@@ -25,14 +42,26 @@ impl Duration {
             self.years >= 0 {
             return;
         }
-        self.days = self.to_days(); //todo: don't use to_days(), to avoid accumulation of error: 1. if days is negative, subract from months, if months is negative, subtract from years. If years is negative...do the to_days() thing...
-        self.months = 0;
-        self.years = 0;
 
-        self.years = (self.days as f64 / 365.2425).floor() as i32;
-        self.days = (self.days as f64 % 365.2425) as i32;
-        self.months = (self.days as f64 / 30.437) as i32;
-        self.days = (self.days as f64 % 30.437) as i32;
+        let dur_from_days = Duration::from_days(self.days);
+        self.days = dur_from_days.days;
+        self.months += dur_from_days.months;
+        self.years += dur_from_days.years;
+
+        let dur_from_months = Duration::from_months(self.months);
+        self.months = dur_from_months.months;
+        self.years += dur_from_months.years;
+
+        if self.months < 0 && self.years > 0{
+            self.years -= 1;
+            self.months += 12;
+        }
+
+        if self.days < 0 && self.months > 0 {
+            self.months -= 1;
+            self.days += 30;
+        }
+
     }
 
     pub fn to_days(&self) -> i32 {
@@ -49,5 +78,29 @@ impl Duration {
             _ => errors.push(Error::build(ErrorId::EExplicitUnitsExpected, range.clone(), &["days, months, years"])),
         }
         duration
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::date::Duration;
+
+    #[test]
+    fn test_duration() {
+        let dur = Duration::from_days(-35);
+        assert_eq!(dur.months, -1);
+        let dur = Duration::from_days(-400);
+        assert_eq!(dur.years, -1);
+        assert_eq!(dur.months, -1);
+        assert!(dur.days < 0);
+
+        let mut dur = Duration::new();
+        dur.days = -400;
+        dur.normalize();
+        assert_eq!(dur.years, -1);
+        assert_eq!(dur.months, -1);
+        assert!(dur.days < 0);
+
+
     }
 }

@@ -66,11 +66,16 @@ impl<'a> PeekingTokenizer<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::globals::Globals;
     use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
 
     #[test]
     fn test_peeking() {
-        let mut tok = PeekingTokenizer::new("111 + 222 = abbc;\n!//comment");
+        let mut globals = Globals::new();
+        let src_name = "src1";
+        let text = "111 + 222 = abbc;\n!//comment";
+        globals.set_source(src_name.to_string(), text.to_string());
+        let mut tok = PeekingTokenizer::new(globals.get_source_by_name(src_name).unwrap()); //unwrap ok: we just pushed a source.
         //start with peeking '+'
         let peek2 = tok.peek_second();
         // peek 111

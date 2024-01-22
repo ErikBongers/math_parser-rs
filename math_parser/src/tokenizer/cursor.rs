@@ -316,26 +316,30 @@ pub fn is_id_continue(c: char) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use crate::globals::sources::Source;
+    use crate::globals::Globals;
     use crate::tokenizer::cursor::Cursor;
 
     #[test]
     fn test_integer() {
+        let mut globals = Globals::new();
         let text = "12345";
-        let source = Source { name: "N/A".to_string(), index: 0, text: text.to_string(), lines: vec![], multi_byte_chars: vec![], };
-        let mut cur = Cursor::new(&source);
+        let src_name = "src1";
+        globals.set_source(src_name.to_string(), text.to_string());
+        let mut cur = Cursor::new(globals.get_source_by_name(src_name).unwrap());
         let i = cur.parse_integer();
         assert_eq!(i, 12345);
 
         let text = "-12345";
-        let source = Source { name: "N/A".to_string(), index: 0, text: text.to_string(), lines: vec![], multi_byte_chars: vec![], };
-        let mut cur = Cursor::new(&source);
+        let src_name = "src1";
+        globals.set_source(src_name.to_string(), text.to_string());
+        let mut cur = Cursor::new(globals.get_source_by_name(src_name).unwrap());
         let i = cur.parse_integer();
         assert_eq!(i, -12345);
 
         let text = "12_345";
-        let source = Source { name: "N/A".to_string(), index: 0, text: text.to_string(), lines: vec![], multi_byte_chars: vec![], };
-        let mut cur = Cursor::new(&source);
+        let src_name = "src1";
+        globals.set_source(src_name.to_string(), text.to_string());
+        let mut cur = Cursor::new(globals.get_source_by_name(src_name).unwrap());
         let i = cur.parse_integer();
         assert_eq!(i, 12345);
     }
@@ -351,8 +355,10 @@ mod tests {
     }
 
     fn test_number(text: &str, sig: f64, exp: i32) {
-        let source = Source { name: "N/A".to_string(), index: 0, text: text.to_string(), lines: vec![], multi_byte_chars: vec![], };
-        let mut cur = Cursor::new(&source);
+        let mut globals = Globals::new();
+        let src_name = "src1";
+        globals.set_source(src_name.to_string(), text.to_string());
+        let mut cur = Cursor::new(globals.get_source_by_name(src_name).unwrap());
         let c = cur.next().unwrap();
         let n = cur.parse_decimal(c);
         assert_eq!(n.significand, sig);
@@ -362,8 +368,10 @@ mod tests {
     #[test]
     fn test_newline() {
         let text = "first word\nsecond word and\n  third line \n  \n  fifth?\n";
-        let source = Source { name: "N/A".to_string(), index: 0, text: text.to_string(), lines: vec![], multi_byte_chars: vec![], };
-        let mut cur = Cursor::new(&source);
+        let mut globals = Globals::new();
+        let src_name = "src1";
+        globals.set_source(src_name.to_string(), text.to_string());
+        let mut cur = Cursor::new(globals.get_source_by_name(src_name).unwrap());
         cur.next_token();
         assert!(cur.newline_found);
         cur.next_token();
