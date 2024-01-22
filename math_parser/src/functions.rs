@@ -4,8 +4,8 @@ use std::rc::Rc;
 use chrono::{Datelike, Utc};
 use crate::resolver::scope::Scope;
 use crate::errors::{Error, ErrorId};
-use crate::date::Date;
-use crate::date::{LAST, month_from_int};
+use crate::date::{Timepoint, Day};
+use crate::date::{month_from_int};
 use crate::parser::nodes::{CodeBlock, FunctionDefExpr};
 use crate::resolver::{add_error, Resolver};
 use crate::globals::Globals;
@@ -486,11 +486,11 @@ fn now(_global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, _a
     let month = current_date.month();
     let day = current_date.day();
 
-   Value::from_date(Date { month: month_from_int(month as i32), day: day as i8, year, range: range.clone(), errors: vec![], }, range.clone())
+   Value::from_date(Timepoint { month: month_from_int(month as i32), day: Day::Value(day as i8), year: Some(year), range: range.clone(), errors: vec![], }, range.clone())
 }
 
 fn date_func(_global_function_def: &GlobalFunctionDef, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
-    let mut date = Date::new();
+    let mut date = Timepoint::new();
 
     let  idx = scope.borrow().date_format.indices();
     let mut exploded_args = Vec::<Value>::new();
@@ -503,17 +503,17 @@ fn date_func(_global_function_def: &GlobalFunctionDef, scope: &Rc<RefCell<Scope>
     let year = &args_list[idx.year];
 
     if let Some(day_num) = &day.as_number() {
-        date.day = day_num.to_double() as i8;
+        date.day = Day::Value(day_num.to_double() as i8);
     } else {
         if let Variant::Last = &day.variant {
-            date.day = LAST;//TODO: magic value
+            date.day = Day::Last;
         }
     }
     if let Some(month_num) = &month.as_number() {
         date.month = month_from_int(month_num.to_double() as i32);
     }
     if let Some(year_num) = &year.as_number() {
-        date.year = year_num.to_double() as i32;
+        date.year = Some(year_num.to_double() as i32);
     }
     if !date.is_valid() {
         errors.push(Error::build(ErrorId::InvDate, range.clone(), &[]));

@@ -5,7 +5,7 @@ use crate::resolver::unit::Unit;
 use crate::resolver::value::{NumberFormat, Value, Variant};
 use crate::tokenizer::cursor::Range;
 use crate::tokenizer::token_type::TokenType;
-use crate::date::Date;
+use crate::date::Timepoint;
 use crate::number::Number;
 
 #[repr(u8)]
@@ -97,7 +97,7 @@ pub fn op_num_pow_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> V
 
 pub fn load_operators(globals: &mut Globals) {
     let variant_num = Variant::Numeric { number: Number::from(0.0)}; //note that even with discriminant.hash(), you'd have to have a concrete variant to generate the hash.
-    let variant_date = Variant::Date { date: Date::new()};
+    let variant_date = Variant::Date { date: Timepoint::new()};
     globals.operators.insert(operator_id_from(&variant_num, OperatorType::Plus, &variant_num), op_num_plus_num);
     globals.operators.insert(operator_id_from(&variant_num, OperatorType::Min, &variant_num), op_num_min_num);
     globals.operators.insert(operator_id_from(&variant_num, OperatorType::Mult, &variant_num), op_num_mult_num);

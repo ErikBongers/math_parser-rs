@@ -335,8 +335,8 @@ impl<'g, 'a> Resolver<'g, 'a> {
             return self.return_error(ErrorId::InvFormat, pfix_expr.postfix_id.range.clone(), &[id], result);
         };
         let val = match id {
-            "day" => date.day as i32,
-            "year" => date.year,
+            "day" => date.get_normalized_day() as i32,
+            "year" => date.year.unwrap_or(0),
             "month" => date.month.clone() as i32,
             _ => return result
         };

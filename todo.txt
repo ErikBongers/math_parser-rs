@@ -14,10 +14,6 @@
      > now version_inc path is hard coded and is a separate project.
   > test a clean clone repo from github. ideally it should run.
 
-* Dates:
-  : lastDay=now().year, 12, 'last'; //31, 30 28 or 29?
-    date(lastDay).day; --> returns 99 !
-
 * NodeData: needed?
 
 * copy tests from c++

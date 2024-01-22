@@ -16,9 +16,6 @@ impl fmt::Display for DateFormat {
     }
 }
 
-pub const LAST: i8 = 99;
-pub const EMPTY_YEAR: i32 = i32::MIN; //TODO: magic value.
-
 pub struct DateFormatIndices {
     pub day: usize,
     pub month: usize,
@@ -76,68 +73,97 @@ pub fn month_from_int(i: i32) -> Month {
 }
 
 #[derive(Clone)]
-pub struct Date { //TODO: rename to Timepoint
+pub enum Day {
+    Value(i8),
+    Last,
+    None
+}
+
+impl Day {
+    #[inline]
+    pub const fn is_none(&self) -> bool {
+        matches!(*self, Day::None)
+    }
+    #[inline]
+    pub const fn is_last(&self) -> bool {
+        matches!(*self, Day::Last)
+    }
+    #[inline]
+    pub const fn unwrap_or(&self, default: i8) -> i8 {
+        return if let Day::Value(day) = *self {
+            day
+        } else {
+            default
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct Timepoint {
     pub month: Month,
-    pub day: i8,
-    pub year: i32,
+    pub day: Day,
+    pub year: Option<i32>,
     pub range: Range,
     pub errors: Vec<Error>,
 }
 
-impl Date {
+impl Timepoint {
     pub fn new() -> Self {
-        Date {
+        Timepoint {
             month: Month::NONE,
-            day: 0,
-            year: EMPTY_YEAR,
+            day: Day::None,
+            year: None,
             range: Range::none(),
             errors: Vec::new(),
         }
     }
 
     pub fn is_valid(&self) -> bool {
-        if self.year == EMPTY_YEAR { return false; }
-        if self.day != LAST && (self.day <= 0 || self.day > 31) { return false; }
+        if self.year.is_none() { return false; }
+        if self.day.is_none() { return false; }
+        if let Day::Value(day) = self.day {
+            if day <= 0 || day > 31 { return false; }
+        }
         if self.month == Month::NONE { return false; }
 
         true
     }
 
+    ///Always returns a number, but 0 if undetermined.
     pub fn get_normalized_day(&self) -> i8 {
         //check leap year: if y/4 and not y/100 : leap year. Also, if y/100 and y/400: leap year.
-        if  self.day == LAST {
+        if  self.day.is_last() {
             match self.month {
                 Month::APR | Month::JUN | Month::SEP | Month::NOV => 30,
                 Month::FEB => {
-                    if self.year == EMPTY_YEAR {
-                        self.day
-                    } else {
-                        if (self.year%4 == 0 && self.year%100 != 0)
-                            || (self.year%100 == 0 && self.year%400 == 0) {
+                    if let Some(year) = self.year {
+                        if (year%4 == 0 && year%100 != 0)
+                            || (year%100 == 0 && year%400 == 0) {
                             29
                         } else {
                             28
                         }
+                    } else {
+                        self.day.unwrap_or(0)
                     }
                 },
-                Month::NONE => self.day,
+                Month::NONE => self.day.unwrap_or(0),
                 _ => 31
             }
         } else {
-            self.day
+            self.day.unwrap_or(0)
         }
     }
 }
 
-impl ops::Sub<&Date> for &Date {
+impl ops::Sub<&Timepoint> for &Timepoint {
     type Output = Duration;
 
-    fn sub(self, rhs: &Date) -> Self::Output {
-        //TODO: what if year = EMPTY_YEAR?
+    fn sub(self, rhs: &Timepoint) -> Self::Output {
         Duration {
             days: self.get_normalized_day() as i32 - rhs.get_normalized_day() as i32,
             months: self.month as i32 - rhs.month as i32,
-            years: self.year - rhs.year,
+            years: self.year.unwrap_or(0) - rhs.year.unwrap_or(0)
         }
     }
 }

@@ -1,5 +1,5 @@
 use serde::Serialize;
-use crate::date::{Date, Duration};
+use crate::date::{Timepoint, Duration};
 use crate::number::Number;
 use crate::tokenizer::cursor::Range;
 
@@ -11,7 +11,7 @@ pub enum NumberFormat {
 #[derive(Clone)]
 pub enum Variant {
     Numeric { number: Number },
-    Date { date: Date},
+    Date { date: Timepoint },
     Duration { duration: Duration },
     List { values: Vec<Value> },
     FunctionDef,
@@ -98,7 +98,7 @@ impl Value {
         }
     }
 
-    pub fn from_date(date: Date, range: Range) -> Self {
+    pub fn from_date(date: Timepoint, range: Range) -> Self {
         Value {
             id: None,
             stmt_range: range,
@@ -131,7 +131,7 @@ impl Value {
         }
     }
 
-    pub fn as_date(&mut self) -> Option<&mut Date> {
+    pub fn as_date(&mut self) -> Option<&mut Timepoint> {
         if let Variant::Date { ref mut date, ..} = self.variant {
             Some(date)
         } else {

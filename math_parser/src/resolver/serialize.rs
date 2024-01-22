@@ -4,7 +4,6 @@ use serde::{Serialize, Serializer};
 use serde::ser::SerializeStruct;
 use crate::{date, errors};
 use crate::errors::ERROR_MAP;
-use crate::date::{EMPTY_YEAR, LAST};
 use crate::globals::Globals;
 use crate::number::Number;
 use crate::resolver::Resolver;
@@ -203,31 +202,28 @@ void ResultJsonSerializer::serialize(const Date& date, const Scope& scope)
     sstr << "}";
     }
 */
-impl Serialize for date::Date {
+impl Serialize for date::Timepoint {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where
             S: Serializer
     {
         let mut state = serializer.serialize_struct("Timepoint", 4)?;
-        let str_day_formatted = if self.day == 0 {
+        let norm_day = self.get_normalized_day();
+        let str_day_formatted = if norm_day == 0 {
             "??".to_string()
         } else {
-            if self.day == LAST {
-                self.get_normalized_day().to_string()
-            } else {
-                self.day.to_string()
-            }
+            norm_day.to_string()
         };
-        let str_day = if self.day == 0 {
+        let str_day = if self.day.is_none() {
             "--".to_string()
         } else {
-            if self.day == LAST {
+            if self.day.is_last() {
                 format!("last ({})", self.get_normalized_day())
             } else {
-                self.day.to_string()
+                self.get_normalized_day().to_string()
             }
         };
-        let str_year = if self.year == EMPTY_YEAR { "????".to_string()} else { self.year.to_string()};
+        let str_year = if let Some(year) = self.year { year.to_string()} else { "????".to_string()};
         let formatted = format!("{0}-{1:?}-{2}", &str_year, &self.month, &str_day_formatted);
         state.serialize_field("formatted", &formatted)?;
         state.serialize_field("day", &str_day)?;

@@ -156,9 +156,9 @@ pub mod test_api {
         let Variant::Date { date, .. } = &value.variant else {
             panic!("Result isn't a date.");
         };
-        assert_eq!(date.day, day);
+        assert_eq!(date.get_normalized_day(), day);
         assert_eq!(date.month as i32, month);
-        assert_eq!(date.year, year);
+        assert_eq!(date.year.unwrap(), year);
     }
 
     pub fn test_error(text: &str, error_id: ErrorId) {

@@ -1,13 +1,12 @@
 use errors::has_real_errors;
 use crate::errors;
 use crate::errors::{Error, ErrorId};
-use crate::date::{Date};
+use crate::date::{Timepoint, Day};
 use crate::date::{DateFormat, Month, month_from_int, month_from_str};
-use crate::date;
 use crate::tokenizer::cursor::Range;
 
 
-pub fn parse_date_string(text: &str, range: &Range, date_format: DateFormat) -> Date {
+pub fn parse_date_string(text: &str, range: &Range, date_format: DateFormat) -> Timepoint {
     let slices = text.split(|c| c == ' ' || c == '/' || c == ',' || c == '-').filter(|s| !s.is_empty()).collect();
     let mut parser = FormattedDateParser::new(&slices, range);
     parser.parser_state.date_format = date_format;
@@ -15,7 +14,7 @@ pub fn parse_date_string(text: &str, range: &Range, date_format: DateFormat) -> 
 }
 
 struct DateParserState<'s, 'r> {
-    date: Date,
+    date: Timepoint,
     range: &'r Range,
     ymd_format: bool,
     date_format: DateFormat,
@@ -33,7 +32,7 @@ impl<'s, 'r> FormattedDateParser<'s, 'r> {
             slices,
             parser_state:
             DateParserState {
-                date: Date::new(),
+                date: Timepoint::new(),
                 range,
                 ymd_format: false,
                 slices: &slices,
@@ -41,7 +40,7 @@ impl<'s, 'r> FormattedDateParser<'s, 'r> {
             },
         }
     }
-    pub fn parse(&mut self) -> Date {
+    pub fn parse(&mut self) -> Timepoint {
         for (i, slice) in self.slices.iter().enumerate() {
             self.parser_state.parse_any_slice(i, slice);
             if has_real_errors(&self.parser_state.date.errors) {
@@ -58,10 +57,10 @@ impl<'s, 'r> FormattedDateParser<'s, 'r> {
 impl<'s, 'r> DateParserState<'s, 'r> {
     fn parse_any_slice(&mut self, slice_no: usize, slice: &str) {
         if slice == "last" {
-            if self.date.day != 0 {
+            if !self.date.day.is_none() {
                 self.date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), &["multiple values for day."]));
             } else {
-                self.date.day = date::LAST;
+                self.date.day = Day::Last;
             }
             return;
         }
@@ -86,11 +85,11 @@ impl<'s, 'r> DateParserState<'s, 'r> {
             return;
         }
         if n > 31 {
-            if self.date.year != date::EMPTY_YEAR {
+            if self.date.year.is_some() {
                 self.date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), &["multiple values for year."]));
                 return ;
             } else {
-                self.date.year = n;
+                self.date.year = Some(n);
                 if slice_no == 0 {
                     self.ymd_format = true;
                 }
@@ -101,24 +100,24 @@ impl<'s, 'r> DateParserState<'s, 'r> {
                     self.date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), &["values could be month or year."]));
                     return;
                 }
-                if self.date.day != 0 {
+                if !self.date.day.is_none() {
                     self.date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), &["multiple values for day."]));
                     return;
                 }
-                self.date.day = n as i8;
+                self.date.day = Day::Value(n as i8);
             } else { // n <= 12
                 if self.count_date_slices() == 3 {
                     if self.count_same_date_values(n) == 3 {
-                        self.date.day = n as i8;
+                        self.date.day = Day::Value(n as i8);
                         self.date.month = month_from_int(n);
-                        self.date.year = n;
+                        self.date.year = Some(n);
                         return;
                     }
                     //slice could be day, month, year
                     if self.has_year_slice() {
                         if self.has_month_slice() {
-                            if self.date.day == 0 {
-                                self.date.day = n as i8;
+                            if self.date.day.is_none() {
+                                self.date.day = Day::Value(n as i8);
                             } else {
                                 self.date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), &["not clear which value is day or month."]));
                             }
@@ -133,7 +132,7 @@ impl<'s, 'r> DateParserState<'s, 'r> {
                             return;
                         }
                         if self.count_same_date_values(n) >= 2 {
-                            self.date.day = n as i8;
+                            self.date.day = Day::Value(n as i8);
                             self.date.month = month_from_int(n);
                             return;
                         }
@@ -149,7 +148,7 @@ impl<'s, 'r> DateParserState<'s, 'r> {
                             return;
                         }
                         if self.has_month_slice() {
-                            self.date.day = n as  i8;
+                            self.date.day = Day::Value(n as  i8);
                             return;
                         }
                         self.date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), &["not clear which value is day or month."]));
@@ -162,8 +161,8 @@ impl<'s, 'r> DateParserState<'s, 'r> {
     fn parse_ymd_slice_number(&mut self, slice_no: usize, n: i32) {
         match slice_no {
             0 => {
-                if self.date.year == date::EMPTY_YEAR {
-                self.date.year = n
+                if self.date.year.is_none() {
+                self.date.year = Some(n)
                 } else {
                 self.date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), & ["assuming ymd format, but day is already filled."]));
                 }
@@ -176,8 +175,8 @@ impl<'s, 'r> DateParserState<'s, 'r> {
                 }
             },
             2 => {
-                if self.date.day == 0 {
-                    self.date.day = n as i8;
+                if self.date.day.is_none() {
+                    self.date.day = Day::Value(n as i8);
                 } else {
                     self.date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), & ["assuming ymd but day is already filled."]));
                 }
@@ -222,7 +221,7 @@ impl<'s, 'r> DateParserState<'s, 'r> {
             return;
         }
         let idx = self.date_format.indices();
-        let mut tmp_date = Date::new();
+        let mut tmp_date = Timepoint::new();
         self.parse_year(&mut tmp_date, self.slices[idx.year]);
         self.parse_month(&mut tmp_date, self.slices[idx.month]);
         self.parse_day(&mut tmp_date, self.slices[idx.day]);
@@ -233,19 +232,25 @@ impl<'s, 'r> DateParserState<'s, 'r> {
         self.date = tmp_date;
    }
 
-    fn parse_day(&self, date: &mut Date, slice: &str) {
+    fn parse_day(&self, date: &mut Timepoint, slice: &str) {
         if slice == "last" {
-            date.day = date::LAST;
+            date.day = Day::Last;
             return;
         }
-        date.day = slice.parse::<i8>().unwrap_or(0);
+        date.day = slice
+            .parse::<i8>()
+            .map_or(Day::None,
+                    |d| Day::Value(d));
     }
 
-    fn parse_year(&self, date: &mut Date, slice: &str) {
-        date.year = slice.parse::<i32>().unwrap_or(date::EMPTY_YEAR);
+    fn parse_year(&self, date: &mut Timepoint, slice: &str) {
+        date.year = slice
+            .parse::<i32>()
+            .map_or(None,
+                    |y| Some(y));
     }
 
-    fn parse_month(&self, date: &mut Date, slice: &str) {
+    fn parse_month(&self, date: &mut Timepoint, slice: &str) {
         let month = month_from_str(&slice.to_lowercase());
         if month != Month::NONE {
             date.month = month;
