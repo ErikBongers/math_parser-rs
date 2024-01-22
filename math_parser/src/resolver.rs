@@ -383,7 +383,9 @@ impl<'g, 'a> Resolver<'g, 'a> {
         let mut value = self.resolve_node(&expr.expr);
         let id_str = self.globals.get_text(&expr.id.range).to_string();
         if !self.scope.borrow().variables.contains_key(&id_str) {
-            //TODO: test if id is function
+            if self.scope.borrow().function_exists(&id_str, self.globals) {
+                self.add_error(ErrorId::WVarIsFunction, expr.id.range.clone(), &[id_str.as_str()]);
+            }
             if self.scope.borrow().units_view.units.contains(&id_str) {
                 self.add_error(ErrorId::WVarIsUnit, expr.id.range.clone(), &[id_str.as_str()]);
             }
