@@ -115,7 +115,7 @@ fn do_term(v1: &Number, adding: bool, v2: &Number, _range: &Range, globals: &Glo
         let u1 = &globals.unit_defs[&v1.unit.id];
         let u2 = &globals.unit_defs[&v2.unit.id];
         if u1.property != u2.property {
-            panic!("TODO: implement errors.");
+            todo!("implement errors.");
         }
         let d1 = v1.to_si(&globals);
         let d2 = v2.to_si(&globals);
