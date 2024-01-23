@@ -9,7 +9,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use crate::date::{DateFormat, parse_date_string};
 use crate::errors::{Error, ErrorId, has_real_errors};
-use crate::functions::FunctionType;
+use crate::functions::{explode_args, FunctionType};
 use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, DefineExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NoneExpr, PostfixExpr, Statement, UnaryExpr, UnitExpr};
 use crate::globals::Globals;
 use crate::number::{Number, parse_formatted_number};
@@ -245,16 +245,22 @@ impl<'g, 'a> Resolver<'g, 'a> {
         for arg in &arguments.nodes {
             let value = self.resolve_node(arg);
             if value.has_errors {
-                return self.add_error_value(ErrorId::FuncArgWrong, arg.get_range(), &[&call_expr.function_name]);
+                return Value::error(call_expr.get_range());
             }
             arg_values.push(value);
         };
 
         let Some(result) = self.scope.borrow().with_function(function_name, self.globals,|fd| {
-            if !fd.is_correct_arg_count(arguments.nodes.len()) {
+            let mut args_ref = &arg_values;
+            let mut exploded_args = Vec::new();
+            if fd.get_min_args() > 1 {
+                args_ref = explode_args(&arg_values, &mut exploded_args);
+            }
+
+            if !fd.is_correct_arg_count(args_ref.len()) {
                 return Err(Error::build(ErrorId::FuncArgWrong, call_expr.function_name_range.clone(), &[&call_expr.function_name]));
             };
-            let mut result = fd.call(&self.scope.clone(), &arg_values,  &call_expr.function_name_range, &mut self.errors, self.globals);
+            let mut result = fd.call(&self.scope.clone(), args_ref,  &call_expr.function_name_range, &mut self.errors, self.globals);
             Resolver::apply_unit(&mut result, expr, &self.scope.borrow().units_view, &expr.get_range(), self.errors, self.globals);
             Ok(result)
         }) else {

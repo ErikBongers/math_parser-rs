@@ -19,6 +19,7 @@ pub trait FunctionDef {
     fn is_correct_arg_count(&self, cnt: usize) -> bool;
     fn get_name(&self) -> &str;
     fn call(&self, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value;
+    fn get_min_args(&self) -> usize;
 }
 
 #[derive(PartialEq)]
@@ -58,6 +59,10 @@ impl FunctionDef for GlobalFunctionDef {
             add_error(errors, ErrorId::FuncArgWrong, range.clone(), &[""], Value::error(range.clone()))
         }
     }
+
+    fn get_min_args(&self) -> usize {
+        self.min_args
+    }
 }
 
 impl FunctionDef for CustomFunctionDef {
@@ -76,6 +81,10 @@ impl FunctionDef for CustomFunctionDef {
         } else {
             add_error(errors, ErrorId::FuncArgWrong, range.clone(), &[""], Value::error(range.clone()))
         }
+    }
+
+    fn get_min_args(&self) -> usize {
+        self.min_args
     }
 }
 
@@ -135,21 +144,21 @@ pub fn create_global_function_defs() -> HashMap<String, GlobalFunctionDef> {
         ("acos".to_string(), GlobalFunctionDef { name: "acos".to_string(), min_args: 1, max_args: 1, execute: acos, func_type: FunctionType::Trig}),
         ("atan".to_string(), GlobalFunctionDef { name: "atan".to_string(), min_args: 1, max_args: 1, execute: atan, func_type: FunctionType::Trig}),
 
-        ("sum".to_string(), GlobalFunctionDef { name: "sum".to_string(), min_args: 1, max_args: 999, execute: sum, func_type: FunctionType::Arithm}),
-        ("avg".to_string(), GlobalFunctionDef { name: "avg".to_string(), min_args: 1, max_args: 999, execute: avg, func_type: FunctionType::Arithm}),
-        ("max".to_string(), GlobalFunctionDef { name: "max".to_string(), min_args: 1, max_args: 999, execute: max, func_type: FunctionType::Arithm}),
-        ("min".to_string(), GlobalFunctionDef { name: "min".to_string(), min_args: 1, max_args: 999, execute: min, func_type: FunctionType::Arithm}),
+        ("sum".to_string(), GlobalFunctionDef { name: "sum".to_string(), min_args: 2, max_args: 999, execute: sum, func_type: FunctionType::Arithm}),
+        ("avg".to_string(), GlobalFunctionDef { name: "avg".to_string(), min_args: 2, max_args: 999, execute: avg, func_type: FunctionType::Arithm}),
+        ("max".to_string(), GlobalFunctionDef { name: "max".to_string(), min_args: 2, max_args: 999, execute: max, func_type: FunctionType::Arithm}),
+        ("min".to_string(), GlobalFunctionDef { name: "min".to_string(), min_args: 2, max_args: 999, execute: min, func_type: FunctionType::Arithm}),
 
-        ("reverse".to_string(), GlobalFunctionDef { name: "reverse".to_string(), min_args: 1, max_args: 999, execute: reverse, func_type: FunctionType::Arithm}),
-        ("sort".to_string(), GlobalFunctionDef { name: "sort".to_string(), min_args: 1, max_args: 999, execute: sort, func_type: FunctionType::Arithm}),
-        ("first".to_string(), GlobalFunctionDef { name: "first".to_string(), min_args: 1, max_args: 999, execute: first, func_type: FunctionType::Arithm}),
-        ("last".to_string(), GlobalFunctionDef { name: "last".to_string(), min_args: 1, max_args: 999, execute: last, func_type: FunctionType::Arithm}),
+        ("reverse".to_string(), GlobalFunctionDef { name: "reverse".to_string(), min_args: 2, max_args: 999, execute: reverse, func_type: FunctionType::Arithm}),
+        ("sort".to_string(), GlobalFunctionDef { name: "sort".to_string(), min_args: 2, max_args: 999, execute: sort, func_type: FunctionType::Arithm}),
+        ("first".to_string(), GlobalFunctionDef { name: "first".to_string(), min_args: 2, max_args: 999, execute: first, func_type: FunctionType::Arithm}),
+        ("last".to_string(), GlobalFunctionDef { name: "last".to_string(), min_args: 2, max_args: 999, execute: last, func_type: FunctionType::Arithm}),
 
-        ("factors".to_string(), GlobalFunctionDef { name: "factors".to_string(), min_args: 1, max_args: 999, execute: factors, func_type: FunctionType::Arithm}),
-        ("primes".to_string(), GlobalFunctionDef { name: "primes".to_string(), min_args: 1, max_args: 999, execute: primes, func_type: FunctionType::Arithm}),
+        ("factors".to_string(), GlobalFunctionDef { name: "factors".to_string(), min_args: 1, max_args: 1, execute: factors, func_type: FunctionType::Arithm}),
+        ("primes".to_string(), GlobalFunctionDef { name: "primes".to_string(), min_args: 1, max_args: 1, execute: primes, func_type: FunctionType::Arithm}),
 
         ("now".to_string(), GlobalFunctionDef { name: "now".to_string(), min_args: 0, max_args: 0, execute: now, func_type: FunctionType::Date}),
-        ("date".to_string(), GlobalFunctionDef { name: "date".to_string(), min_args: 1, max_args: 3, execute: date_func, func_type: FunctionType::Date}),
+        ("date".to_string(), GlobalFunctionDef { name: "date".to_string(), min_args: 3, max_args: 3, execute: date_func, func_type: FunctionType::Date}),
     ]);
     defs
 }
@@ -180,44 +189,34 @@ fn sqrt(global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, ar
     Value::from_number(Number {significand: number.to_double().sqrt(), exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range.clone())
 }
 fn sum(global_function_def: &GlobalFunctionDef, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
-    let mut exploded_args = Vec::new();
-    let args_ref = explode_args(args, &mut exploded_args);
-    let mut res = with_num_vec(global_function_def, &args_ref, range, errors, globals, |num_vec| {
+    let mut res = with_num_vec(global_function_def, &args, range, errors, globals, |num_vec| {
         num_vec.into_iter().reduce(|tot, num| tot+num).unwrap_or(0.0)
     });
-    res.as_number_mut().unwrap().convert_to_unit(&args_ref[0].as_number().unwrap().unit, &scope.borrow().units_view, range, errors, globals);
+    res.as_number_mut().unwrap().convert_to_unit(&args[0].as_number().unwrap().unit, &scope.borrow().units_view, range, errors, globals);
     res
 }
 
 fn max(global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
-    let mut exploded_args = Vec::new();
-    let args_ref = explode_args(args, &mut exploded_args);
-    with_num_vec(global_function_def, &args_ref, range, errors, globals, |num_vec| {
+    with_num_vec(global_function_def, &args, range, errors, globals, |num_vec| {
         num_vec.into_iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(0.0)
     })
 }
 
 fn min(global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
-    let mut exploded_args = Vec::new();
-    let args_ref = explode_args(args, &mut exploded_args);
-    with_num_vec(global_function_def, &args_ref, range, errors, globals, |num_vec| {
+    with_num_vec(global_function_def, &args, range, errors, globals, |num_vec| {
         num_vec.into_iter().min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(0.0)
     })
 }
 
 fn avg(global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
-    let mut exploded_args = Vec::new();
-    let args_ref = explode_args(args, &mut exploded_args);
-    with_num_vec(global_function_def, &args_ref, range, errors, globals, |num_vec| {
+    with_num_vec(global_function_def, &args, range, errors, globals, |num_vec| {
         let val = num_vec.into_iter().reduce(|tot, num| tot + num).unwrap_or(0.0);
         val / args.len() as f64
     })
 }
 
 fn reverse(_global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>, _globals: &Globals) -> Value {
-    let mut exploded_args = Vec::new();
-    let args_ref = explode_args(args, &mut exploded_args);
-    let reversed: Vec<Value> = args_ref.into_iter().rev().map(|value| {
+    let reversed: Vec<Value> = args.into_iter().rev().map(|value| {
        value.clone()
     }).collect();
     Value {
@@ -229,9 +228,7 @@ fn reverse(_global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>
 }
 
 fn sort(_global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>, _globals: &Globals) -> Value {
-    let mut exploded_args = Vec::new();
-    let args_ref = explode_args(args, &mut exploded_args);
-    let mut sorted: Vec<Value> = args_ref.clone();
+    let mut sorted: Vec<Value> = args.clone();
     sorted.sort_by(|a, b| a.sortable_value().partial_cmp(&b.sortable_value()).unwrap());
     Value {
         id: None,
@@ -322,15 +319,11 @@ const PRIMES: [i32; 168] = [
 ];
 
 fn first(_global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, _range: &Range, _errors: &mut Vec<Error>, _globals: &Globals) -> Value {
-    let mut exploded_args = Vec::new();
-    let args_ref = explode_args(args, &mut exploded_args);
-    args_ref.first().unwrap().clone()
+    args.first().unwrap().clone()
 }
 
 fn last(_global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, _range: &Range, _errors: &mut Vec<Error>, _globals: &Globals) -> Value {
-    let mut exploded_args = Vec::new();
-    let args_ref = explode_args(args, &mut exploded_args);
-    args_ref.last().unwrap().clone()
+    args.last().unwrap().clone()
 }
 
 fn with_num_vec(function_def: &dyn FunctionDef, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals, func: impl Fn(Vec<f64>) -> f64) -> Value {
@@ -456,7 +449,7 @@ pub fn execute_custom_function(local_function_def: &CustomFunctionDef, _scope: &
     result
 }
 
-fn explode_args<'a>(args: &'a Vec<Value>, exploded_args: &'a mut Vec<Value>) -> &'a Vec<Value> {
+pub fn explode_args<'a>(args: &'a Vec<Value>, exploded_args: &'a mut Vec<Value>) -> &'a Vec<Value> {
     if args.len() != 1 {
         return args;
     }
@@ -483,15 +476,13 @@ fn date_func(global_function_def: &GlobalFunctionDef, scope: &Rc<RefCell<Scope>>
     let mut date = Timepoint::new();
 
     let  idx = scope.borrow().date_format.indices();
-    let mut exploded_args = Vec::<Value>::new();
-    let args_list = explode_args(args, &mut exploded_args);
-    if args_list.len() < 3 {
+    if args.len() < 3 {
         errors.push(Error::build(ErrorId::FuncArgWrong, range.clone(), &[global_function_def.get_name()]));
         return Value::error(range.clone());
     }
-    let day = &args_list[idx.day];
-    let month = &args_list[idx.month];
-    let year = &args_list[idx.year];
+    let day = &args[idx.day];
+    let month = &args[idx.month];
+    let year = &args[idx.year];
 
     if let Some(day_num) = &day.as_number() {
         date.day = Day::Value(day_num.to_double() as i8);

@@ -1,2 +1,1 @@
-#define strict
-a=
+first(reverse(1,2,3))
