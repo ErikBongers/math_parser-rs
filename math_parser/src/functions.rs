@@ -334,17 +334,12 @@ fn last(_global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, a
 }
 
 fn with_num_vec(function_def: &dyn FunctionDef, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals, func: impl Fn(Vec<f64>) -> f64) -> Value {
-    if let Some(num_vec) = to_num_vec(function_def, &args, range, errors, globals) {
-        let mut val = Value::from_number(Number {significand: func(num_vec), exponent: 0, unit: Unit::none(), fmt: NumberFormat::Dec }, range.clone());
-        let Some(number) = match_arg_number(function_def, &args[0], range, errors) else { return Value::error(range.clone()) };
-        let si_id = globals.unit_defs.get(&number.unit.id).unwrap().si_id;
-        val.as_number_mut().unwrap().unit.id = si_id.to_string();
-        val
-    } else { Value::error(range.clone()) }
-}
-
-fn to_num_vec(function_def: &dyn FunctionDef, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Option<Vec<f64>> {
-    Some(to_num_iter(function_def.get_name(), args, range, errors, globals))
+    let num_vec: Vec<f64> = to_num_iter(function_def.get_name(), &args, range, errors, globals).collect();
+    let mut val = Value::from_number(Number {significand: func(num_vec), exponent: 0, unit: Unit::none(), fmt: NumberFormat::Dec }, range.clone());
+    let Some(number) = match_arg_number(function_def, &args[0], range, errors) else { return Value::error(range.clone()) };
+    let si_id = globals.unit_defs.get(&number.unit.id).unwrap().si_id;
+    val.as_number_mut().unwrap().unit.id = si_id.to_string();
+    val
 }
 
 fn match_arg_number<'a>(function_def: &dyn FunctionDef, args: &'a Value, range: &Range, errors: &mut Vec<Error>) -> Option<&'a Number> {
@@ -355,21 +350,16 @@ fn match_arg_number<'a>(function_def: &dyn FunctionDef, args: &'a Value, range: 
     Some(number)
 }
 
-//TODO: try to figure out how to return an iterator instead of a vec. Not easy.
-//https://stackoverflow.com/questions/27535289/what-is-the-correct-way-to-return-an-iterator-or-any-other-trait
-//the closure in map should probably be converted into a 'real' function.
-fn to_num_iter(function_name: &str, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Vec<f64> {
-    let num_iter: Vec<f64> = args.iter()
-        .map(|value|
-            {
-                if let Variant::Numeric { number, .. } = &value.variant {
-                    number.to_si(globals)
-                } else {
-                    add_error(errors, ErrorId::FuncArgWrongType, range.clone(), &[function_name], Value::error(range.clone()));
-                    0.0
-                }
-            }).collect();
-    num_iter
+fn to_num_iter<'a>(function_name: &'a str, args: &'a Vec<Value>, range: &'a Range, errors: &'a mut Vec<Error>, globals: &'a Globals) -> impl Iterator<Item=f64> + 'a {
+    args.iter()
+        .map(|value| {
+            if let Variant::Numeric { number, .. } = &value.variant {
+                number.to_si(globals)
+            } else {
+                add_error(errors, ErrorId::FuncArgWrongType, range.clone(), &[function_name], Value::error(range.clone()));
+                0.0
+            }
+        })
 }
 
 fn inc(global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {

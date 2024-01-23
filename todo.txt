@@ -1,3 +1,11 @@
+* create some rust operators for Duration:
+  > dur + dur
+  > dur - dur
+  > dur * number
+  > dur / number
+  > use them in normalize()
+  > implement them as parser operators.
+
 * implement strict
   > trig functions require unit and do not assume rad.
   > no unit overrides or function overrides.
