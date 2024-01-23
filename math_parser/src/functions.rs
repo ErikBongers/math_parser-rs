@@ -479,14 +479,15 @@ fn now(_global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, _a
    Value::from_date(Timepoint { month: month_from_int(month as i32), day: Day::Value(day as i8), year: Some(year), range: range.clone(), errors: vec![], }, range.clone())
 }
 
-fn date_func(_global_function_def: &GlobalFunctionDef, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
+fn date_func(global_function_def: &GlobalFunctionDef, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
     let mut date = Timepoint::new();
 
     let  idx = scope.borrow().date_format.indices();
     let mut exploded_args = Vec::<Value>::new();
     let args_list = explode_args(args, &mut exploded_args);
     if args_list.len() < 3 {
-        return Value::error(range.clone()); //TODO: provide error message?
+        errors.push(Error::build(ErrorId::FuncArgWrong, range.clone(), &[global_function_def.get_name()]));
+        return Value::error(range.clone());
     }
     let day = &args_list[idx.day];
     let month = &args_list[idx.month];
