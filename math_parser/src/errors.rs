@@ -14,6 +14,7 @@ pub enum ErrorId
 
     VarNotDef,
     FuncNotDef,
+    FuncNotAccessible,
     UnitNotDef,
     DefineNotDef,
     UndefNotOk,
@@ -83,6 +84,7 @@ pub static ERROR_MAP: Lazy<HashMap<ErrorId, ErrorDef>>  = Lazy::new(|| HashMap::
 
 (ErrorId::VarNotDef, ErrorDef{id: ErrorId::VarNotDef, error_type: ErrorType::E, name: "VarNotDef", message: "variable `{0}` is not defined."}),
 (ErrorId::FuncNotDef, ErrorDef{id: ErrorId::FuncNotDef, error_type: ErrorType::E, name: "FuncNotDef", message: "function `{0}` is not defined."}),
+(ErrorId::FuncNotAccessible, ErrorDef{id: ErrorId::FuncNotAccessible, error_type: ErrorType::E, name: "FuncNotAccessible", message: "function `{0}` is not accessible."}),
 (ErrorId::UnitNotDef, ErrorDef{id: ErrorId::UnitNotDef, error_type: ErrorType::E, name: "UnitNotDef", message: "unit `{0}` is not defined."}),
 (ErrorId::DefineNotDef, ErrorDef{id: ErrorId::DefineNotDef, error_type: ErrorType::E, name: "DefineNotDef", message: "#define: option `{0}`not recognized."}),
 (ErrorId::UndefNotOk, ErrorDef{id: ErrorId::UndefNotOk, error_type: ErrorType::E, name: "UndefNotOk", message: "#undef: option `{0}` not recognized."}),

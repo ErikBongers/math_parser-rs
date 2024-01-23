@@ -235,8 +235,12 @@ impl<'g, 'a> Resolver<'g, 'a> {
         };
         let function_name = call_expr.function_name.as_str();
         if self.scope.borrow().function_accessible(function_name) == false {
-            //TODO: error: distinguish between non-existent function and function "inaccessible".
-            return self.add_error_value(ErrorId::FuncNotDef, call_expr.function_name_range.clone(), &[&call_expr.function_name]);
+            let error_id = if self.scope.borrow().function_exists(function_name, self.globals) == false {
+                ErrorId::FuncNotDef
+            } else {
+                ErrorId::FuncNotAccessible
+            };
+            return self.add_error_value(error_id, call_expr.function_name_range.clone(), &[&call_expr.function_name]);
         }
 
         //resolve the arguments.
