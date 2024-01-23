@@ -116,6 +116,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     }
 
     fn parse_define(&mut self) -> Option<Define>{
+        let mut extra_range = None;
         let token = self.tok.next();
         let txt = self.globals.get_text(&token.range); //assuming TokenType::Id, not checking as the next match will cover it.
         let define_type = match txt {
@@ -134,7 +135,8 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                     self.add_error(ErrorId::Expected, int.range.clone(), &["an integer"]);
                     return None;
                 }
-                self.tok.next();
+                let number_token = self.tok.next();
+                extra_range = Some(number_token.range);
                 let number = self.tok.get_number();
                 Precision {number}
             },
@@ -153,7 +155,11 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 return None;
             }
         };
-    Some(Define{ define_type, range: token.range.clone()}) //TODO: is token.range wide enough?
+        let mut range = token.range.clone();
+        if let Some(extra_range) = extra_range {
+            range = &range + &extra_range;
+        }
+        Some(Define{ define_type, range})
     }
 
     fn parse_echo_comment(&mut self) -> Option<Statement> {
