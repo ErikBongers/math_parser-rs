@@ -72,6 +72,9 @@ function formatResult (line) {
 	else if (line.type === "Last") {
 		strFormatted = "'last'";
 	}
+	else if (line.type === "FunctionDef") {
+		strFormatted = "Function";
+	}
 	return strFormatted;
 }
 
