@@ -9,6 +9,16 @@ use crate::tokenizer::cursor::Range;
 
 pub mod sources;
 
+///Opaque wrapper to avoid any int value being used.
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct SourceIndex(u8);
+
+impl SourceIndex {
+    pub fn as_int(&self) -> i32 {
+        self.0 as i32
+    }
+}
+
 pub struct Globals {
     pub operators: HashMap<u32, fn(&Globals, &Vec<Value>, &Range)-> Value>,
     sources: Vec<Source>, //keep private. Sources should only be added through set_source()
@@ -34,17 +44,14 @@ impl<'a> Globals {
         globals
     }
 
-    pub fn set_source(&mut self, name: String, text: String) -> i32 {
+    pub fn set_source(&mut self, name: String, text: String) -> SourceIndex {
         if let Some(source) = self.sources.iter_mut().find(|s| s.name == name) {
             source.set_text(text);
-            source.index as i32
+            source.index
         } else  {
-            self.sources.push(Source::new(name, text));
-            let index = self.sources.len() - 1;
-            if let Some(last) = self.sources.last_mut() {
-                last.index = index;
-            }
-            index as i32
+            let index = SourceIndex(self.sources.len() as u8);
+            self.sources.push(Source::new(name, text, index));
+            index
         }
     }
 
@@ -62,16 +69,16 @@ impl<'a> Globals {
     }
 
     pub fn get_text(&self, range: &Range) -> &str {
-        &self.sources[range.source_index as usize].get_text()[range.start..range.end]
+        &self.sources[range.source_index.0 as usize].get_text()[range.start..range.end]
     }
 
     pub fn get_line_and_column(&self, range: &Range) -> (usize, usize) {
-        self.sources[range.source_index as usize].get_line_and_column(range.start)
+        self.sources[range.source_index.0 as usize].get_line_and_column(range.start)
     }
 
     pub fn get_lines_and_columns(&self, range: &Range) -> (usize, usize, usize, usize) {
-        let (l1, c1) = self.sources[range.source_index as usize].get_line_and_column(range.start);
-        let (l2, c2) = self.sources[range.source_index as usize].get_line_and_column(range.end);
+        let (l1, c1) = self.sources[range.source_index.0 as usize].get_line_and_column(range.start);
+        let (l2, c2) = self.sources[range.source_index.0 as usize].get_line_and_column(range.end);
         (l1, c1, l2, c2)
     }
 

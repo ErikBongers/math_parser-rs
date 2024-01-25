@@ -1,6 +1,5 @@
 use std::ops;
 use crate::errors::Error;
-use crate::tokenizer::cursor::Range;
 
 use std::fmt;
 use serde::Serialize;
@@ -103,7 +102,6 @@ pub struct Timepoint {
     pub month: Month,
     pub day: Day,
     pub year: Option<i32>,
-    pub range: Range,
     pub errors: Vec<Error>,
 }
 
@@ -113,7 +111,6 @@ impl Timepoint {
             month: Month::NONE,
             day: Day::None,
             year: None,
-            range: Range::none(),
             errors: Vec::new(),
         }
     }

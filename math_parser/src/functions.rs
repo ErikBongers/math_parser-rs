@@ -469,7 +469,7 @@ fn now(_global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, _a
     let month = current_date.month();
     let day = current_date.day();
 
-   Value::from_date(Timepoint { month: month_from_int(month as i32), day: Day::Value(day as i8), year: Some(year), range: range.clone(), errors: vec![], }, range.clone())
+   Value::from_date(Timepoint { month: month_from_int(month as i32), day: Day::Value(day as i8), year: Some(year), errors: vec![], }, range.clone())
 }
 
 fn date_func(global_function_def: &GlobalFunctionDef, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {

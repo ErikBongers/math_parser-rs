@@ -1,2 +1,1 @@
-#undef trig
-sin(1);
+a=1;

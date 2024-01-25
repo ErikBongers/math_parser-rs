@@ -1,3 +1,4 @@
+use crate::globals::SourceIndex;
 use crate::tokenizer::cursor::{Cursor, is_id_continue, is_id_start, Range};
 use crate::tokenizer::token_type::TokenType;
 use crate::tokenizer::token_type::TokenType::*;
@@ -14,7 +15,7 @@ pub struct Token {
     pub text: String,
 }
 impl Token {
-    fn new(kind: TokenType, source_index :u8, start: usize, end :usize, _text: String) -> Token {
+    fn new(kind: TokenType, source_index :SourceIndex, start: usize, end :usize, _text: String) -> Token {
         Token { kind, range: Range { source_index, start, end },
             #[cfg(debug_assertions)]
             text: _text
@@ -24,14 +25,14 @@ impl Token {
 
 impl Cursor<'_> {
     #[inline]
-    pub fn source_index(&self) -> usize { self.source.index }
+    pub fn source_index(&self) -> SourceIndex { self.source.index }
 
     pub fn next_token(&mut self) -> Token {
         self.eat_whitespace();
         let mut start_pos = self.get_pos();
         self.is_beginning_of_text = false; // clear this once per next_token instead of once per next(), for performance.
         let first_char = match self.next() {
-            None => return Token::new(Eot, self.source.index as u8, 0, 0, "".to_string()),
+            None => return Token::new(Eot, self.source.index, 0, 0, "".to_string()),
             Some(c) => c
         };
         let token_type = match first_char {
@@ -172,7 +173,7 @@ impl Cursor<'_> {
 
             _ => Unknown
         };
-        let res = Token::new(token_type, self.source.index as u8, start_pos, self.get_pos(), self.source.get_text()[start_pos..self.get_pos()].to_string());
+        let res = Token::new(token_type, self.source.index, start_pos, self.get_pos(), self.source.get_text()[start_pos..self.get_pos()].to_string());
         res
     }
 

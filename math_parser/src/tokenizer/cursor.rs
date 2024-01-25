@@ -1,7 +1,7 @@
 use std::cmp::{max, min};
 use std::ops;
 use std::str::Chars;
-use serde::Serialize;
+use crate::globals::SourceIndex;
 use crate::globals::sources::Source;
 use crate::number::Number;
 use crate::resolver::unit::Unit;
@@ -18,17 +18,17 @@ pub struct Cursor<'a> {
     pub (in crate::tokenizer) nl_is_token: bool,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone)]
 pub struct Range {
-    pub source_index: u8, //TODO: try to use a ref, as an index is checked every time at runtime.
+    pub source_index: SourceIndex,
     pub start :usize,
     pub end : usize
 }
 
 impl Range {
-    pub fn none() -> Range {
+    pub fn none(source_index: SourceIndex) -> Range {
         Range {
-            source_index: 0,
+            source_index,
             start: 0,
             end: 0
         }

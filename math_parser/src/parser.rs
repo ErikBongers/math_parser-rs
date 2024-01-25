@@ -320,7 +320,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 } else {
                     Token {
                         kind: TokenType::ClearUnit,
-                        range: Range::none(),
+                        range: Range::none(self.tok.source_index()),
                         #[cfg(debug_assertions)]
                         text: "".to_string(),
                     }

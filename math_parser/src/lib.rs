@@ -32,7 +32,7 @@ impl Api {
     }
 
     pub fn set_source(&mut self, name: String, text: String) -> i32 {
-        self.globals.set_source(name, text)
+        self.globals.set_source(name, text).as_int()
     }
 
     pub fn parse(&mut self, start_script_id: String, main_script_id: String) -> String {
@@ -74,8 +74,7 @@ impl Api {
             panic!("TODO: return source file {} not found as an error -> json", script_id);
         };
 
-        let mut range = Range::none();
-        range.source_index = source.index as u8;
+        let range = Range::none(source.index);
         let code_block = match block_or_scope {
             Either::Scope(scope) => {
                 CodeBlock::new(scope, range)
@@ -174,10 +173,10 @@ pub mod test_api {
     pub fn get_results(text: &str) -> (Vec<Value>, Vec<Error>) {
         let mut globals = Globals::new();
         let src_name = "src1";
-        globals.set_source(src_name.to_string(), text.to_string());
+        let source_index = globals.set_source(src_name.to_string(), text.to_string());
         let mut tok = PeekingTokenizer::new(globals.get_source_by_name(src_name).unwrap()); //unwrap ok: we just pushed a source.
         let scope = Scope::new(&globals);
-        let code_block = CodeBlock::new(RefCell::new(scope), Range::none());
+        let code_block = CodeBlock::new(RefCell::new(scope), Range::none(source_index));
         let mut errors: Vec<Error> = Vec::new();
         //parse
         let mut parser = Parser::new(&globals, &mut tok, &mut errors, code_block);

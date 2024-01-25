@@ -60,7 +60,7 @@ impl<'a> Serialize for ScopedValue<'a> {
         };
 
         state.serialize_field("type", &&self.value.variant.name())?;
-        state.serialize_field("src", &self.value.stmt_range.source_index)?;
+        state.serialize_field("src", &self.value.stmt_range.source_index.as_int())?;
         let (line, _) = self.globals.get_line_and_column(&self.value.stmt_range);
         state.serialize_field("line", &line)?;
 
@@ -83,7 +83,7 @@ impl<'a> Serialize for ScopedValue<'a> {
                 state.serialize_field("Last", "last")
             },
             None => {
-                state.serialize_field("range", &self.value.stmt_range)
+                state.serialize_field("range", &&RangeContext{ range: &self.value.stmt_range, globals: self.globals })
             },
             _ => state.serialize_field("todo", "No serialization for this Value.Variant.")
         }?;
@@ -142,15 +142,49 @@ impl<'a> Serialize for ErrorContext<'a> {
         where
             S: Serializer
     {
-        let mut state = serializer.serialize_struct("error", 5)?;
+        let mut cnt_fields = 5;
+        if self.error.stack_trace.is_none() { cnt_fields -= 1; }
+
+        let mut state = serializer.serialize_struct("error", cnt_fields)?;
 
         state.serialize_field("id", &self.error.id)?;
         let error_type = &ERROR_MAP.get(&self.error.id).unwrap().error_type;
         state.serialize_field("type", &error_type)?;
         state.serialize_field("msg", &self.error.message)?;
         state.serialize_field("range", &RangeContext{ range: &self.error.range, globals: self.globals })?;
-        state.serialize_field("stackTrace", &self.error.stack_trace)?;
+        if let Some(stack_trace) = &self.error.stack_trace {
+            let ctx_stack_trace = stack_trace
+                .iter()
+                .map(|error|
+                    ErrorContext { error, globals: self.globals }
+                );
+            let adapter = IteratorAdapter::new(ctx_stack_trace);
+            state.serialize_field("stackTrace", &adapter)?;
+        }
         state.end()
+    }
+}
+
+struct IteratorAdapter<I> {
+    iterator: RefCell<I>,
+}
+
+impl<I> IteratorAdapter<I> {
+    fn new(iterator: I) -> Self {
+        Self { iterator: RefCell::new(iterator) }
+    }
+}
+
+impl<I> Serialize for IteratorAdapter<I>
+    where
+        I: Iterator,
+        I::Item: serde::Serialize,
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+    {
+        serializer.collect_seq(self.iterator.borrow_mut().by_ref())
     }
 }
 
@@ -168,7 +202,7 @@ impl<'a> Serialize for RangeContext<'a> {
 
         let mut state = serializer.serialize_struct("range", 5)?;
 
-        state.serialize_field("sourceIndex", &self.range.source_index)?;
+        state.serialize_field("sourceIndex", &self.range.source_index.as_int())?;
         state.serialize_field("startLine", &start_line)?;
         state.serialize_field("startPos", &start_pos)?;
         state.serialize_field("endLine", &end_line)?;

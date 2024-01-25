@@ -1,3 +1,4 @@
+use crate::globals::SourceIndex;
 use crate::globals::sources::Source;
 use crate::number::Number;
 use crate::tokenizer::cursor::Cursor;
@@ -23,7 +24,7 @@ impl<'a> PeekingTokenizer<'a> {
     }
 
     #[inline]
-    pub fn source_index(&self) -> u8 { self.cur.source_index() as u8 }
+    pub fn source_index(&self) -> SourceIndex { self.cur.source_index() }
 
     pub fn peek(&self) -> &Token {
         &self.peeked_token

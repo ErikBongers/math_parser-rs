@@ -69,7 +69,7 @@ pub struct ErrorDef{
     pub message: &'static str,
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Clone)]
 pub struct Error {
     pub id: ErrorId,
     pub message: String, //fully expanded message with params

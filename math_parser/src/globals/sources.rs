@@ -1,6 +1,8 @@
 //MIT license applies.
 //based on https://doc.rust-lang.org/beta/nightly-rustc/src/rustc_span/lib.rs.html#1781
 
+use crate::globals::SourceIndex;
+
 /// Identifies an offset of a multi-byte character in a `SourceFile`.
 #[derive(Debug)]
 pub struct MultiByteChar {
@@ -9,14 +11,14 @@ pub struct MultiByteChar {
 }
 pub struct Source {
     pub(super) name: String,
-    pub index: usize,
+    pub index: SourceIndex,
     text: String,
     pub lines: Vec<usize>,
     pub multi_byte_chars: Vec<MultiByteChar>,
 }
 impl Source {
-    pub fn new(name: String, text: String) -> Self {
-        let mut source = Source {name, text, index: 0, lines: vec![], multi_byte_chars: vec![]};
+    pub fn new(name: String, text: String, index: SourceIndex) -> Self {
+        let mut source = Source {name, text, index, lines: vec![], multi_byte_chars: vec![]};
         source.index_lines_and_multibytechars();
         source
     }

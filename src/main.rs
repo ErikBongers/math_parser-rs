@@ -2,14 +2,14 @@ use std::fs;
 use math_parser::{parse_1_file, parse_2_files};
 
 fn main() {
-    parse_one_file();
-    // parse_two_files();
+    // parse_one_file();
+    parse_two_files();
 }
 
 #[allow(unused)]
 fn parse_two_files() {
     let file_path = r"data/source1.txt";
-    let file_path2 = r"data/source3.txt";
+    let file_path2 = r"data/source2.txt";
     let result = fs::read_to_string(file_path);
     let Ok(text1) = result
         else {
