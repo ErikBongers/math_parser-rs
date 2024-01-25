@@ -1,0 +1,29 @@
+function angleCorrection(height1, height2)
+  {
+  a1 = atan(height1);
+  a2 = atan(height2);
+  deltaA = a2 - a1;
+  res = tan(deltaA);
+  res.=height1;
+  }
+angleCorrection(.70cm, .75).mm; //should be 0.328mm
+
+function ageThisYear(bday)
+  {
+  #define ymd
+  lastDay=date(now().year, 12, 'last');
+  lastDay-bday;
+  }
+mybday = date(1968,07,30);
+ageThisYear(mybday).years;
+
+
+function age(bday)
+  {
+  #define ymd
+  now()-bday;
+  }
+age(mybday);
+zm = 10cm;
+emm = 123mm;
+zm .= emm;

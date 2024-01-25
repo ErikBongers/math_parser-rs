@@ -23,7 +23,7 @@ impl MathParser {
         }
     }
 
-    pub fn add_source(&mut self, name: String, text: String) -> i32 {
+    pub fn set_source(&mut self, name: String, text: String) -> i32 {
         self.api.set_source(name, text)
     }
 

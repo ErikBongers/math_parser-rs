@@ -23,6 +23,11 @@
     > this installs inc_version.exe in C:\Users\erikb\.cargo\bin
   > check out https://crates.io/crates/cargo-post
 
+* implement a ~= operator to approximately compare floats.
+  > PI ~= 3.14
+  > we don't have if statements, so...not usefull?
+
+* implement delta symbol shortcut...ctrl D?
 
 * google login: failes more than not.
   > order of scripts?

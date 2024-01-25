@@ -161,11 +161,11 @@ export function afterEditorChange() {
 
 function parseAfterChange(scriptId) {
     let result = {};
-    let sourceIndex = parserInstance.add_source(scriptId, cm.editor.state.doc.toString()); //TODO: rename to set_source()
+    let sourceIndex = parserInstance.set_source(scriptId, cm.editor.state.doc.toString());
     if (scriptId !== "start") {
         if (!localStorage.savedStartCode)
             localStorage.savedStartCode = "";
-        parserInstance.add_source("start", localStorage.savedStartCode);
+        parserInstance.set_source("start", localStorage.savedStartCode);
         result = parserInstance.parse("start", scriptId);
     } else {
         result = parserInstance.parse("", scriptId);
