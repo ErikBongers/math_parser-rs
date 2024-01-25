@@ -1,3 +1,17 @@
+* try to refactor nodes:
+  > instead of a `base class` Node,
+  enum ExpressionType {
+    BinExpr {
+        fields,
+        child: Box<Node>,
+        },
+    ...
+  }
+  . Node {
+     ...insert node_data, but not in separate struct,
+     > expr: ExpressionType,
+     >
+  }
 * create some rust operators for Duration:
   > dur + dur
   > dur - dur

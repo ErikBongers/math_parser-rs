@@ -373,7 +373,7 @@ fn sin(global_function_def: &GlobalFunctionDef, scope: &Rc<RefCell<Scope>>, args
     let Some(number) = match_arg_number(global_function_def, &args[0], range, errors) else { return Value::error(range.clone()); };
     let mut number = number.clone(); //Needed? Test it.
     if number.unit.id == "deg" {
-        number.convert_to_unit(&Unit { range: None, id: "rad".to_string() }, &scope.borrow().units_view, range, errors, globals);
+        number.convert_to_unit(&Unit { id: "rad".to_string() }, &scope.borrow().units_view, range, errors, globals);
     }
     Value::from_number(Number {significand: number.to_double().sin(), exponent: 0, unit: Unit::none(), fmt: NumberFormat::Dec }, range.clone())
 }
@@ -382,7 +382,7 @@ fn cos(global_function_def: &GlobalFunctionDef, scope: &Rc<RefCell<Scope>>, args
     let Some(number) = match_arg_number(global_function_def, &args[0], range, errors) else { return Value::error(range.clone()); };
     let mut number = number.clone(); //Needed? Test it.
     if number.unit.id == "deg" {
-        number.convert_to_unit(&Unit { range: None, id: "rad".to_string() }, &scope.borrow().units_view, range, errors, globals);     }
+        number.convert_to_unit(&Unit { id: "rad".to_string() }, &scope.borrow().units_view, range, errors, globals);     }
     Value::from_number(Number {significand: number.to_double().cos(), exponent: 0, unit: Unit::none(), fmt: NumberFormat::Dec }, range.clone())
 }
 
@@ -390,22 +390,22 @@ fn tan(global_function_def: &GlobalFunctionDef, scope: &Rc<RefCell<Scope>>, args
     let Some(number) = match_arg_number(global_function_def, &args[0], range, errors) else { return Value::error(range.clone()); };
     let mut number = number.clone(); //Needed? Test it.
     if number.unit.id == "deg" {
-        number.convert_to_unit(&Unit { range: None, id: "rad".to_string() }, &scope.borrow().units_view, range, errors, globals);
+        number.convert_to_unit(&Unit { id: "rad".to_string() }, &scope.borrow().units_view, range, errors, globals);
     }
     Value::from_number(Number {significand: number.to_double().tan(), exponent: 0, unit: Unit::none(), fmt: NumberFormat::Dec }, range.clone())
 }
 
 fn asin(global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
     let Some(number) = match_arg_number(global_function_def, &args[0], range, errors) else { return Value::error(range.clone()); };
-    Value::from_number(Number {significand: number.to_double().asin(), exponent: 0, unit: Unit { id: "rad".to_string(), range: Some(range.clone())}, fmt: NumberFormat::Dec }, range.clone())
+    Value::from_number(Number {significand: number.to_double().asin(), exponent: 0, unit: Unit { id: "rad".to_string()}, fmt: NumberFormat::Dec }, range.clone())
 }
 fn acos(global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
     let Some(number) = match_arg_number(global_function_def, &args[0], range, errors) else { return Value::error(range.clone()); };
-    Value::from_number(Number {significand: number.to_double().acos(), exponent: 0, unit: Unit { id: "rad".to_string(), range: Some(range.clone())}, fmt: NumberFormat::Dec }, range.clone())
+    Value::from_number(Number {significand: number.to_double().acos(), exponent: 0, unit: Unit { id: "rad".to_string()}, fmt: NumberFormat::Dec }, range.clone())
 }
 fn atan(global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
     let Some(number) = match_arg_number(global_function_def, &args[0], range, errors) else { return Value::error(range.clone()); };
-    Value::from_number(Number {significand: number.to_double().atan(), exponent: 0, unit: Unit { id: "rad".to_string(), range: Some(range.clone())}, fmt: NumberFormat::Dec }, range.clone())
+    Value::from_number(Number {significand: number.to_double().atan(), exponent: 0, unit: Unit { id: "rad".to_string()}, fmt: NumberFormat::Dec }, range.clone())
 }
 
 

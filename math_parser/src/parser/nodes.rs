@@ -1,7 +1,5 @@
-use std::any::{Any, TypeId};
 use std::cell::RefCell;
 use std::rc::Rc;
-use macros::{CastAny, Node};
 use crate::errors::{Error, ErrorId};
 use crate::globals::Globals;
 use crate::number::Number;
@@ -10,41 +8,91 @@ use crate::resolver::unit::Unit;
 use crate::tokenizer::cursor::Range;
 use crate::tokenizer::Token;
 
-#[derive(Clone)]
-pub struct NodeData {
-    pub unit: Unit,
-    pub has_errors: bool
-}
-
-impl NodeData {
-    pub fn new() -> Self {
-        NodeData {
-            unit: Unit::none(),
-            has_errors: false,
-        }
-    }
-}
-
 pub trait HasRange{
     fn get_range(&self) -> Range;
 }
 
-pub trait Node: CastAny + HasRange {
-    fn get_node_data(&self) -> &NodeData;
-    fn get_node_data_mut(&mut self) -> &mut NodeData;
+#[derive(Clone)]
+pub struct Node {
+    pub unit: Unit,
+    pub has_errors: bool,
+    pub expr: NodeType,
+}
 
-    fn is_implicit_mult(&self) -> bool {
-        match self.as_any().type_id() {
-            t if TypeId::of::<BinExpr>() == t => self.as_any().downcast_ref::<BinExpr>().unwrap().implicit_mult,
-            _ => false
+impl Node {
+    pub fn new (expr: NodeType) -> Node {
+        Node {
+            unit: Unit::none(),
+            has_errors: false,
+            expr,
+        }
+    }
+
+    pub fn boxed(expr: NodeType) -> Box<Node> {
+       Box::new(Node::new(expr))
+    }
+}
+
+impl HasRange for Node {
+    fn get_range(&self) -> Range {
+        self.expr.get_range()
+    }
+}
+
+#[derive(Clone)]
+pub enum NodeType {
+    None(NoneExpr),
+    Unit(UnitExpr),
+    Comment(CommentExpr),
+    Assign(AssignExpr),
+    Binary(BinExpr),
+    Unary(UnaryExpr),
+    Const(ConstExpr),
+    Id(IdExpr),
+    Postfix(PostfixExpr),
+    List(ListExpr),
+    FunctionDef(FunctionDefExpr),
+    Call(CallExpr),
+    Block(CodeBlock),
+    Define(DefineExpr),
+}
+
+impl NodeType {
+    pub fn is_implicit_mult(&self) -> bool {
+        if let Binary(bin_expr)  = self{
+            bin_expr.implicit_mult
+        } else {
+            false
         }
     }
 }
-//emulating a base class like Partial: https://docs.rs/partially/latest/partially/
 
-#[derive(CastAny, Node)]
+use NodeType as N;
+use crate::parser::nodes::N::Binary;
+
+impl HasRange for NodeType {
+    fn get_range(&self) -> Range {
+        match self {
+            N::None(expr) => expr.get_range(),
+            N::Unit(expr) => expr.get_range(),
+            N::Comment(expr) => expr.get_range(),
+            N::Assign(expr) => expr.get_range(),
+            N::Binary(expr) => expr.get_range(),
+            N::Unary(expr) => expr.get_range(),
+            N::Const(expr) => expr.get_range(),
+            N::Id(expr) => expr.get_range(),
+            N::Postfix(expr) => expr.get_range(),
+            N::List(expr) => expr.get_range(),
+            N::FunctionDef(expr) => expr.get_range(),
+            N::Call(expr) => expr.get_range(),
+            N::Block(expr) => expr.get_range(),
+            N::Define(expr) => expr.get_range(),
+        }
+    }
+}
+
+#[derive(Clone)]
 pub struct NoneExpr {
-    pub node_data: NodeData,
     pub token: Token, //may be EOT
 }
 
@@ -53,10 +101,11 @@ impl HasRange for NoneExpr {
         self.token.range.clone()
     }
 }
-#[derive(CastAny, Node)]
+
+#[derive(Clone)]
 pub struct UnitExpr {
-    pub node_data: NodeData,
-    pub node: Box<dyn Node>
+    pub node: Box<Node>,
+    pub range: Range,
 }
 
 impl HasRange for UnitExpr {
@@ -65,9 +114,8 @@ impl HasRange for UnitExpr {
     }
 }
 
-#[derive(CastAny, Node)]
+#[derive(Clone)]
 pub struct CommentExpr {
-    pub node_data: NodeData,
     pub token: Token,
 }
 
@@ -77,11 +125,10 @@ impl HasRange for CommentExpr {
     }
 }
 
-#[derive(CastAny, Node)]
+#[derive(Clone)]
 pub struct AssignExpr {
-    pub node_data: NodeData,
     pub id: Token,
-    pub expr: Box<dyn Node>,
+    pub expr: Box<Node>,
 }
 
 impl HasRange for AssignExpr {
@@ -90,37 +137,37 @@ impl HasRange for AssignExpr {
     }
 }
 
-#[derive(CastAny, Node)]
+#[derive(Clone)]
 pub struct BinExpr {
-    pub node_data: NodeData,
-    pub expr1: Box<dyn Node>,
+    pub expr1: Box<Node>,
     pub op: Token,
-    pub expr2: Box<dyn Node>,
+    pub expr2: Box<Node>,
     pub implicit_mult: bool,
 }
+
 impl HasRange for BinExpr {
     fn get_range(&self) -> Range {
          &self.expr1.get_range() + &self.expr2.get_range()
     }
 }
 
-#[derive(CastAny, Node)]
+#[derive(Clone)]
 pub struct UnaryExpr {
-    pub node_data: NodeData,
     pub op: Token,
-    pub expr: Box<dyn Node>,
+    pub expr: Box<Node>,
 }
+
 impl HasRange for UnaryExpr {
     fn get_range(&self) -> Range {
          &self.expr.get_range() + &self.op.range
     }
 }
 
-
+#[derive(Clone)]
 pub enum ConstType { Numeric {number: Number}, FormattedString }
-#[derive(CastAny, Node)]
+
+#[derive(Clone)]
 pub struct ConstExpr {
-    pub node_data: NodeData,
     pub const_type: ConstType,
     pub range: Range,
 }
@@ -131,9 +178,8 @@ impl HasRange for ConstExpr {
     }
 }
 
-#[derive(CastAny, Node)]
+#[derive(Clone)]
 pub struct IdExpr {
-    pub node_data: NodeData,
     pub id: Token,
 }
 
@@ -143,10 +189,9 @@ impl HasRange for IdExpr {
     }
 }
 
-#[derive(CastAny, Node)]
+#[derive(Clone)]
 pub struct PostfixExpr {
-    pub node_data: NodeData,
-    pub node: Box<dyn Node>,
+    pub node: Box<Node>,
     pub postfix_id: Token,
 }
 
@@ -160,10 +205,9 @@ impl HasRange for PostfixExpr {
     }
 }
 
-#[derive(CastAny, Node)]
+#[derive(Clone)]
 pub struct Statement {
-    pub node_data: NodeData,
-    pub node: Box<dyn Node>,
+    pub node: Box<Node>,
     pub mute: bool
 }
 
@@ -177,8 +221,7 @@ impl Statement {
     pub fn error(errors: &mut Vec<Error>, id: ErrorId, token: Token, arg1: &str) -> Statement {
         errors.push( Error::build(id, token.range.clone(), &[arg1]) );
         Statement {
-            node: Box::new(NoneExpr { token, node_data: NodeData { has_errors: true, unit: Unit::none()}}),
-            node_data: NodeData { has_errors: true, unit: Unit::none()},
+            node: Box::new( Node { expr: N::None(NoneExpr { token }), unit: Unit::none(), has_errors: true }),
             mute: false
         }
     }
@@ -189,10 +232,9 @@ impl Statement {
     }
 }
 
-#[derive(CastAny, Node)]
+#[derive(Clone)]
 pub struct ListExpr {
-    pub node_data: NodeData,
-    pub nodes: Vec<Box<dyn Node>>,
+    pub nodes: Vec<Box<Node>>,
 }
 
 impl HasRange for ListExpr {
@@ -200,13 +242,12 @@ impl HasRange for ListExpr {
         self.nodes
             .iter()
             .map(|node| node.get_range())
-            .reduce(|r1, r2| &r1 + &r2).unwrap_or(Range::none())
+            .reduce(|r1, r2| &r1 + &r2).expect("No range found. List may not be empty.")
     }
 }
 
-#[derive(CastAny, Node, Clone)]
+#[derive(Clone)]
 pub struct FunctionDefExpr {
-    pub node_data: NodeData,
     pub id: String, //Not a Token because id may be a decorated name in case of polymorphism.
     pub id_range: Range, //the undecorated functionname
     pub arg_names: Vec<String>,
@@ -219,28 +260,22 @@ impl HasRange for FunctionDefExpr {
     }
 }
 
-#[derive(CastAny, Node)]
+#[derive(Clone)]
 pub struct CallExpr {
-    pub node_data: NodeData,
     pub function_name: String, //this may not be a stream range, but a translated function name: e.g. x++ -> _inc(x)
     pub function_name_range: Range,
-    pub arguments: Box<dyn Node>
+    pub arguments: Vec<Box<Node>>,
+    pub par_close_range: Range,
 }
 
 impl HasRange for CallExpr {
     fn get_range(&self) -> Range {
-        let arg_range = self.arguments.get_range();
-        if arg_range.is_none() {
-            self.function_name_range.clone()
-        } else {
-            &self.function_name_range + &self.arguments.get_range()
-        }
+        &self.function_name_range + &self.par_close_range
     }
 }
 
-#[derive(CastAny, Node)]
+#[derive(Clone)]
 pub struct CodeBlock {
-    pub node_data: NodeData,
     pub block_start: Range,
     pub statements: Vec<Statement>,
     pub scope: Rc<RefCell<Scope>>,
@@ -249,7 +284,6 @@ pub struct CodeBlock {
 impl CodeBlock {
     pub fn new(scope: RefCell<Scope>, block_start: Range) -> Self {
         CodeBlock {
-            node_data: NodeData::new(),
             block_start,
             scope: Rc::new(scope),
             statements: Vec::new(),
@@ -265,11 +299,7 @@ impl HasRange for CodeBlock {
     }
 }
 
-pub struct Define {
-    pub define_type: DefineType,
-    pub range:Range,
-}
-
+#[derive(Clone)]
 pub enum DefineType {
     Dmy,
     Ymd,
@@ -287,9 +317,14 @@ pub enum DefineType {
     DecimalComma,
 }
 
-#[derive(CastAny, Node)]
+#[derive(Clone)]
+pub struct Define {
+    pub define_type: DefineType,
+    pub range:Range,
+}
+
+#[derive(Clone)]
 pub struct DefineExpr {
-    pub node_data: NodeData,
     pub def_undef: Token,
     pub defines: Vec<Define>,
 }
@@ -304,64 +339,59 @@ impl HasRange for DefineExpr {
 
 
 #[allow(unused)]
-pub fn print_nodes(expr: &Box<dyn Node>, indent: usize, globals: &Globals) {
+pub fn print_nodes(node: &Box<Node>, indent: usize, globals: &Globals) {
     print!("{: <1$}", "", indent);
     let indent= indent+5;
-    match expr.as_any().type_id() {
-        t if TypeId::of::<ConstExpr>() == t => {
-            let expr = expr.as_any().downcast_ref::<ConstExpr>().unwrap();
+    match &node.expr {
+        N::Const(expr) => {
             let value_str = match &expr.const_type {
                 ConstType::Numeric { number } => number.to_double().to_string(),
                 ConstType::FormattedString => globals.get_text(&expr.range).to_string()
             };
-            println!("{0}: {1}{2}", "ConstExpr", value_str, expr.node_data.unit.id);
+            println!("{0}: {1}{2}", "ConstExpr", value_str, node.unit.id);
         },
-        t if TypeId::of::<BinExpr>() == t => {
-            println!("{0}: {1:?}", "BinExpr", expr.as_any().downcast_ref::<BinExpr>().unwrap().op.kind);
-            let bin_expr = expr.as_any().downcast_ref::<BinExpr>().unwrap();
-            print_nodes(&bin_expr.expr1, indent, globals);
-            print_nodes(&bin_expr.expr2, indent, globals);
+        N::Binary(expr) => {
+            println!("{0}: {1:?}", "BinExpr", expr.op.kind);
+            print_nodes(&expr.expr1, indent, globals);
+            print_nodes(&expr.expr2, indent, globals);
         },
-        t if TypeId::of::<NoneExpr>() == t => {
+        N::None(expr) => {
             println!("{0}", "NoneExpr");
         },
-        t if TypeId::of::<ListExpr>() == t => {
+        N::List(expr) => {
             println!("{0}", "ListExpr");
-            let list_expr = expr.as_any().downcast_ref::<ListExpr>().unwrap();
-            for child in &list_expr.nodes {
+            for child in &expr.nodes {
                 print_nodes(&child, indent, globals);
             }
         },
-        t if TypeId::of::<AssignExpr>() == t => {
+        N::Assign(expr) => {
             println!("{0}", "AssignExpr");
-            let assign_expr = expr.as_any().downcast_ref::<AssignExpr>().unwrap();
-            print_nodes(&assign_expr.expr, indent, globals);
+            print_nodes(&expr.expr, indent, globals);
         },
-        t if TypeId::of::<PostfixExpr>() == t => {
+        N::Postfix(expr) => {
             println!("{0}", "PostfixExpr");
         },
-        t if TypeId::of::<CommentExpr>() == t => {
+        N::Comment(expr) => {
             println!("{0}", "CommentExpr");
         },
-        t if TypeId::of::<CallExpr>() == t => {
+        N::Call(expr) => {
             println!("{0}", "CallExpr");
         },
-        t if TypeId::of::<IdExpr>() == t => {
+        N::Id(expr) => {
             println!("{0}", "IdExpr");
         },
-        t if TypeId::of::<FunctionDefExpr>() == t => {
+        N::FunctionDef(expr) => {
             println!("{0}", "FunctionDefExpr");
         },
-        t if TypeId::of::<UnitExpr>() == t => {
+        N::Unit(expr) => {
             println!("{0}", "UnitExpr");
         },
-        t if TypeId::of::<DefineExpr>() == t => {
+        N::Define(expr) => {
             println!("{0}", "DefineExpr");
         },
-        t if TypeId::of::<CodeBlock>() == t => {
+        N::Block(expr) => {
             println!("{0}", "CodeBlock");
-            let code_block = expr.as_any().downcast_ref::<CodeBlock>().unwrap();
-            for stmt in &code_block.statements {
+            for stmt in &expr.statements {
                 print_nodes(&stmt.node, indent, globals);
             }
         },

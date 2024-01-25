@@ -4,13 +4,12 @@ pub mod scope;
 mod serialize;
 pub mod unit;
 
-use std::any::TypeId;
 use std::cell::RefCell;
 use std::rc::Rc;
 use crate::date::{DateFormat, parse_date_string};
 use crate::errors::{Error, ErrorId, has_real_errors};
 use crate::functions::{explode_args, FunctionType};
-use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, DefineExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NoneExpr, PostfixExpr, Statement, UnaryExpr, UnitExpr};
+use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, DefineExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NodeType, PostfixExpr, Statement, UnaryExpr, UnitExpr};
 use crate::globals::Globals;
 use crate::number::{Number, parse_formatted_number};
 use crate::resolver::operator::{operator_id_from, OperatorType};
@@ -31,7 +30,7 @@ pub struct Resolver<'g, 'a> {
     pub current_statement_muted: bool,
 }
 
-pub fn add_error(errors: &mut Vec<Error>, id: ErrorId, range: Range, args: &[&str], mut value: Value) -> Value {
+pub fn add_error<'s>(errors: &mut Vec<Error>, id: ErrorId, range: Range, args: &[&str], mut value: Value) -> Value {
     value.has_errors = true;
     errors.push(Error::build(id, range, args));
     value
@@ -88,28 +87,29 @@ impl<'g, 'a> Resolver<'g, 'a> {
         value
     }
 
-    pub fn resolve_node(&mut self, expr: &Box<dyn Node>) -> Value {
-        match expr.as_any().type_id() {
-            t if TypeId::of::<CodeBlock>() == t => { self.resolve_codeblock_expr(expr) },
-            t if TypeId::of::<ConstExpr>() == t => { self.resolve_const_expr(expr) },
-            t if TypeId::of::<BinExpr>() == t => { self.resolve_bin_expr(expr) },
-            t if TypeId::of::<IdExpr>() == t => { self.resolve_id_expr(expr) },
-            t if TypeId::of::<AssignExpr>() == t => { self.resolve_assign_expr(expr) },
-            t if TypeId::of::<UnaryExpr>() == t => { self.resolve_unary_expr(expr) },
-            t if TypeId::of::<PostfixExpr>() == t => { self.resolve_postfix_expr(expr) },
-            t if TypeId::of::<UnitExpr>() == t => { self.resolve_unit_expr(expr) },
-            t if TypeId::of::<CallExpr>() == t => { self.resolve_call_expr(expr) },
-            t if TypeId::of::<ListExpr>() == t => { self.resolve_list_expr(expr) },
-            t if TypeId::of::<CommentExpr>() == t => { self.resolve_comment_expr(expr) },
-            t if TypeId::of::<FunctionDefExpr>() == t => { self.resolve_func_def_expr(expr) },
-            t if TypeId::of::<DefineExpr>() == t => { self.resolve_define_expr(expr) },
-            t if TypeId::of::<NoneExpr>() == t => { Value::none(expr.get_range()) },
-            _ => self.add_error_value(ErrorId::ValueError, expr.get_range(), &["Unknown expression to resolve_node"])
+    pub fn resolve_node(&mut self, node: &Box<Node>) -> Value {
+        if node.has_errors {
+            return Value::error(node.get_range());
+        };
+        match &node.expr {
+            NodeType::Block(expr) => { self.resolve_codeblock_expr(expr) },
+            NodeType::Const(expr) => { self.resolve_const_expr(expr, &node.unit) },
+            NodeType::Binary(expr) => { self.resolve_bin_expr(expr) },
+            NodeType::Id(expr) => { self.resolve_id_expr(expr) },
+            NodeType::Assign(expr) => { self.resolve_assign_expr(expr) },
+            NodeType::Unary(expr) => { self.resolve_unary_expr(expr) },
+            NodeType::Postfix(expr) => { self.resolve_postfix_expr(expr, &node.unit) },
+            NodeType::Unit(expr) => { self.resolve_unit_expr(expr, &node.unit) },
+            NodeType::Call(expr) => { self.resolve_call_expr(expr, &node.unit) },
+            NodeType::List(expr) => { self.resolve_list_expr(expr) },
+            NodeType::Comment(expr) => { self.resolve_comment_expr(expr) },
+            NodeType::FunctionDef(expr) => { self.resolve_func_def_expr(expr) },
+            NodeType::Define(expr) => { self.resolve_define_expr(expr) },
+            NodeType::None(expr) => { Value::none(expr.get_range()) },
         }
     }
 
-    fn resolve_codeblock_expr(&mut self, expr: &Box<dyn Node>) -> Value {
-        let code_block = expr.as_any().downcast_ref::<CodeBlock>().unwrap();
+    fn resolve_codeblock_expr(&mut self, code_block: &CodeBlock) -> Value {
         let mut resolver = Resolver {globals: self.globals, scope: code_block.scope.clone(), results: Vec::new(), errors: self.errors, muted: self.muted || self.current_statement_muted, current_statement_muted: false};
         let result = resolver.resolve(&code_block.statements);
         self.results.extend(resolver.results);
@@ -120,8 +120,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
         result
     }
 
-    fn resolve_define_expr(&mut self, expr: &Box<dyn Node>) -> Value {
-        let define_expr = expr.as_any().downcast_ref::<DefineExpr>().unwrap();
+    fn resolve_define_expr(&mut self, define_expr: &DefineExpr) -> Value {
         if define_expr.def_undef.kind == TokenType::Define {
             self.resolve_defines(&define_expr);
         } else {
@@ -193,8 +192,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
         }
     }
 
-    fn resolve_list_expr(&mut self, expr: &Box<dyn Node>) -> Value {
-        let list_expr = expr.as_any().downcast_ref::<ListExpr>().unwrap();
+    fn resolve_list_expr(&mut self, list_expr: &ListExpr) -> Value {
         let mut number_list = Vec::<Value>::new();
         for item in &list_expr.nodes {
             let value = self.resolve_node(item);
@@ -202,37 +200,32 @@ impl<'g, 'a> Resolver<'g, 'a> {
         };
         Value {
             id: None,
-            stmt_range: expr.get_range().clone(),
+            stmt_range: list_expr.get_range().clone(),
             variant: Variant::List {values: number_list},
             has_errors: false,
         }
     }
 
-    fn resolve_comment_expr(&mut self, expr: &Box<dyn Node>) -> Value {
+    fn resolve_comment_expr(&mut self, comment_expr: &CommentExpr) -> Value {
         Value {
             id: None,
-            stmt_range: expr.get_range().clone(),
+            stmt_range: comment_expr.get_range().clone(),
             variant: Variant::Comment,
             has_errors: false,
         }
     }
 
-    fn resolve_func_def_expr(&mut self, expr: &Box<dyn Node>) -> Value {
-        let func_expr = expr.as_any().downcast_ref::<FunctionDefExpr>().unwrap();
+    fn resolve_func_def_expr(&mut self, function_def_expr: &FunctionDefExpr) -> Value {
         Value {
-            id: Some(func_expr.id_range.clone()),
+            id: Some(function_def_expr.id_range.clone()),
             has_errors: false,
-            stmt_range: func_expr.get_range(),
+            stmt_range: function_def_expr.get_range(),
             variant: Variant::FunctionDef
         }
     }
 
 
-    fn resolve_call_expr(&mut self, expr: &Box<dyn Node>) -> Value {
-        let call_expr = expr.as_any().downcast_ref::<CallExpr>().unwrap();
-        if call_expr.node_data.has_errors {
-            return Value::error(call_expr.get_range());
-        };
+    fn resolve_call_expr(&mut self, call_expr: &CallExpr, unit: &Unit) -> Value {
         let function_name = call_expr.function_name.as_str();
         if self.scope.borrow().function_accessible(function_name) == false {
             let error_id = if self.scope.borrow().function_exists(function_name, self.globals) == false {
@@ -244,9 +237,8 @@ impl<'g, 'a> Resolver<'g, 'a> {
         }
 
         //resolve the arguments.
-        let arguments = call_expr.arguments.as_any().downcast_ref::<ListExpr>().unwrap();
         let mut arg_values: Vec<Value> = Vec::new();
-        for arg in &arguments.nodes {
+        for arg in &call_expr.arguments {
             let value = self.resolve_node(arg);
             if value.has_errors {
                 return Value::error(call_expr.get_range());
@@ -265,7 +257,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
                 return Err(Error::build(ErrorId::FuncArgWrong, call_expr.function_name_range.clone(), &[&call_expr.function_name]));
             };
             let mut result = fd.call(&self.scope.clone(), args_ref,  &call_expr.function_name_range, &mut self.errors, self.globals);
-            Resolver::apply_unit(&mut result, expr, &self.scope.borrow().units_view, &expr.get_range(), self.errors, self.globals);
+            Resolver::apply_unit(&mut result, unit, &self.scope.borrow().units_view, &call_expr.get_range(), self.errors, self.globals);
             Ok(result)
         }) else {
             return self.add_error_value(ErrorId::FuncNotDef, call_expr.function_name_range.clone(), &[&call_expr.function_name]);
@@ -277,29 +269,27 @@ impl<'g, 'a> Resolver<'g, 'a> {
         })
     }
 
-    fn resolve_unit_expr(&mut self, expr: &Box<dyn Node>) -> Value {
-        let unit_expr = expr.as_any().downcast_ref::<UnitExpr>().unwrap();
+    fn resolve_unit_expr(&mut self, unit_expr: &UnitExpr, unit: &Unit) -> Value {
         let mut result = self.resolve_node(&unit_expr.node);
         if let Numeric { .. } = &mut result.variant {
-            Resolver::apply_unit(&mut result, expr, &self.scope.borrow().units_view, &expr.get_range(), self.errors, self.globals);
+            Resolver::apply_unit(&mut result, unit, &self.scope.borrow().units_view, &unit_expr.get_range(), self.errors, self.globals);
         }
         result
     }
 
     //A postfix is ALWAYS separated by a dot, contrary to a implcit mult or a 'glued' unit.
     //A 'glued' unit is applied to the variant itself (numeric, duration,...)
-    fn resolve_postfix_expr(&mut self, expr: &Box<dyn Node>) -> Value {
-        let pfix_expr = expr.as_any().downcast_ref::<PostfixExpr>().unwrap();
-        let result = self.resolve_node(&pfix_expr.node);
-        let id = self.globals.get_text(&pfix_expr.postfix_id.range).to_string();
+    fn resolve_postfix_expr(&mut self, postfix_expr: &PostfixExpr, unit: &Unit) -> Value {
+        let result = self.resolve_node(&postfix_expr.node);
+        let id = self.globals.get_text(&postfix_expr.postfix_id.range).to_string();
         let mut result = match id.as_str() {
-            "to_days" | "days" | "months" | "years" => self.resolve_duration_fragment(result, &id, &pfix_expr.postfix_id.range),
-            "day" | "month" | "year" => self.resolve_date_fragment(&pfix_expr, result, &id),
-            "bin" | "hex" | "dec" | "oct" | "exp" =>  self.resolve_num_format(pfix_expr, result, &id),
-            _ => self.resolve_unit_postfix(result, &pfix_expr, &id)
+            "to_days" | "days" | "months" | "years" => self.resolve_duration_fragment(result, &id, &postfix_expr.postfix_id.range),
+            "day" | "month" | "year" => self.resolve_date_fragment(&postfix_expr, result, &id),
+            "bin" | "hex" | "dec" | "oct" | "exp" =>  self.resolve_num_format(postfix_expr, result, &id),
+            _ => self.resolve_unit_postfix(result, &postfix_expr, &id)
         };
 
-        Resolver::apply_unit(&mut result, expr, &self.scope.borrow().units_view, &expr.get_range(), self.errors, self.globals);
+        Resolver::apply_unit(&mut result, unit, &self.scope.borrow().units_view, &postfix_expr.get_range(), self.errors, self.globals);
         result
     }
 
@@ -309,10 +299,14 @@ impl<'g, 'a> Resolver<'g, 'a> {
                 if pfix_expr.postfix_id.kind == TokenType::ClearUnit {
                     number.unit = Unit::none();
                 } else {
-                   let unit = if self.scope.borrow().var_exists(id, self.globals) {
-                        Unit { range: Some(pfix_expr.postfix_id.range.clone()), id: self.scope.borrow().get_var(id, self.globals).as_number().unwrap().unit.id.clone() }
+                    let unit = if let Some(var) = self.scope.borrow().variables.get(id) {
+                        var.as_number().map_or(Unit::none(), |number| number.unit.clone()) //TODO: if not a number: report error.
                     } else {
-                        Unit { range: Some(pfix_expr.postfix_id.range.clone()), id: id.clone() }
+                        if let Some(constant) = self.globals.constants.get(id.as_str()) {
+                            constant.unit.clone()
+                        } else {
+                            Unit { id: id.clone() }
+                        }
                     };
                     number.convert_to_unit(&unit, &self.scope.borrow().units_view, &pfix_expr.postfix_id.range, self.errors, self.globals);
                 }
@@ -379,56 +373,57 @@ impl<'g, 'a> Resolver<'g, 'a> {
    }
 
     //in case of (x.km)m, both postfixId (km) and unit (m) are filled.
-    fn apply_unit(value: &mut Value, node: &Box<dyn Node>, units_view: &UnitsView, range: &Range, errors: &mut Vec<Error>, globals: &Globals) {
+    fn apply_unit(value: &mut Value, unit: &Unit, units_view: &UnitsView, range: &Range, errors: &mut Vec<Error>, globals: &Globals) {
         if let Some(number) = value.as_number_mut() {
-            if !node.get_node_data().unit.is_empty() {
-                number.convert_to_unit(&node.get_node_data().unit, units_view, range, errors, globals);
+            if !unit.is_empty() {
+                number.convert_to_unit(unit, units_view, range, errors, globals);
             }
         }
         //else: ignore.
     }
 
-    fn resolve_assign_expr(&mut self, expr: &Box<dyn Node>) -> Value {
-        let expr = expr.as_any().downcast_ref::<AssignExpr>().unwrap();
-        let mut value = self.resolve_node(&expr.expr);
-        let id_str = self.globals.get_text(&expr.id.range).to_string();
+    fn resolve_assign_expr(&mut self, assign_expr: &AssignExpr) -> Value {
+        let mut value = self.resolve_node(&assign_expr.expr);
+        let id_str = self.globals.get_text(&assign_expr.id.range).to_string();
         if !self.scope.borrow().variables.contains_key(&id_str) {
             if self.scope.borrow().function_exists(&id_str, self.globals) {
-                self.add_error(ErrorId::WVarIsFunction, expr.id.range.clone(), &[id_str.as_str()]);
+                self.add_error(ErrorId::WVarIsFunction, assign_expr.id.range.clone(), &[id_str.as_str()]);
             }
             if self.scope.borrow().units_view.units.contains(&id_str) {
-                self.add_error(ErrorId::WVarIsUnit, expr.id.range.clone(), &[id_str.as_str()]);
+                self.add_error(ErrorId::WVarIsUnit, assign_expr.id.range.clone(), &[id_str.as_str()]);
             }
         }
         //disallow redefine of constant in case of `strict`. Error has already been added
         if self.globals.constants.contains_key(&id_str.as_str()) {
             if self.scope.borrow().strict {
-                self.add_error(ErrorId::ConstRedef, expr.id.range.clone(), &[id_str.as_str()]);
+                self.add_error(ErrorId::ConstRedef, assign_expr.id.range.clone(), &[id_str.as_str()]);
                 return value;
             } else {
-                self.add_error(ErrorId::WConstRedef, expr.id.range.clone(), &[id_str.as_str()]);
+                self.add_error(ErrorId::WConstRedef, assign_expr.id.range.clone(), &[id_str.as_str()]);
             }
         }
         self.scope.borrow_mut().variables.insert(id_str, value.clone());
-        value.id = Some(expr.id.range.clone()); //add id here to avoid adding id to the self.scope.variables.
+        value.id = Some(assign_expr.id.range.clone()); //add id here to avoid adding id to the self.scope.variables.
         value
     }
 
-    fn resolve_id_expr(&mut self, expr: &Box<dyn Node>) -> Value {
-        let expr = expr.as_any().downcast_ref::<IdExpr>().unwrap();
-        let id = self.globals.get_text(&expr.id.range).to_string();
-        let var_exists = self.scope.borrow().var_exists(&id, self.globals);
+    fn resolve_id_expr(&mut self, id_expr: &IdExpr) -> Value {
+        let id = self.globals.get_text(&id_expr.id.range).to_string();
+        let var_exists = self.scope.borrow().variables.contains_key(&id);
         if var_exists  {
-            self.scope.borrow().get_var(&id, self.globals).clone()
+            self.scope.borrow().variables[&id].clone()
         } else {
-            self.add_error_value(ErrorId::VarNotDef, expr.id.range.clone(), &[&id])
+            if self.globals.constants.contains_key(id.as_str()) {
+                Value::from_number(self.globals.constants[&id as &str].clone(), id_expr.get_range())
+            } else {
+                self.add_error_value(ErrorId::VarNotDef, id_expr.id.range.clone(), &[&id])
+            }
         }
     }
 
-    fn resolve_unary_expr(&mut self, expr: &Box<dyn Node>) -> Value {
-        let expr = expr.as_any().downcast_ref::<UnaryExpr>().unwrap();
-        let mut result = self.resolve_node(&expr.expr);
-        if expr.op.kind == TokenType::Min {
+    fn resolve_unary_expr(&mut self, unary_expr: &UnaryExpr) -> Value {
+        let mut result = self.resolve_node(&unary_expr.expr);
+        if unary_expr.op.kind == TokenType::Min {
             if let Numeric {ref mut number,..} = result.variant {
                 number.significand = -number.significand
             }
@@ -436,16 +431,15 @@ impl<'g, 'a> Resolver<'g, 'a> {
         result
     }
 
-    fn resolve_const_expr(&mut self, expr: &Box<dyn Node>) -> Value {
-        let expr = expr.as_any().downcast_ref::<ConstExpr>().unwrap();
-        match &expr.const_type {
+    fn resolve_const_expr(&mut self, const_expr: &ConstExpr, unit: &Unit) -> Value {
+        match &const_expr.const_type {
             ConstType::Numeric { number } => {
                 let mut n = number.clone();
-                n.unit = expr.node_data.unit.clone();
-                Value::from_number(n, expr.get_range())
+                n.unit = unit.clone();
+                Value::from_number(n, const_expr.get_range())
            },
             ConstType::FormattedString => {
-                let mut trimmed_range = expr.range.clone();
+                let mut trimmed_range = const_expr.range.clone();
                 if (trimmed_range.end - trimmed_range.start) >=2 {
                     trimmed_range.start += 1;
                     trimmed_range.end -= 1;
@@ -461,46 +455,45 @@ impl<'g, 'a> Resolver<'g, 'a> {
 
                 let string = self.globals.get_text(&trimmed_range);
                 if string == "last" {
-                    return Value::last_variant(expr.range.clone());
+                    return Value::last_variant(const_expr.range.clone());
                 }
-                let mut date = parse_date_string(string, &expr.range, self.scope.borrow().date_format);
+                let mut date = parse_date_string(string, &const_expr.range, self.scope.borrow().date_format);
                 if date.errors.is_empty() == false {
                     self.errors.append(&mut date.errors);
                     //only add the num_error if the date parsing failed.
                     self.errors.push(num_error);
                 }
-                Value::from_date(date, expr.get_range())
+                Value::from_date(date, const_expr.get_range())
             }
         }
     }
 
-    fn resolve_bin_expr(&mut self, expr: &Box<dyn Node>) -> Value {
-        let expr = expr.as_any().downcast_ref::<BinExpr>().unwrap();
+    fn resolve_bin_expr(&mut self, bin_expr: &BinExpr) -> Value {
 
         let error_cnt_before = self.errors.len();
-        let expr1 = self.resolve_node(&expr.expr1);
-        let expr2 = self.resolve_node(&expr.expr2);
+        let expr1 = self.resolve_node(&bin_expr.expr1);
+        let expr2 = self.resolve_node(&bin_expr.expr2);
         if error_cnt_before != self.errors.len() {
             if has_real_errors(&self.errors[error_cnt_before..]) {
-                return Value::error(expr.get_range());
+                return Value::error(bin_expr.get_range());
             }
         }
 
-        let operator_type = OperatorType::from(&expr.op.kind);
+        let operator_type = OperatorType::from(&bin_expr.op.kind);
         let op_id = operator_id_from(&expr1.variant, operator_type, &expr2.variant);
         if !self.globals.exists_operator(op_id) {
             let op_str = operator_type.to_string();
             let val_type1 = &expr1.variant.name();
             let val_type2 = &expr2.variant.name();
-            return self.add_error_value(ErrorId::NoOp, expr.get_range().clone(), &[&op_str, &val_type1, &val_type2]);
+            return self.add_error_value(ErrorId::NoOp, bin_expr.get_range().clone(), &[&op_str, &val_type1, &val_type2]);
         }
 
         let args = vec![expr1, expr2];
-        let range = Range { source_index: expr.get_range().source_index, start: 0, end: 0};
+        let range = Range { source_index: bin_expr.get_range().source_index, start: 0, end: 0};
 
         let result = (self.globals.get_operator(op_id).unwrap())(&self.globals, &args, &range);
-        if expr.is_implicit_mult() {
-            if let Some(id_expr) = expr.expr2.as_any().downcast_ref::<IdExpr>() {
+        if bin_expr.implicit_mult {
+            if let NodeType::Id(id_expr) = &bin_expr.expr2.expr {
                 let id_str = self.globals.get_text(&id_expr.id.range);
                 if self.scope.borrow().units_view.units.contains(id_str) {
                     self.add_error_value(ErrorId::WUnitIsVar, id_expr.id.range.clone(), &[id_str]);

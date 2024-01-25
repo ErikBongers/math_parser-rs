@@ -4,7 +4,7 @@ use crate::globals::sources::Source;
 use crate::number::Number;
 use crate::resolver::operator::load_operators;
 use crate::resolver::unit::{create_unit_defs, Unit, UnitDef, UnitsView, UnitTag};
-use crate::resolver::value::{NumberFormat, Value, Variant};
+use crate::resolver::value::{NumberFormat, Value};
 use crate::tokenizer::cursor::Range;
 
 pub mod sources;
@@ -14,7 +14,7 @@ pub struct Globals {
     sources: Vec<Source>, //keep private. Sources should only be added through set_source()
     pub unit_defs: HashMap<String, UnitDef>,
     pub global_function_defs:  HashMap<String, GlobalFunctionDef>,
-    pub constants: HashMap<&'static str, Value>,
+    pub constants: HashMap<&'static str, Number>,
     pub units_view: UnitsView,
     pub function_view: FunctionView,
 }
@@ -76,18 +76,11 @@ impl<'a> Globals {
     }
 
     fn fill_constants(&mut self) {
-        self.constants.insert("PI", Value {
-            id: None,
-            stmt_range: Range::none(),
-            variant: Variant::Numeric {
-                number: Number {
-                    significand: std::f64::consts::PI,
-                    exponent: 0,
-                    unit: Unit::none(),
-                    fmt: NumberFormat::Dec,
-                },
-            },
-            has_errors: false,
+        self.constants.insert("PI",  Number {
+            significand: std::f64::consts::PI,
+            exponent: 0,
+            unit: Unit::none(),
+            fmt: NumberFormat::Dec,
         });
     }
 }

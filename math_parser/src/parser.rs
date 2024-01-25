@@ -1,7 +1,5 @@
-use std::any::{TypeId};
-use std::ops::{Deref, DerefMut};
 use crate::errors::{Error, ErrorId};
-use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, Define, DefineExpr, DefineType, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NodeData, NoneExpr, PostfixExpr, Statement, UnaryExpr, UnitExpr};
+use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, Define, DefineExpr, DefineType, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NodeType, NoneExpr, PostfixExpr, Statement, UnaryExpr, UnitExpr};
 use crate::parser::nodes::DefineType::Precision;
 use crate::globals::Globals;
 use crate::tokenizer::cursor::Range;
@@ -77,7 +75,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             if !self.match_token(&TokenType::CurlClose) {
                 self.add_error(ErrorId::Expected, self.tok.peek().range.clone(), &["}"]);
             }
-            return Statement { node_data: NodeData::new(), node: Box::new(block), mute: mute_line | self.mute_block }
+            return Statement { node: Node::boxed(NodeType::Block(block)), mute: mute_line | self.mute_block };
         }
         if let Some(stmt) = self.parse_echo_comment() {
             return stmt.set_mute(mute_line | self.mute_block);
@@ -106,12 +104,12 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 }
             }
             self.tok.set_nl_is_token(false);
-            return Some(Statement { mute: false, node_data: NodeData::new(), node: Box::new(DefineExpr {
-                node_data: NodeData::new(),
-                def_undef: t,
-                defines,
-            }) })
-        }
+            return Some(Statement { mute: false, node: Node::boxed(NodeType::Define(DefineExpr {
+                    def_undef: t,
+                    defines,
+                }))
+            });
+            }
         None
     }
 
@@ -168,8 +166,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             return None;
         };
         Some( Statement {
-            node_data: NodeData::new(),
-            node: Box::new(CommentExpr { node_data: NodeData::new(), token: self.tok.next() }),
+            node: Node::boxed(NodeType::Comment(CommentExpr { token: self.tok.next() })),
             mute: false,
         })
     }
@@ -214,22 +211,22 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             return Some(Statement::error(&mut self.errors, ErrorId::Expected, self.tok.peek().clone(), "}"));
         };
         let token_end = self.tok.next();
-        let mut fun_def_expr = FunctionDefExpr {
+        let fun_def_expr = FunctionDefExpr {
             id: self.globals.get_text(&id.range).to_string(),
             id_range: id.range.clone(),
             arg_names: param_defs,
-            node_data: NodeData::new(),
             range: &self.statement_start + &token_end.range,
         };
+        let mut has_errors = false;
         if self.code_block.scope.borrow().local_function_defs.contains_key(&fun_def_expr.id) {
-            fun_def_expr.node_data.has_errors = true;
+            has_errors = true;
             self.errors.push(Error::build(ErrorId::WFunctionOverride, id.range.clone(), &[&self.globals.get_text(&id.range)]));
         };
-
         self.code_block.scope.borrow_mut().add_local_function(new_code_block, &fun_def_expr);
+        let mut node = Node::new(NodeType::FunctionDef(fun_def_expr));
+        node.has_errors = has_errors;
         Some(Statement {
-            node: Box::new(fun_def_expr),
-            node_data: NodeData::new(),
+            node: Box::new(node),
             mute: false,
         })
     }
@@ -245,7 +242,6 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     fn parse_expr_statement(&mut self) -> Statement {
         let mut stmt = Statement {
             node: self.parse_assign_expr(),
-            node_data: NodeData::new(),
             mute: false,
         };
         match self.tok.peek().kind {
@@ -257,13 +253,13 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             _ => {
                 let t = self.tok.next(); //avoid dead loop!
                 self.errors.push(Error::build(ErrorId::Expected, t.range.clone(), &[";"]));
-                stmt.node_data.has_errors = true;
+                stmt.node.has_errors = true;
             }
         };
         stmt
     }
 
-    fn parse_assign_expr(&mut self) -> Box<dyn Node> {
+    fn parse_assign_expr(&mut self) -> Box<Node> {
         if self.tok.peek().kind != TokenType::Id {
             return self.parse_add_expr();
         }
@@ -277,12 +273,11 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         if let Eq = op_type {
             let eq = self.tok.next();
             let assign_expr = AssignExpr {
-                node_data: NodeData::new(),
                 id,
-                expr: Parser::reduce_list(Box::new(self.parse_list_expr()))
+                expr: Parser::reduce_list(Node::boxed(NodeType::List(self.parse_list_expr())))
             };
 
-            if let Some(none_expr) = assign_expr.expr.as_any().downcast_ref::<NoneExpr>() {
+            if let NodeType::None(none_expr) = &assign_expr.expr.expr {
                 if none_expr.token.kind == TokenType::Eot {
                     self.add_error(ErrorId::Eos, Range { start: eq.range.end, ..eq.range }, &[]);
                 }
@@ -290,16 +285,15 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
 
             let txt = self.globals.get_text(&assign_expr.id.range).to_string();
             self.code_block.scope.borrow_mut().var_defs.insert(txt);
-            return Box::new(assign_expr);
+            return Node::boxed(NodeType::Assign(assign_expr));
         }
         //build this expression: AssignExpr {id, BinExpr{ IdExpr, op, expr }}
         let eq_op = self.tok.next();
         let id_expr = IdExpr {
-            node_data: NodeData::new(),
             id: id.clone(),
         };
 
-        let expr : Box<dyn Node> = match op_type {
+        let expr : Box<Node> = match op_type {
             EqPlus | EqMin | EqMult | EqDiv => {
                 let bin_op = match op_type {
                     EqPlus => Plus,
@@ -308,9 +302,8 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                     EqDiv => Div,
                     _ => unreachable!()
                 };
-                Box::new(BinExpr {
-                    node_data: NodeData::new(),
-                    expr1: Box::new(id_expr),
+                Node::boxed(NodeType::Binary(BinExpr {
+                    expr1: Node::boxed(NodeType::Id(id_expr)),
                     op: Token {
                         kind: bin_op,
                         range: eq_op.range,
@@ -319,7 +312,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                     } ,
                     expr2: self.parse_add_expr(),
                     implicit_mult: false,
-                })
+                }))
             },
             EqUnit => {
                 let id_token = if self.tok.peek().kind == TokenType::Id { //assume id is a variable with a unit we'd like to apply.
@@ -332,36 +325,34 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                         text: "".to_string(),
                     }
                 };
-                Box::new(PostfixExpr {
-                    node_data: NodeData::new(),
-                    node: Box::new(id_expr),
+                Node::boxed(NodeType::Postfix(PostfixExpr {
+                    node: Node::boxed(NodeType::Id(id_expr)),
                     postfix_id: id_token,
-                })
+                }))
             },
             _ => unreachable!("expected a Eq operator.")
         };
 
         let assign_expr = AssignExpr {
-            node_data: NodeData::new(),
             id,
             expr,
         };
-        Box::new(assign_expr)
+        Node::boxed(NodeType::Assign(assign_expr))
     }
 
-    fn parse_add_expr(&mut self) -> Box<dyn Node> {
+    fn parse_add_expr(&mut self) -> Box<Node> {
         let expr1 = self.parse_mult_expr();
         match self.tok.peek().kind {
             TokenType::Plus | TokenType::Min => {
                 let op = self.tok.next().clone();
                 let expr2 = self.parse_mult_expr();
-                Box::new(BinExpr { expr1, op, expr2, node_data: NodeData::new(), implicit_mult: false })
+                Node::boxed(NodeType::Binary(BinExpr { expr1, op, expr2, implicit_mult: false }))
             },
             _ => expr1
         }
     }
 
-    fn parse_mult_expr(&mut self) -> Box<dyn Node> {
+    fn parse_mult_expr(&mut self) -> Box<Node> {
         let mut expr1 = self.parse_power_expr();
         loop {
             match self.tok.peek().kind {
@@ -369,11 +360,11 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                     let op = self.tok.next().clone();
                     let expr2 = self.parse_power_expr();
                     if op.kind == Div {
-                        if expr2.is_implicit_mult() {
+                        if expr2.expr.is_implicit_mult() {
                             self.add_error(ErrorId::WDivImplMult, expr2.get_range().clone(), &[""]);
                         }
                     }
-                    expr1 = Box::new(BinExpr { expr1, op, expr2, node_data: NodeData::new(), implicit_mult: false })
+                    expr1 = Node::boxed(NodeType::Binary(BinExpr { expr1, op, expr2, implicit_mult: false }))
                 }
                 _ => break
             }
@@ -381,18 +372,18 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         expr1
     }
 
-    fn parse_power_expr(&mut self) -> Box<dyn Node> {
+    fn parse_power_expr(&mut self) -> Box<Node> {
         let mut expr1 = self.parse_implicit_mult();
         loop {
             match self.tok.peek().kind {
                 TokenType::Power => {
                     let op = self.tok.next().clone();
                     let expr2 = self.parse_power_expr(); //right associative!
-                    let bin_expr = BinExpr { expr1, op, expr2, node_data: NodeData::new(), implicit_mult: false };
-                    if bin_expr.expr1.deref().is_implicit_mult() || bin_expr.expr2.deref().is_implicit_mult() {
+                    let bin_expr = BinExpr { expr1, op, expr2, implicit_mult: false };
+                    if bin_expr.expr1.expr.is_implicit_mult() || bin_expr.expr2.expr.is_implicit_mult() {
                         self.add_error(ErrorId::WPowImplMult, bin_expr.get_range().clone(), &[""]);
                     }
-                    expr1 = Box::new(bin_expr);
+                    expr1 = Node::boxed(NodeType::Binary(bin_expr));
 
                 }
                 _ => break
@@ -401,7 +392,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         expr1
     }
 
-    fn parse_implicit_mult(&mut self) -> Box<dyn Node> {
+    fn parse_implicit_mult(&mut self) -> Box<Node> {
         let mut n1 = self.parse_unary_expr();
         loop {
             let t = self.tok.peek();
@@ -416,35 +407,33 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 text: "implicit mult".to_string(),
             };
             let n2 = if t.kind == TokenType::ParOpen {
-                Parser::reduce_list(Box::new(self.parse_list_expr()))
+                Parser::reduce_list(Node::boxed(NodeType::List(self.parse_list_expr())))
             } else {
                 self.parse_postfix_expr()
             };
             let expr = BinExpr {
-                node_data: NodeData::new(),
                 expr1: n1,
                 op,
                 expr2: n2,
                 implicit_mult: true,
             };
-            n1 = Box::new(expr);
+            n1 = Node::boxed(NodeType::Binary(expr));
         };
         n1
     }
 
-    fn parse_unary_expr(&mut self) -> Box<dyn Node> {
+    fn parse_unary_expr(&mut self) -> Box<Node> {
         let token = self.tok.peek();
         if token.kind == TokenType::Min {
-            return Box::new( UnaryExpr {
-                node_data: NodeData::new(),
+            return Node::boxed( NodeType::Unary(UnaryExpr {
                 op: self.tok.next(),
                 expr: self.parse_postfix_expr(),
-            });
+            }));
         }
         self.parse_postfix_expr()
     }
 
-    fn parse_postfix_expr(&mut self) -> Box<dyn Node> {
+    fn parse_postfix_expr(&mut self) -> Box<Node> {
         let mut expr = self.parse_unit_expr();
         loop {
             match self.tok.peek().kind {
@@ -457,13 +446,13 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         expr
     }
 
-    fn parse_one_postfix(&mut self, node: Box<dyn Node>) -> Box<dyn Node> {
+    fn parse_one_postfix(&mut self, node: Box<Node>) -> Box<Node> {
         match self.tok.peek().kind {
             TokenType::Dot => {
                 let dot = self.tok.next();
                 let t = self.tok.peek();
                 let t_type = &t.kind.clone();
-                let mut postfix = PostfixExpr { postfix_id: t.clone(), node, node_data: NodeData::new() };
+                let mut postfix = PostfixExpr { postfix_id: t.clone(), node};
                 if t_type == &TokenType::Id {
                     self.tok.next();
                     // postfix.postfix_id already set!
@@ -473,7 +462,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                         text: "".to_string()
                     }
                 }
-                Box::new(postfix)
+                Node::boxed(NodeType::Postfix(postfix))
             },
             TokenType::Inc | TokenType::Dec => {
                 let t = self.tok.next();
@@ -492,20 +481,17 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         }
     }
 
-    fn create_call_for_operator(&mut self, function_name: &str, arg:  Box<dyn Node>, range: &Range) -> Box<dyn Node> {
-        Box::new(CallExpr {
-            node_data: NodeData::new(),
+    fn create_call_for_operator(&mut self, function_name: &str, arg:  Box<Node>, range: &Range) -> Box<Node> {
+        Node::boxed(NodeType::Call( CallExpr {
             function_name: function_name.to_string(),
             function_name_range: range.clone(),
-            arguments: Box::new( ListExpr {
-                node_data: NodeData::new(),
-                nodes: vec![arg],
-            }),
-        })
+            arguments: vec![arg],
+            par_close_range: range.clone(), //just use the same range, there's no real arguments here.
+        }))
     }
 
     // if an id is 'glued' to a primary expr, without a dot in between, it should be a unit.
-    fn parse_unit_expr(&mut self) -> Box<dyn Node> {
+    fn parse_unit_expr(&mut self) -> Box<Node> {
         let mut expr = self.parse_primary_expr();
         if let TokenType::Id = self.tok.peek().kind {
             let id = self.tok.peek();
@@ -514,15 +500,15 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 return expr; //ignore this id - it's probably an implicit mult.
             }
             let id = self.tok.next();
-            let it = expr.deref_mut();
-            let nd = &mut it.get_node_data_mut();
-            if nd.unit.is_empty() {
-                nd.unit.id = id_str;
+            if expr.unit.is_empty() {
+                expr.unit.id = id_str;
             } else { //there's a 2nd unit glued to the expr as in: `(1m)mm`, so wrap the original expr in a UnitExpr.
-                return Box::new(UnitExpr {
-                    node_data: NodeData { unit: Unit { id: id_str, range: Some(id.range.clone()) }, has_errors: false },
+                let mut unit_node = Node::new(NodeType::Unit(UnitExpr {
                     node: expr,
-                })
+                    range: id.range.clone(),
+                }));
+                unit_node.unit = Unit { id: id_str, };
+                return Box::new(unit_node);
             }
         }
         expr
@@ -536,36 +522,41 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         true
     }
 
-    fn parse_call_expr(&mut self, function_name: Token) -> Box<dyn Node> {
+    fn parse_call_expr(&mut self, function_name: Token) -> Box<Node> {
         let func_name_str = self.globals.get_text(&function_name.range);
         if TokenType::ParOpen != self.tok.peek().kind {
             let error = Error::build(ErrorId::FuncNoOpenPar, function_name.range.clone(), &[&func_name_str]);
             self.errors.push(error);
-            return Box::new(NoneExpr{node_data: NodeData { unit: Unit::none(), has_errors: true}, token: function_name.clone()});
+            let mut node = Node::new(NodeType::None(NoneExpr{token: function_name.clone()}));
+            node.has_errors = true;
+            return Box::new(node)
         }
         self.tok.next();// eat `(`
         let mut list_expr = self.parse_list_expr();
         //first argument may be NONE, with a token EOT, which is an invalid argument list in this case.
         if list_expr.nodes.len() == 1 {
-            if let Some(none_expr) = list_expr.nodes.first().unwrap().as_any().downcast_ref::<NoneExpr>() {
+            if let NodeType::None(none_expr) = &list_expr.nodes.first().unwrap().expr {
                 if none_expr.token.kind == TokenType::Eot {
                     let error = Error::build(ErrorId::Eos, function_name.range.clone(), &[&self.globals.get_text(&function_name.range)]);
                     self.errors.push(error);
-                    return Box::new(NoneExpr{node_data: NodeData { unit: Unit::none(), has_errors: true}, token: function_name});
+                    let mut node =  Node::new(NodeType::None(NoneExpr{token: function_name}));
+                    node.has_errors = true;
+                    return Box::new(node);
                 } else {
                     list_expr.nodes.clear();
                 }
             }
         }
-        if !self.match_token(&TokenType::ParClose) {
+        if self.tok.peek().kind != TokenType::ParClose {
             self.add_error(ErrorId::Expected, self.tok.peek().range.clone(), &[")"]);
         }
-        Box::new(CallExpr {
-            node_data: NodeData::new(),
+        let par_close = self.tok.next(); // ')'
+        Node::boxed(NodeType::Call(CallExpr {
             function_name: func_name_str.to_string(),
             function_name_range: function_name.range.clone(),
-            arguments: Box::new(list_expr)
-        })
+            arguments: list_expr.nodes,
+            par_close_range: par_close.range
+        }))
     }
 
     fn add_error(&mut self, id: ErrorId, range: Range, args: &[&str]) {
@@ -573,7 +564,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         self.errors.push(error);
     }
 
-    fn parse_primary_expr(&mut self) -> Box<dyn Node> {
+    fn parse_primary_expr(&mut self) -> Box<Node> {
         match self.tok.peek().kind {
             TokenType::Number => self.parse_number_expr(),
             TokenType::Id => {
@@ -582,20 +573,18 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 if self.code_block.scope.borrow().function_exists(id, self.globals) {
                     return self.parse_call_expr(t);
                 }
-                Box::new(IdExpr {
+                Node::boxed(NodeType::Id(IdExpr {
                     id: t,
-                    node_data: NodeData::new()
-                })
+                }))
             }
             TokenType::ParOpen => {
                 self.tok.next();
-                let mut expr = Parser::reduce_list(Box::new(self.parse_list_expr()));
+                let mut expr = Parser::reduce_list(Node::boxed(NodeType::List(self.parse_list_expr())));
                 if !self.match_token(&TokenType::ParClose) {
                     let error = Error::build(ErrorId::Expected, expr.get_range(), &[")"]);
                     self.errors.push(error);
                 }
-                if expr.as_any().type_id() == TypeId::of::<BinExpr>() {
-                    let bin_expr = expr.as_any_mut().downcast_mut::<BinExpr>().unwrap();
+                if let NodeType::Binary(ref mut bin_expr) =  &mut expr.expr {
                     bin_expr.implicit_mult = false;
                 }
                 expr
@@ -606,55 +595,53 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             },
             TokenType::QuotedStr => {
                 let t = self.tok.next();
-                Box::new(ConstExpr {
-                    node_data: NodeData::new(),
+                Node::boxed(NodeType::Const(ConstExpr {
                     const_type: ConstType::FormattedString,
                     range: t.range,
-                })
+                }))
             }
             // if nothing meaningfull found, don't report an error yet as this will be too generic : "Unexpected..."
-            _ => Box::new(NoneExpr { node_data: NodeData::new(), token: self.tok.peek().clone()})
+            _ => Node::boxed(NodeType::None(NoneExpr { token: self.tok.peek().clone()}))
         }
     }
 
-    fn parse_abs_operator(&mut self, token: Token) -> Box<dyn Node> {
+    fn parse_abs_operator(&mut self, token: Token) -> Box<Node> {
         let expr = self.parse_add_expr();
-        let list = Box::new( ListExpr {
-            node_data: NodeData::new(),
-            nodes: vec![expr],
-        });
-        let node = Box::new(CallExpr {
-            node_data: NodeData::new(),
-            function_name: "abs".to_string(),
-            function_name_range: token.range.clone(),
-            arguments: list,
-        });
-        if !self.match_token(&TokenType::Pipe) {
+        if self.tok.peek().kind != TokenType::Pipe {
             self.add_error(ErrorId::Expected, self.tok.peek().range.clone(), &["|"]);
         }
+        let node = Node::boxed(NodeType::Call(CallExpr {
+            function_name: "abs".to_string(),
+            function_name_range: token.range.clone(),
+            arguments: vec![expr],
+            par_close_range: self.tok.next().range, // closing pipe.
+        }));
         node
     }
 
-    fn parse_number_expr(&mut self) -> Box<dyn Node> {
+    fn parse_number_expr(&mut self) -> Box<Node> {
         //assuming type of token already checked.
         let token = self.tok.next();
-        Box::new(ConstExpr { const_type: ConstType::Numeric { number: self.tok.get_number()}, node_data: NodeData::new(), range: token.range.clone()})
+        Node::boxed(NodeType::Const(ConstExpr { const_type: ConstType::Numeric { number: self.tok.get_number()}, range: token.range.clone()}))
     }
 
-    fn reduce_list(mut node: Box<dyn Node>) -> Box<dyn Node> {
-        let list_expr = node.as_any_mut().downcast_mut::<ListExpr>().unwrap();
-        if list_expr.nodes.len() == 1 {
-            return list_expr.nodes.remove(0);
+    fn reduce_list(mut node: Box<Node>) -> Box<Node> {
+        if let NodeType::List(ref mut list_expr) = &mut node.expr {
+            return if list_expr.nodes.len() == 1 {
+                list_expr.nodes.remove(0)
+            } else {
+                node
+            }
         }
         node
     }
 
     fn parse_list_expr(&mut self) -> ListExpr {
-        let mut list_expr = ListExpr { nodes: Vec::new(), node_data: NodeData::new()};
+        let mut list_expr = ListExpr { nodes: Vec::new()};
         loop {
             let expr = self.parse_add_expr();
             list_expr.nodes.push(expr);
-            if list_expr.nodes.last().unwrap().as_any().is::<NoneExpr>() {
+            if let NodeType::None(_) = list_expr.nodes.last().unwrap().expr {
                 break;
             }
             if self.tok.peek().kind != TokenType::Comma {

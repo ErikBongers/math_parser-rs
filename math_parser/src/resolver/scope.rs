@@ -5,7 +5,7 @@ use crate::date::DateFormat;
 use crate::functions::{CustomFunctionDef, execute_custom_function, FunctionDef, FunctionView};
 use crate::parser::nodes::{CodeBlock, FunctionDefExpr};
 use crate::globals::Globals;
-use crate::resolver::unit::UnitsView;
+use crate::resolver::unit::{UnitsView};
 use crate::resolver::value::Value;
 
 pub struct Scope {
@@ -70,20 +70,6 @@ impl Scope {
         };
         self.local_function_defs.insert(func.name.clone(), func);
         self.function_view.ids.insert(function_def_expr.id.clone());
-    }
-
-    pub fn var_exists(&self, id: &str, globals: &Globals) -> bool {
-        if self.variables.contains_key(id) {
-            return true;
-        }
-        globals.constants.contains_key(id)
-    }
-
-    pub fn get_var<'a>(&'a self, id: &str, globals: &'a Globals) -> &'a Value {
-        if self.variables.contains_key(id) {
-            return &self.variables[id];
-        }
-        &globals.constants[id]
     }
 
     #[inline]

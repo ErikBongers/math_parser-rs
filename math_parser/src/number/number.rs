@@ -19,7 +19,7 @@ impl Number {
         Number {
             significand,
             exponent,
-            unit : Unit { range: None, id: "".to_string() },
+            unit : Unit { id: "".to_string() },
             fmt: NumberFormat::Dec
         }
     }
@@ -103,7 +103,7 @@ impl Number {
     }
 }
 
-pub fn parse_formatted_number(stream: &str, range: &Range, scope: &Scope) -> Result<Number, Error> {
+pub fn parse_formatted_number<'s>(stream: &str, range: &Range, scope: &Scope) -> Result<Number, Error> {
     let mut decimal_divider = 1.0;
     let chars = stream.chars();
     let mut d: f64 = 0.0;
