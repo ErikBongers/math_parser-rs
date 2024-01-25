@@ -16,7 +16,6 @@ pub struct Parser<'g, 'a, 't> {
     globals: &'g Globals,
     tok: &'a mut PeekingTokenizer<'t>,
     errors: &'a mut Vec<Error>,
-    statement_start: Range,
     code_block: CodeBlock,
     mute_block: bool
 }
@@ -29,13 +28,11 @@ impl<'g, 'a, 't> Into<CodeBlock> for Parser<'g, 'a, 't> {
 
 impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     pub fn new (globals: &'g Globals, tok: &'a mut PeekingTokenizer<'t>, errors: &'a mut Vec<Error>, code_block: CodeBlock) -> Self {
-        let source_index =  tok.source_index();
         Parser {
             globals,
             tok,
             errors,
             code_block,
-            statement_start: Range { start: 0, end: 0, source_index },
             mute_block: false,
         }
     }
@@ -172,9 +169,10 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     }
 
     fn parse_function_def(&mut self) -> Option<Statement> {
-        if !self.match_token(&TokenType::Function) {
+        if self.tok.peek().kind != TokenType::Function {
             return None;
         };
+        let start_range = self.tok.next().range;
         if self.tok.peek().kind != TokenType::Id {
             return Some(Statement::error(&mut self.errors, ErrorId::ExpectedId, self.tok.peek().clone(), ""));
         };
@@ -215,7 +213,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             id: self.globals.get_text(&id.range).to_string(),
             id_range: id.range.clone(),
             arg_names: param_defs,
-            range: &self.statement_start + &token_end.range,
+            range: &start_range + &token_end.range,
         };
         let mut has_errors = false;
         if self.code_block.scope.borrow().local_function_defs.contains_key(&fun_def_expr.id) {
