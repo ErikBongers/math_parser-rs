@@ -1,6 +1,7 @@
-    use crate::errors::{Error, ErrorId};
+use std::ops::{Add, Sub, Mul, Div};
+use crate::errors::{Error, ErrorId};
     use crate::number::Number;
-    use crate::tokenizer::cursor::Range;
+use crate::tokenizer::cursor::Range;
 
 #[derive(Clone, Copy)]
 pub struct Duration {
@@ -78,6 +79,56 @@ impl Duration {
             _ => errors.push(Error::build(ErrorId::EExplicitUnitsExpected, range.clone(), &["days, months, years"])),
         }
         duration
+    }
+}
+
+impl Add for Duration {
+    type Output = Duration;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Duration {
+            days: self.days + rhs.days,
+            months: self.months + rhs.months,
+            years: self.years + rhs.years,
+        }
+    }
+}
+
+impl Sub for Duration {
+    type Output = Duration;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Duration {
+            days: self.days - rhs.days,
+            months: self.months - rhs.months,
+            years: self.years - rhs.years,
+        }
+    }
+}
+
+impl Mul<&Number> for Duration {
+    type Output = Duration;
+
+    fn mul(self, rhs: &Number) -> Self::Output {
+        let d = rhs.to_double();
+        Duration {
+            days: (self.days as f64 * d) as i32,
+            months: (self.months as f64 * d) as i32,
+            years: (self.years as f64 * d) as i32,
+        }
+    }
+}
+
+impl Div<&Number> for Duration {
+    type Output = Duration;
+
+    fn div(self, rhs: &Number) -> Self::Output {
+        let d = rhs.to_double();
+        Duration {
+            days: (self.days as f64 / d) as i32,
+            months: (self.months as f64 / d) as i32,
+            years: (self.years as f64 / d) as i32,
+        }
     }
 }
 

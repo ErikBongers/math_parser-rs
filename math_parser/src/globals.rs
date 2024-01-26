@@ -3,7 +3,7 @@ use crate::functions::{create_global_function_defs, FunctionView, GlobalFunction
 use crate::globals::sources::Source;
 use crate::number::Number;
 use crate::resolver::operator::load_operators;
-use crate::resolver::unit::{create_unit_defs, Unit, UnitDef, UnitsView, UnitTag};
+use crate::resolver::unit::{create_unit_defs, Unit, UnitDef, UnitProperty, UnitsView, UnitTag};
 use crate::resolver::value::{NumberFormat, Value};
 use crate::tokenizer::cursor::Range;
 
@@ -89,5 +89,13 @@ impl<'a> Globals {
             unit: Unit::none(),
             fmt: NumberFormat::Dec,
         });
+    }
+
+    pub fn is_unit(&self, unit: &Unit, property: UnitProperty) -> bool {
+        if let Some(unit_def) =  self.unit_defs.get(&unit.id) {
+            unit_def.property == property
+        } else {
+            false
+        }
     }
 }

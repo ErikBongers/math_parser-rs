@@ -22,6 +22,9 @@ pub enum Variant {
     None,
 }
 
+#[repr(u8)]
+pub enum OperandType { Number, Date, Duration, Invalid }
+
 impl Variant {
     pub fn name(&self) -> &'static str {
         match self {
@@ -38,18 +41,12 @@ impl Variant {
         }
     }
 
-    pub fn to_u32(&self) -> u32 { //implemeent a cast to numeric value?
+    pub fn to_operand_type(&self) -> OperandType {
         match self {
-            Variant::Numeric {..} => 1,
-            Variant::Date {..} => 2,
-            Variant::Duration {..} => 3,
-            Variant::List {..} => 4,
-            Variant::FunctionDef => 5,
-            Variant::Comment  => 6,
-            Variant::Last  => 7,
-            Variant::Error  => 8,
-            Variant::Define  => 9,
-            Variant::None  => 10,
+            Variant::Numeric {..} => OperandType::Number,
+            Variant::Date {..} => OperandType::Date,
+            Variant::Duration {..} => OperandType::Duration,
+            _  => OperandType::Invalid,
         }
     }
 }

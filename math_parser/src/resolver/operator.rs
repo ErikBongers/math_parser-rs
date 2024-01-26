@@ -1,11 +1,9 @@
 use std::fmt::{Display, Formatter};
-use std::ops::Sub;
 use crate::globals::Globals;
 use crate::resolver::unit::Unit;
-use crate::resolver::value::{NumberFormat, Value, Variant};
+use crate::resolver::value::{NumberFormat, OperandType, Value, Variant};
 use crate::tokenizer::cursor::Range;
 use crate::tokenizer::token_type::TokenType;
-use crate::date::Timepoint;
 use crate::number::Number;
 
 #[repr(u8)]
@@ -49,8 +47,8 @@ impl From<&TokenType> for OperatorType {
     }
 }
 
-pub fn operator_id_from(type1: &Variant, op: OperatorType, type2: &Variant) -> u32 {
-    (type1.to_u32() *265*265) + (op as u32*265) + type2.to_u32()
+pub fn operator_id_from(type1: OperandType, op: OperatorType, type2: OperandType) -> u32 {
+    (type1 as u32 *265*265) + (op as u32*265) + type2 as u32
 }
 
 pub fn op_num_plus_num(globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
@@ -96,16 +94,19 @@ pub fn op_num_pow_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> V
 }
 
 pub fn load_operators(globals: &mut Globals) {
-    let variant_num = Variant::Numeric { number: Number::from(0.0)}; //note that even with discriminant.hash(), you'd have to have a concrete variant to generate the hash.
-    let variant_date = Variant::Date { date: Timepoint::new()};
-    globals.operators.insert(operator_id_from(&variant_num, OperatorType::Plus, &variant_num), op_num_plus_num);
-    globals.operators.insert(operator_id_from(&variant_num, OperatorType::Min, &variant_num), op_num_min_num);
-    globals.operators.insert(operator_id_from(&variant_num, OperatorType::Mult, &variant_num), op_num_mult_num);
-    globals.operators.insert(operator_id_from(&variant_num, OperatorType::Div, &variant_num), op_num_div_num);
-    globals.operators.insert(operator_id_from(&variant_num, OperatorType::Remain, &variant_num), op_num_rem_num);
-    globals.operators.insert(operator_id_from(&variant_num, OperatorType::Modulo, &variant_num), op_num_mod_num);
-    globals.operators.insert(operator_id_from(&variant_num, OperatorType::Power, &variant_num), op_num_pow_num);
-    globals.operators.insert(operator_id_from(&variant_date, OperatorType::Min, &variant_date), op_date_min_date);
+    use OperandType as OT;
+    globals.operators.insert(operator_id_from(OT::Number, OperatorType::Plus, OT::Number), op_num_plus_num);
+    globals.operators.insert(operator_id_from(OT::Number, OperatorType::Min, OT::Number), op_num_min_num);
+    globals.operators.insert(operator_id_from(OT::Number, OperatorType::Mult, OT::Number), op_num_mult_num);
+    globals.operators.insert(operator_id_from(OT::Number, OperatorType::Div, OT::Number), op_num_div_num);
+    globals.operators.insert(operator_id_from(OT::Number, OperatorType::Remain, OT::Number), op_num_rem_num);
+    globals.operators.insert(operator_id_from(OT::Number, OperatorType::Modulo, OT::Number), op_num_mod_num);
+    globals.operators.insert(operator_id_from(OT::Number, OperatorType::Power, OT::Number), op_num_pow_num);
+    globals.operators.insert(operator_id_from(OT::Date, OperatorType::Min, OT::Date), op_date_min_date);
+    globals.operators.insert(operator_id_from(OT::Duration, OperatorType::Min, OT::Duration), op_dur_min_dur);
+    globals.operators.insert(operator_id_from(OT::Duration, OperatorType::Min, OT::Duration), op_dur_plus_dur);
+    globals.operators.insert(operator_id_from(OT::Duration, OperatorType::Mult, OT::Number), op_dur_mult_num);
+    globals.operators.insert(operator_id_from(OT::Duration, OperatorType::Div, OT::Number), op_dur_div_num);
 }
 
 fn do_term(v1: &Number, adding: bool, v2: &Number, _range: &Range, globals: &Globals) -> Number {
@@ -145,7 +146,33 @@ pub fn op_date_min_date(_globals: &Globals, args: &Vec<Value>, range: &Range) ->
     let Variant::Date {date: ref d1, ..} = &args[0].variant else { unreachable!(); }; //has been checked.
     let Variant::Date {date: ref d2, ..} = &args[1].variant else { unreachable!(); }; //has been checked.
 
+    Value::from_duration(d1 - d2, range.clone())
+}
 
-    let dur = d1.sub(d2);
-    Value::from_duration(dur, range.clone())
+pub fn op_dur_min_dur(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
+    let Variant::Duration {duration: ref d1, ..} = &args[0].variant else { unreachable!(); }; //has been checked.
+    let Variant::Duration {duration: ref d2, ..} = &args[1].variant else { unreachable!(); }; //has been checked.
+
+    Value::from_duration(*d1 - *d2, range.clone())
+}
+
+pub fn op_dur_plus_dur(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
+    let Variant::Duration {duration: ref d1, ..} = &args[0].variant else { unreachable!(); }; //has been checked.
+    let Variant::Duration {duration: ref d2, ..} = &args[1].variant else { unreachable!(); }; //has been checked.
+
+    Value::from_duration(*d1 + *d2, range.clone())
+}
+
+pub fn op_dur_mult_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
+    let Variant::Duration {duration: ref d1, ..} = &args[0].variant else { unreachable!(); }; //has been checked.
+    let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!(); }; //has been checked.
+
+    Value::from_duration(*d1 * n2, range.clone())
+}
+
+pub fn op_dur_div_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
+    let Variant::Duration {duration: ref d1, ..} = &args[0].variant else { unreachable!(); }; //has been checked.
+    let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!(); }; //has been checked.
+
+    Value::from_duration(*d1 / n2, range.clone())
 }

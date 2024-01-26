@@ -6,7 +6,7 @@ pub mod unit;
 
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::date::{DateFormat, parse_date_string};
+use crate::date::{DateFormat, Duration, parse_date_string};
 use crate::errors::{Error, ErrorId, has_real_errors};
 use crate::functions::{explode_args, FunctionType};
 use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, DefineExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NodeType, PostfixExpr, Statement, UnaryExpr, UnitExpr};
@@ -193,17 +193,62 @@ impl<'g, 'a> Resolver<'g, 'a> {
     }
 
     fn resolve_list_expr(&mut self, list_expr: &ListExpr) -> Value {
-        let mut number_list = Vec::<Value>::new();
+        let mut value_list = Vec::<Value>::new();
         for item in &list_expr.nodes {
             let value = self.resolve_node(item);
-            number_list.push(value);
+            value_list.push(value);
         };
+        let mut has_duration = false;
+        let mut has_other = false;
+        for value in &value_list {
+            if let Numeric { number: num, ..} = &value.variant {
+                has_duration |= self.globals.is_unit(&num.unit, UnitProperty::DURATION);
+                has_other |= !self.globals.is_unit(&num.unit, UnitProperty::DURATION);
+            }
+        }
+        if has_duration && !has_other {
+            return self.resolve_duration_list(value_list, &list_expr);
+        }
         Value {
             id: None,
             stmt_range: list_expr.get_range().clone(),
-            variant: Variant::List {values: number_list},
+            variant: Variant::List {values: value_list},
             has_errors: false,
         }
+    }
+
+    fn resolve_duration_list(&mut self, value_list: Vec<Value>, list_expr: &ListExpr) -> Value {
+        let mut has_days = false;
+        let mut has_months = false;
+        let mut has_years = false;
+        let mut duration = Duration::new();
+        for number in value_list.iter().map(|v| v.as_number().unwrap()) { //unwrap: already check by caller.
+            match number.unit.id.as_str() {
+                "days" => {
+                    if has_days {
+                        return self.add_error_value(ErrorId::InvList, list_expr.get_range(), &["Unit 'days' used more than once."]);
+                    }
+                    has_days = true;
+                    duration.days = number.to_double() as i32;
+                }
+                "months" => {
+                    if has_months {
+                        return self.add_error_value(ErrorId::InvList, list_expr.get_range(), &["Unit 'months' used more than once."]);
+                    }
+                    has_months = true;
+                    duration.months = number.to_double() as i32;
+                }
+                "years" => {
+                    if has_years {
+                        return self.add_error_value(ErrorId::InvList, list_expr.get_range(), &["Unit 'years' used more than once."]);
+                    }
+                    has_years = true;
+                    duration.years = number.to_double() as i32;
+                }
+                _ => { unreachable!("already checked")}
+            }
+        }
+        Value::from_duration(duration, list_expr.get_range())
     }
 
     fn resolve_comment_expr(&mut self, comment_expr: &CommentExpr) -> Value {
@@ -480,7 +525,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
         }
 
         let operator_type = OperatorType::from(&bin_expr.op.kind);
-        let op_id = operator_id_from(&expr1.variant, operator_type, &expr2.variant);
+        let op_id = operator_id_from(expr1.variant.to_operand_type(), operator_type, expr2.variant.to_operand_type());
         if !self.globals.exists_operator(op_id) {
             let op_str = operator_type.to_string();
             let val_type1 = &expr1.variant.name();
