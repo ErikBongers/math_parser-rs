@@ -1,12 +1,9 @@
-* values should have their proper range, not stmt_range.
-
-* function: check if all values are numbers, where applicable.
-  > with_num_vec defaults to 0.0 if non numeric.
-
 * ErrorId: implement with macro?
   > would allow for format!() with checking of number of args.
 
 * implement strict
+  > pre-resolve #define so it can be used in the parser.
+  > Move check for function override back from resolver to parser.
   > no unit overrides or function overrides.
 
 * number strings.

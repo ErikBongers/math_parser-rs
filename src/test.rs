@@ -127,7 +127,6 @@ fn test_units () {
     test_result("1mm.", 1.0, "");
     test_error("sin(1mm)", ErrorId::UnitPropWrong);
     test_no_error("sin(1)");
-    test_error("#define strict\n sin(1)", ErrorId::WExplicitUnitsExpected);
 }
 
 #[test]
@@ -147,12 +146,21 @@ fn test_defines () {
     test_error("#undef trig\n  sin(1);", ErrorId::FuncNotAccessible);
     test_result("#undef trig\n#define trig\n  sin(30deg);", 0.5, "");
     test_error("#undef date\n  now();", ErrorId::FuncNotAccessible);
+
+    test_error("#define precision=1.2", ErrorId::Expected);
+    test_no_error("#define precision=2");
+    test_no_error("#undef date\n#define date\n  now();");
+}
+
+#[test]
+fn test_strict () {
     //strict and constants
     test_error("#define strict\n  PI=1;", ErrorId::ConstRedef);
     test_error("PI=1;", ErrorId::WConstRedef);
     test_result("PI=1;", 1.0, "");
 
-    test_error("#define precision=1.2", ErrorId::Expected);
-    test_no_error("#define precision=2");
-    test_no_error("#undef date\n#define date\n  now();");
+    test_error("#define strict\n sin(1)", ErrorId::WExplicitUnitsExpected);
+
+    test_error("#define strict\n function a(i) { i+1; } function a(k) {k+2;}", ErrorId::FunctionOverride);
+    test_error("function a(i) { i+1; } function a(k) {k+2;}", ErrorId::WFunctionOverride);
 }

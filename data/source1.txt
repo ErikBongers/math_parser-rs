@@ -1,1 +1,2 @@
-avg(3,2,1, now());
+#define strict
+function a(i) { i+1; } function a(k) {k+2;}

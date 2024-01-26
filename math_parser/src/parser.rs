@@ -1,12 +1,14 @@
+use crate::date::DateFormat;
 use crate::errors::{Error, ErrorId};
+use crate::functions::FunctionType;
 use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, Define, DefineExpr, DefineType, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NodeType, NoneExpr, PostfixExpr, Statement, UnaryExpr, UnitExpr};
-use crate::parser::nodes::DefineType::Precision;
 use crate::globals::Globals;
+use crate::parser::nodes::DefineType::Precision;
 use crate::tokenizer::cursor::Range;
 use crate::tokenizer::peeking_tokenizer::PeekingTokenizer;
 use crate::tokenizer::token_type::TokenType;
 use crate::resolver::scope::Scope;
-use crate::resolver::unit::Unit;
+use crate::resolver::unit::{Unit, UnitProperty, UnitTag};
 use crate::tokenizer::Token;
 use crate::tokenizer::token_type::TokenType::{Div};
 
@@ -101,12 +103,14 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 }
             }
             self.tok.set_nl_is_token(false);
-            return Some(Statement { mute: false, node: Node::boxed(NodeType::Define(DefineExpr {
-                    def_undef: t,
-                    defines,
-                }))
+            let define_expr = DefineExpr {
+                def_undef: t,
+                defines,
+            };
+            self.resolve_define_expr(&define_expr);
+            return Some(Statement { mute: false, node: Node::boxed(NodeType::Define(define_expr))
             });
-            }
+        }
         None
     }
 
@@ -215,18 +219,86 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             arg_names: param_defs,
             range: &start_range + &token_end.range,
         };
-        let mut has_errors = false;
         if self.code_block.scope.borrow().local_function_defs.contains_key(&fun_def_expr.id) {
-            has_errors = true;
-            self.errors.push(Error::build(ErrorId::WFunctionOverride, id.range.clone(), &[&self.globals.get_text(&id.range)]));
+            if self.code_block.scope.borrow().strict {
+                self.errors.push(Error::build(ErrorId::FunctionOverride, id.range.clone(), &[&self.globals.get_text(&id.range)]));
+                return None;
+            } else {
+                self.errors.push(Error::build(ErrorId::WFunctionOverride, id.range.clone(), &[&self.globals.get_text(&id.range)]));
+            }
         };
         self.code_block.scope.borrow_mut().add_local_function(new_code_block, &fun_def_expr);
-        let mut node = Node::new(NodeType::FunctionDef(fun_def_expr));
-        node.has_errors = has_errors;
+        let node = Node::new(NodeType::FunctionDef(fun_def_expr));
         Some(Statement {
             node: Box::new(node),
             mute: false,
         })
+    }
+
+    fn resolve_define_expr(&mut self, define_expr: &DefineExpr) {
+        if define_expr.def_undef.kind == TokenType::Define {
+            self.resolve_defines(&define_expr);
+        } else {
+            self.resolve_undefines(&define_expr);
+        }
+    }
+
+    fn resolve_defines(&mut self, define_expr: &DefineExpr) {
+        for define in &define_expr.defines  {
+            use crate::parser::nodes::DefineType::*;
+            match &define.define_type {
+                Ymd => self.code_block.scope.borrow_mut().date_format = DateFormat::YMD, //TODO: borrow scope once?
+                Dmy => self.code_block.scope.borrow_mut().date_format = DateFormat::DMY,
+                Mdy => self.code_block.scope.borrow_mut().date_format = DateFormat::MDY,
+                Precision {ref number} => {
+                    if ! number.is_int() {
+                        self.add_error(ErrorId::Expected, define.range.clone(), &["integer value, but found float"]);
+                        continue;
+                    }
+                    self.code_block.scope.borrow_mut().precision = 10.0_f64.powf(number.to_double());
+                },
+                DateUnits => self.code_block.scope.borrow_mut().units_view.add_tagged(&UnitTag::LongDateTime, self.globals),
+                ShortDateUnits => self.code_block.scope.borrow_mut().units_view.add_tagged(&UnitTag::ShortDateTime, self.globals),
+                Electric => {
+                    self.code_block.scope.borrow_mut().units_view.add_class(&UnitProperty::VOLTAGE, &self.globals.unit_defs);
+                    self.code_block.scope.borrow_mut().units_view.add_class(&UnitProperty::CURRENT, &self.globals.unit_defs);
+                    self.code_block.scope.borrow_mut().units_view.add_class(&UnitProperty::RESISTANCE, &self.globals.unit_defs);
+                },
+                Strict => self.code_block.scope.borrow_mut().strict = true,
+                DecimalDot => {
+                    self.code_block.scope.borrow_mut().decimal_char = '.';
+                    self.code_block.scope.borrow_mut().thou_char = ',';
+                },
+                DecimalComma => {
+                    self.code_block.scope.borrow_mut().decimal_char = ',';
+                    self.code_block.scope.borrow_mut().thou_char = '.';
+                },
+                Trig => self.code_block.scope.borrow_mut().function_view.add_type(FunctionType::Trig, self.globals),
+                Arithm => self.code_block.scope.borrow_mut().function_view.add_type(FunctionType::Arithm, self.globals),
+                Date => self.code_block.scope.borrow_mut().function_view.add_type(FunctionType::Date, self.globals),
+                All => self.code_block.scope.borrow_mut().function_view.add_all(&self.globals.global_function_defs),
+            }
+        }
+    }
+
+    fn resolve_undefines(&mut self, define_expr: &DefineExpr) {
+        for define in &define_expr.defines  {
+            use crate::parser::nodes::DefineType::*;
+            match &define.define_type {
+                DateUnits => self.code_block.scope.borrow_mut().units_view.remove_tagged(UnitTag::LongDateTime, &self.globals.unit_defs),
+                ShortDateUnits => self.code_block.scope.borrow_mut().units_view.remove_tagged(UnitTag::ShortDateTime, &self.globals.unit_defs),
+                Electric => {
+                    self.code_block.scope.borrow_mut().units_view.remove_class(&UnitProperty::VOLTAGE, self.globals);
+                    self.code_block.scope.borrow_mut().units_view.remove_class(&UnitProperty::CURRENT, self.globals);
+                    self.code_block.scope.borrow_mut().units_view.remove_class(&UnitProperty::RESISTANCE, self.globals);
+                },
+                Strict => self.code_block.scope.borrow_mut().strict = true,
+                Trig => self.code_block.scope.borrow_mut().function_view.remove_type(FunctionType::Trig, self.globals),
+                Arithm => self.code_block.scope.borrow_mut().function_view.remove_type(FunctionType::Arithm, self.globals),
+                Date => self.code_block.scope.borrow_mut().function_view.remove_type(FunctionType::Date, self.globals),
+                _ => self.add_error(ErrorId::UndefNotOk, define.range.clone(), &[self.globals.get_text(&define.range)]),
+            }
+        }
     }
 
     fn parse_block(&mut self, block_start: Range) -> CodeBlock {
