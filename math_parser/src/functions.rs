@@ -10,7 +10,7 @@ use crate::parser::nodes::{CodeBlock, FunctionDefExpr};
 use crate::resolver::{add_error, Resolver};
 use crate::globals::Globals;
 use crate::number::Number;
-use crate::resolver::unit::Unit;
+use crate::resolver::unit::{Unit, UnitProperty};
 use crate::resolver::value::{NumberFormat, Value};
 use crate::resolver::value::Variant;
 use crate::tokenizer::cursor::Range;
@@ -370,28 +370,45 @@ fn dec(global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, arg
 }
 
 fn sin(global_function_def: &GlobalFunctionDef, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
-    let Some(number) = match_arg_number(global_function_def, &args[0], range, errors) else { return Value::error(range.clone()); };
-    let mut number = number.clone(); //Needed? Test it.
-    if number.unit.id == "deg" {
-        number.convert_to_unit(&Unit { id: "rad".to_string() }, &scope.borrow().units_view, range, errors, globals);
-    }
+    let number = match check_trig_angle_arg(global_function_def, &scope, &args, range, errors, globals) {
+        Ok(value) => value,
+        Err(value) => return value,
+    };
     Value::from_number(Number {significand: number.to_double().sin(), exponent: 0, unit: Unit::none(), fmt: NumberFormat::Dec }, range.clone())
 }
 
-fn cos(global_function_def: &GlobalFunctionDef, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
-    let Some(number) = match_arg_number(global_function_def, &args[0], range, errors) else { return Value::error(range.clone()); };
-    let mut number = number.clone(); //Needed? Test it.
+fn check_trig_angle_arg(global_function_def: &GlobalFunctionDef, scope: &&Rc<RefCell<Scope>>, args: &&Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Result<Number, Value> {
+    let Some(number) = match_arg_number(global_function_def, &args[0], range, errors) else { return Err(Value::error(range.clone())); };
+    let mut number = number.clone();
+    if number.unit.is_empty() {
+        if scope.borrow().strict {
+            errors.push(Error::build(ErrorId::WExplicitUnitsExpected, range.clone(), &["rad, deg"]));
+        }
+    } else {
+        if !globals.is_unit(&number.unit, UnitProperty::ANGLE) {
+            errors.push(Error::build(ErrorId::UnitPropWrong, range.clone(), &["angle: (rad, deg)"]));
+            return Err(Value::error(range.clone()));
+        }
+    }
     if number.unit.id == "deg" {
-        number.convert_to_unit(&Unit { id: "rad".to_string() }, &scope.borrow().units_view, range, errors, globals);     }
+        number.convert_to_unit(&Unit { id: "rad".to_string() }, &scope.borrow().units_view, range, errors, globals);
+    }
+    Ok(number)
+}
+
+fn cos(global_function_def: &GlobalFunctionDef, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
+    let number = match check_trig_angle_arg(global_function_def, &scope, &args, range, errors, globals) {
+        Ok(value) => value,
+        Err(value) => return value,
+    };
     Value::from_number(Number {significand: number.to_double().cos(), exponent: 0, unit: Unit::none(), fmt: NumberFormat::Dec }, range.clone())
 }
 
 fn tan(global_function_def: &GlobalFunctionDef, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
-    let Some(number) = match_arg_number(global_function_def, &args[0], range, errors) else { return Value::error(range.clone()); };
-    let mut number = number.clone(); //Needed? Test it.
-    if number.unit.id == "deg" {
-        number.convert_to_unit(&Unit { id: "rad".to_string() }, &scope.borrow().units_view, range, errors, globals);
-    }
+    let number = match check_trig_angle_arg(global_function_def, &scope, &args, range, errors, globals) {
+        Ok(value) => value,
+        Err(value) => return value,
+    };
     Value::from_number(Number {significand: number.to_double().tan(), exponent: 0, unit: Unit::none(), fmt: NumberFormat::Dec }, range.clone())
 }
 

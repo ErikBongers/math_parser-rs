@@ -125,6 +125,9 @@ fn test_units () {
     test_result("sum(1mm, 2cm).mm", 21.0, "mm");
     test_result("sum(1mm, 2cm)mm", 21.0, "mm");
     test_result("1mm.", 1.0, "");
+    test_error("sin(1mm)", ErrorId::UnitPropWrong);
+    test_no_error("sin(1)");
+    test_error("#define strict\n sin(1)", ErrorId::WExplicitUnitsExpected);
 }
 
 #[test]
