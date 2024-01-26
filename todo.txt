@@ -1,8 +1,12 @@
+* values should have their proper range, not stmt_range.
+
+* function: check if all values are numbers, where applicable.
+  > with_num_vec defaults to 0.0 if non numeric.
+
 * ErrorId: implement with macro?
   > would allow for format!() with checking of number of args.
 
 * implement strict
-  > trig functions require unit and do not assume rad.
   > no unit overrides or function overrides.
 
 * number strings.
@@ -27,19 +31,8 @@
 * document all unwraps.
   > just a comment to explain why unwrap() is safe.
 
-* invalidate reference in PeekingTokenizer?
-  : let first = tok.peek();
-    tok.next();
-    first --> references the SECOND token!!
-
 * Allow a block in the middle of an expression?
   > At least an assign expression?
-
-* date and duration.
-  > implement remaining operators.
-
-* Months:
-  > use #[repr(u8)]
 
 * Scope borrows.
   > see if Scope, which changes during resolving, can be moved into a ResolverState object,

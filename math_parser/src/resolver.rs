@@ -30,7 +30,7 @@ pub struct Resolver<'g, 'a> {
     pub current_statement_muted: bool,
 }
 
-pub fn add_error<'s>(errors: &mut Vec<Error>, id: ErrorId, range: Range, args: &[&str], mut value: Value) -> Value {
+pub fn add_error<'s>(errors: &mut Vec<Error>, id: ErrorId, range: Range, args: &[&str], mut value: Value) -> Value { //TODO: try to remove the value arg here. It's not always needed.
     value.has_errors = true;
     errors.push(Error::build(id, range, args));
     value
@@ -345,7 +345,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
                     number.unit = Unit::none();
                 } else {
                     let unit = if let Some(var) = self.scope.borrow().variables.get(id) {
-                        var.as_number().map_or(Unit::none(), |number| number.unit.clone()) //TODO: if not a number: report error.
+                        var.as_number().map_or(Unit::none(), |number| number.unit.clone())
                     } else {
                         if let Some(constant) = self.globals.constants.get(id.as_str()) {
                             constant.unit.clone()
