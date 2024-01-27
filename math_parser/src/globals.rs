@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use crate::errors::Error;
 use crate::functions::{create_global_function_defs, FunctionView, GlobalFunctionDef};
 use crate::globals::sources::Source;
 use crate::number::Number;
@@ -20,7 +21,7 @@ impl SourceIndex {
 }
 
 pub struct Globals {
-    pub operators: HashMap<u32, fn(&Globals, &Vec<Value>, &Range)-> Value>,
+    pub operators: HashMap<u32, fn(&Globals, &Vec<Value>, &Range, &mut Vec<Error>)-> Value>,
     sources: Vec<Source>, //keep private. Sources should only be added through set_source()
     pub unit_defs: HashMap<String, UnitDef>,
     pub global_function_defs:  HashMap<String, GlobalFunctionDef>,
@@ -60,7 +61,7 @@ impl<'a> Globals {
             .find(|source| source.name == name)
     }
 
-    pub fn get_operator(&self, op_id: u32) -> Option<&fn(&Globals, &Vec<Value>, &Range)-> Value> {
+    pub fn get_operator(&self, op_id: u32) -> Option<&fn(&Globals, &Vec<Value>, &Range, &mut Vec<Error>)-> Value> {
         self.operators.get(&op_id)
     }
 

@@ -1,10 +1,12 @@
 use std::fmt::{Display, Formatter};
+use crate::errors::{Error, ErrorId};
 use crate::globals::Globals;
 use crate::resolver::unit::Unit;
 use crate::resolver::value::{NumberFormat, OperandType, Value, Variant};
 use crate::tokenizer::cursor::Range;
 use crate::tokenizer::token_type::TokenType;
 use crate::number::Number;
+use crate::resolver::add_error;
 
 #[repr(u8)]
 #[derive(Copy, Clone)]
@@ -51,43 +53,43 @@ pub fn operator_id_from(type1: OperandType, op: OperatorType, type2: OperandType
     (type1 as u32 *265*265) + (op as u32*265) + type2 as u32
 }
 
-pub fn op_num_plus_num(globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
+pub fn op_num_plus_num(globals: &Globals, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>) -> Value {
     let Variant::Numeric {number: ref n1, ..} = args[0].variant else { unreachable!(); }; //has been checked.
     let Variant::Numeric {number: ref n2, ..} = args[1].variant else { unreachable!(); };
-    Value::from_number( do_term(n1, true, n2, range, &globals), range.clone())
+    Value::from_number( do_term(n1, true, n2, range, &globals, errors), range.clone())
 }
 
-pub fn op_num_min_num(globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
+pub fn op_num_min_num(globals: &Globals, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>) -> Value {
     let Variant::Numeric {number: ref n1, ..} = args[0].variant else { unreachable!(); };
     let Variant::Numeric {number: ref n2, ..} = args[1].variant else { unreachable!(); };
-    Value::from_number( do_term(n1, false, n2, range, &globals), range.clone())
+    Value::from_number( do_term(n1, false, n2, range, &globals, errors), range.clone())
 }
 
-pub fn op_num_mult_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
+pub fn op_num_mult_num(_globals: &Globals, args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>) -> Value {
     let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!(); };
     let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!(); };
     Value::from_number(Number { significand: n1.significand * n2.significand, exponent: 0, unit : Unit { id: "".to_string() }, fmt: NumberFormat::Dec }, range.clone())
 }
 
-pub fn op_num_div_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
+pub fn op_num_div_num(_globals: &Globals, args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>) -> Value {
     let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!(); };
     let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!(); };
     Value::from_number(Number { significand: n1.significand / n2.significand, exponent: 0, unit : Unit { id: "".to_string() }, fmt: NumberFormat::Dec }, range.clone())
 }
 
-pub fn op_num_rem_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
+pub fn op_num_rem_num(_globals: &Globals, args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>) -> Value {
     let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!(); };
     let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!(); };
     Value::from_number(Number { significand: n1.to_double() % n2.to_double(), exponent: 0, unit : Unit { id: "".to_string() }, fmt: NumberFormat::Dec }, range.clone())
 }
 
-pub fn op_num_mod_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
+pub fn op_num_mod_num(_globals: &Globals, args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>) -> Value {
     let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!(); };
     let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!(); };
     Value::from_number(Number { significand: ((n1.to_double() % n2.to_double()) + n2.to_double()) % n2.to_double(), exponent: 0, unit : Unit { id: "".to_string() }, fmt: NumberFormat::Dec }, range.clone())
 }
 
-pub fn op_num_pow_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
+pub fn op_num_pow_num(_globals: &Globals, args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>) -> Value {
     let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!(); };
     let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!(); };
     Value::from_number(Number { significand: n1.to_double().powf(n2.to_double()), exponent: 0, unit : Unit { id: "".to_string() }, fmt: NumberFormat::Dec }, range.clone())
@@ -109,14 +111,14 @@ pub fn load_operators(globals: &mut Globals) {
     globals.operators.insert(operator_id_from(OT::Duration, OperatorType::Div, OT::Number), op_dur_div_num);
 }
 
-fn do_term(v1: &Number, adding: bool, v2: &Number, _range: &Range, globals: &Globals) -> Number {
+fn do_term(v1: &Number, adding: bool, v2: &Number, range: &Range, globals: &Globals, errors: &mut Vec<Error>) -> Number {
     //if both values have units: convert them to SI before operation.
     if !v1.unit.is_empty() && !v2.unit.is_empty() {
         //TODO: don't I have to check if the ids are valid?
         let u1 = &globals.unit_defs[&v1.unit.id];
         let u2 = &globals.unit_defs[&v2.unit.id];
         if u1.property != u2.property {
-            todo!("implement errors.");
+            add_error(errors, ErrorId::UnitPropDiff, range.clone(), &[]);
         }
         let d1 = v1.to_si(&globals);
         let d2 = v2.to_si(&globals);
@@ -142,35 +144,35 @@ fn do_term(v1: &Number, adding: bool, v2: &Number, _range: &Range, globals: &Glo
     }
 }
 
-pub fn op_date_min_date(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
+pub fn op_date_min_date(_globals: &Globals, args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>) -> Value {
     let Variant::Date {date: ref d1, ..} = &args[0].variant else { unreachable!(); }; //has been checked.
     let Variant::Date {date: ref d2, ..} = &args[1].variant else { unreachable!(); }; //has been checked.
 
     Value::from_duration(d1 - d2, range.clone())
 }
 
-pub fn op_dur_min_dur(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
+pub fn op_dur_min_dur(_globals: &Globals, args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>) -> Value {
     let Variant::Duration {duration: ref d1, ..} = &args[0].variant else { unreachable!(); }; //has been checked.
     let Variant::Duration {duration: ref d2, ..} = &args[1].variant else { unreachable!(); }; //has been checked.
 
     Value::from_duration(*d1 - *d2, range.clone())
 }
 
-pub fn op_dur_plus_dur(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
+pub fn op_dur_plus_dur(_globals: &Globals, args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>) -> Value {
     let Variant::Duration {duration: ref d1, ..} = &args[0].variant else { unreachable!(); }; //has been checked.
     let Variant::Duration {duration: ref d2, ..} = &args[1].variant else { unreachable!(); }; //has been checked.
 
     Value::from_duration(*d1 + *d2, range.clone())
 }
 
-pub fn op_dur_mult_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
+pub fn op_dur_mult_num(_globals: &Globals, args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>) -> Value {
     let Variant::Duration {duration: ref d1, ..} = &args[0].variant else { unreachable!(); }; //has been checked.
     let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!(); }; //has been checked.
 
     Value::from_duration(*d1 * n2, range.clone())
 }
 
-pub fn op_dur_div_num(_globals: &Globals, args: &Vec<Value>, range: &Range) -> Value {
+pub fn op_dur_div_num(_globals: &Globals, args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>) -> Value {
     let Variant::Duration {duration: ref d1, ..} = &args[0].variant else { unreachable!(); }; //has been checked.
     let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!(); }; //has been checked.
 

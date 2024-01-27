@@ -128,6 +128,7 @@ fn test_units () {
     test_error("sin(1mm)", ErrorId::UnitPropWrong);
     test_no_error("sin(1)");
     test_error("#define strict\n sin(1)", ErrorId::WExplicitUnitsExpected);
+    test_error("3mm+2ml", ErrorId::UnitPropDiff);
 }
 
 #[test]
