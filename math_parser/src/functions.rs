@@ -357,7 +357,7 @@ fn to_num_iter<'a>(function_name: &'a str, args: &'a Vec<Value>, _range: &'a Ran
             if let Variant::Numeric { number, .. } = &value.variant {
                 number.to_si(globals)
             } else {
-                0.0
+                unreachable!("checked above.")
             }
         }))
 }

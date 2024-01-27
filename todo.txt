@@ -1,6 +1,3 @@
-* Declaring functions in parser and adding them in resolver is not easy.
-  > One last attempt to reference FunctionDefExpr instead of cloning it?
-
 * function: check if all values are numbers, where applicable.
   > with_num_vec defaults to 0.0 if non numeric.
 
