@@ -261,6 +261,16 @@ impl<'g, 'a> Resolver<'g, 'a> {
     }
 
     fn resolve_func_def_expr(&mut self, function_def_expr: &FunctionDefExpr) -> Value {
+        if self.scope.borrow().function_accessible(&function_def_expr.id) {
+            if self.scope.borrow().strict {
+                return self.add_error_value(ErrorId::FunctionOverride, function_def_expr.get_range(), &[&function_def_expr.id]);
+            } else {
+                self.add_error(ErrorId::WFunctionOverride, function_def_expr.get_range(), &[&function_def_expr.id]);
+            }
+        } else {
+            self.scope.borrow_mut().function_view.ids.insert(function_def_expr.id.clone());
+        }
+
         Value {
             id: Some(function_def_expr.id_range.clone()),
             has_errors: false,

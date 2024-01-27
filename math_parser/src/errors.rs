@@ -55,7 +55,7 @@ pub enum ErrorId
     WVarIsUnit,
     WUnitIsVar,
     WVarIsFunction,
-    WFunctionOverride,
+    WFunctionOverride, FunctionOverride,
     WExplicitUnitsExpected,
     EExplicitUnitsExpected,
 }
@@ -103,6 +103,7 @@ pub static ERROR_MAP: Lazy<HashMap<ErrorId, ErrorDef>>  = Lazy::new(|| HashMap::
 (ErrorId::WVarIsUnit, ErrorDef{id: ErrorId::WVarIsUnit, error_type: ErrorType::W, name: "WVarIsUnit", message: "Warning; variable `{0}` overrides unit with same name."}),
 (ErrorId::WVarIsFunction, ErrorDef{id: ErrorId::WVarIsFunction, error_type: ErrorType::W, name: "WVarIsFunction", message: "Warning; variable `{0}` overrides function with same name."}),
 (ErrorId::WFunctionOverride, ErrorDef{id: ErrorId::WFunctionOverride, error_type: ErrorType::W, name: "WFunctionOverride", message: "Warning; function `{0}` overrides an existing function."}),
+(ErrorId::FunctionOverride, ErrorDef{id: ErrorId::FunctionOverride, error_type: ErrorType::E, name: "FunctionOverride", message: "Function `{0}` overrides an existing function."}),
 (ErrorId::WUnitIsVar, ErrorDef{id: ErrorId::WUnitIsVar, error_type: ErrorType::W, name: "WUnitIsVar", message: "Warning: ambiguous implicit multiplication: `{0}` is both a variable and a unit."}),
 (ErrorId::WExplicitUnitsExpected, ErrorDef{id: ErrorId::WExplicitUnitsExpected, error_type: ErrorType::W, name: "WExplicitUnitsExpected", message: "Warning: explicit unit expected: `{0}`"}),
 (ErrorId::EExplicitUnitsExpected, ErrorDef{id: ErrorId::EExplicitUnitsExpected, error_type: ErrorType::E, name: "EExplicitUnitsExpected", message: "Explicit unit expected: `{0}`"}),

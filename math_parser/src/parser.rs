@@ -215,14 +215,8 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             arg_names: param_defs,
             range: &start_range + &token_end.range,
         };
-        let mut has_errors = false;
-        if self.code_block.scope.borrow().local_function_defs.contains_key(&fun_def_expr.id) {
-            has_errors = true;
-            self.errors.push(Error::build(ErrorId::WFunctionOverride, id.range.clone(), &[&self.globals.get_text(&id.range)]));
-        };
         self.code_block.scope.borrow_mut().add_local_function(new_code_block, &fun_def_expr);
         let mut node = Node::new(NodeType::FunctionDef(fun_def_expr));
-        node.has_errors = has_errors;
         Some(Statement {
             node: Box::new(node),
             mute: false,

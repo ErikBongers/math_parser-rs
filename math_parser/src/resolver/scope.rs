@@ -69,7 +69,6 @@ impl Scope {
             execute: execute_custom_function
         };
         self.local_function_defs.insert(func.name.clone(), func);
-        self.function_view.ids.insert(function_def_expr.id.clone());
     }
 
     #[inline]
