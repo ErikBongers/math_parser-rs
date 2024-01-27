@@ -12,7 +12,6 @@ pub trait HasRange{
     fn get_range(&self) -> Range;
 }
 
-#[derive(Clone)]
 pub struct Node {
     pub unit: Unit,
     pub has_errors: bool,
@@ -39,7 +38,6 @@ impl HasRange for Node {
     }
 }
 
-#[derive(Clone)]
 pub enum NodeType {
     None(NoneExpr),
     Unit(UnitExpr),
@@ -91,7 +89,6 @@ impl HasRange for NodeType {
     }
 }
 
-#[derive(Clone)]
 pub struct NoneExpr {
     pub token: Token, //may be EOT
 }
@@ -102,7 +99,6 @@ impl HasRange for NoneExpr {
     }
 }
 
-#[derive(Clone)]
 pub struct UnitExpr {
     pub node: Box<Node>,
     pub range: Range,
@@ -125,7 +121,6 @@ impl HasRange for CommentExpr {
     }
 }
 
-#[derive(Clone)]
 pub struct AssignExpr {
     pub id: Token,
     pub expr: Box<Node>,
@@ -137,7 +132,6 @@ impl HasRange for AssignExpr {
     }
 }
 
-#[derive(Clone)]
 pub struct BinExpr {
     pub expr1: Box<Node>,
     pub op: Token,
@@ -151,7 +145,6 @@ impl HasRange for BinExpr {
     }
 }
 
-#[derive(Clone)]
 pub struct UnaryExpr {
     pub op: Token,
     pub expr: Box<Node>,
@@ -163,10 +156,8 @@ impl HasRange for UnaryExpr {
     }
 }
 
-#[derive(Clone)]
 pub enum ConstType { Numeric {number: Number}, FormattedString }
 
-#[derive(Clone)]
 pub struct ConstExpr {
     pub const_type: ConstType,
     pub range: Range,
@@ -178,7 +169,6 @@ impl HasRange for ConstExpr {
     }
 }
 
-#[derive(Clone)]
 pub struct IdExpr {
     pub id: Token,
 }
@@ -189,7 +179,6 @@ impl HasRange for IdExpr {
     }
 }
 
-#[derive(Clone)]
 pub struct PostfixExpr {
     pub node: Box<Node>,
     pub postfix_id: Token,
@@ -205,7 +194,6 @@ impl HasRange for PostfixExpr {
     }
 }
 
-#[derive(Clone)]
 pub struct Statement {
     pub node: Box<Node>,
     pub mute: bool
@@ -232,7 +220,6 @@ impl Statement {
     }
 }
 
-#[derive(Clone)]
 pub struct ListExpr {
     pub nodes: Vec<Box<Node>>,
 }
@@ -261,7 +248,6 @@ impl HasRange for FunctionDefExpr {
     }
 }
 
-#[derive(Clone)]
 pub struct CallExpr {
     pub function_name: String, //this may not be a stream range, but a translated function name: e.g. x++ -> _inc(x)
     pub function_name_range: Range,
@@ -275,7 +261,6 @@ impl HasRange for CallExpr {
     }
 }
 
-#[derive(Clone)]
 pub struct CodeBlock {
     pub block_start: Range,
     pub statements: Vec<Statement>,
@@ -300,7 +285,6 @@ impl HasRange for CodeBlock {
     }
 }
 
-#[derive(Clone)]
 pub enum DefineType {
     Dmy,
     Ymd,
@@ -318,13 +302,11 @@ pub enum DefineType {
     DecimalComma,
 }
 
-#[derive(Clone)]
 pub struct Define {
     pub define_type: DefineType,
     pub range:Range,
 }
 
-#[derive(Clone)]
 pub struct DefineExpr {
     pub def_undef: Token,
     pub defines: Vec<Define>,
