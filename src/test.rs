@@ -161,5 +161,7 @@ fn test_defines () {
 fn test_strict () {
     test_error("#define strict\n  function ff(a) { a+1; } function ff(b) { b+1; } ", ErrorId::FunctionOverride);
     test_error("function ff(a) { a+1; } function ff(b) { b+1; } ", ErrorId::WFunctionOverride);
+    test_error("mm=23", ErrorId::WVarIsUnit);
+    test_error("#define strict\n  mm=23", ErrorId::VarIsUnit);
 
 }

@@ -446,7 +446,11 @@ impl<'g, 'a> Resolver<'g, 'a> {
                 self.add_error(ErrorId::WVarIsFunction, assign_expr.id.range.clone(), &[id_str.as_str()]);
             }
             if self.scope.borrow().units_view.units.contains(&id_str) {
-                self.add_error(ErrorId::WVarIsUnit, assign_expr.id.range.clone(), &[id_str.as_str()]);
+                if self.scope.borrow().strict {
+                    return self.add_error_value(ErrorId::VarIsUnit, assign_expr.id.range.clone(), &[id_str.as_str()]);
+                } else {
+                    self.add_error(ErrorId::WVarIsUnit, assign_expr.id.range.clone(), &[id_str.as_str()]);
+                }
             }
         }
         //disallow redefine of constant in case of `strict`. Error has already been added
