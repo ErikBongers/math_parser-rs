@@ -252,6 +252,7 @@ pub struct FunctionDefExpr {
     pub id_range: Range, //the undecorated functionname
     pub arg_names: Vec<String>,
     pub range: Range,
+    //don't add CodeBlock as it can't moved out of the (immutable) AST and it can't be referenced from the AST without lifetime issues
 }
 
 impl HasRange for FunctionDefExpr {

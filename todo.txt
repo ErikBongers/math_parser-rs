@@ -1,17 +1,5 @@
 * Declaring functions in parser and adding them in resolver is not easy.
-  > Add function defs in parser.
-     > parser looks for existing file name in the defs.
-  > Add them to function_view in Resolver.
-    > if already added: it's a redefine.
-  > Don't add code_block the the func_def_expr, as it needs to be moved to the CustomFunctionDef, and thus you need to mut the statements.
-    > This cascades up the whole AST needing to be mutable.
-  > Currently the FunctionDefExpr is cloned from the AST to the CustomFunctionDef list.
-    > Possible to ref instead of clone?
-      > NO!
-        > Scope owns CustomFunctionDefs but has no ref to the AST! Lifetime problems.
-      > Since AST is immutable after creation...this should be possible.
-        > If so, store code_block in FunctionDefExpr?
-    > Document this in the code !!!
+  > One last attempt to reference FunctionDefExpr instead of cloning it?
 
 * function: check if all values are numbers, where applicable.
   > with_num_vec defaults to 0.0 if non numeric.
