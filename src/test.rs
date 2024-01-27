@@ -158,7 +158,6 @@ fn test_defines () {
 }
 #[test]
 fn test_strict () {
-
     test_error("#define strict\n  function ff(a) { a+1; } function ff(b) { b+1; } ", ErrorId::FunctionOverride);
     test_error("function ff(a) { a+1; } function ff(b) { b+1; } ", ErrorId::WFunctionOverride);
 

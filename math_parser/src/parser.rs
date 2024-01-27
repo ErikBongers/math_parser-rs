@@ -216,7 +216,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             range: &start_range + &token_end.range,
         };
         self.code_block.scope.borrow_mut().add_local_function(new_code_block, &fun_def_expr);
-        let mut node = Node::new(NodeType::FunctionDef(fun_def_expr));
+        let node = Node::new(NodeType::FunctionDef(fun_def_expr));
         Some(Statement {
             node: Box::new(node),
             mute: false,
