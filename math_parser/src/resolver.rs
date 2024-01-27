@@ -137,38 +137,38 @@ impl<'g, 'a> Resolver<'g, 'a> {
 
     fn resolve_defines(&mut self, define_expr: &DefineExpr) {
         for define in &define_expr.defines  {
-            use crate::parser::nodes::DefineType::*;
+            use crate::parser::nodes::DefineType as T;
             match &define.define_type {
-                Ymd => self.scope.borrow_mut().date_format = DateFormat::YMD,
-                Dmy => self.scope.borrow_mut().date_format = DateFormat::DMY,
-                Mdy => self.scope.borrow_mut().date_format = DateFormat::MDY,
-                Precision {ref number} => {
+                T::Ymd => self.scope.borrow_mut().date_format = DateFormat::YMD,
+                T::Dmy => self.scope.borrow_mut().date_format = DateFormat::DMY,
+                T::Mdy => self.scope.borrow_mut().date_format = DateFormat::MDY,
+                T::Precision {ref number} => {
                     if ! number.is_int() {
                         self.add_error(ErrorId::Expected, define.range.clone(), &["integer value, but found float"]);
                         continue;
                     }
                     self.scope.borrow_mut().precision = 10.0_f64.powf(number.to_double());
                 },
-                DateUnits => self.scope.borrow_mut().units_view.add_tagged(&UnitTag::LongDateTime, self.globals),
-                ShortDateUnits => self.scope.borrow_mut().units_view.add_tagged(&UnitTag::ShortDateTime, self.globals),
-                Electric => {
+                T::DateUnits => self.scope.borrow_mut().units_view.add_tagged(&UnitTag::LongDateTime, self.globals),
+                T::ShortDateUnits => self.scope.borrow_mut().units_view.add_tagged(&UnitTag::ShortDateTime, self.globals),
+                T::Electric => {
                     self.scope.borrow_mut().units_view.add_class(&UnitProperty::VOLTAGE, &self.globals.unit_defs);
                     self.scope.borrow_mut().units_view.add_class(&UnitProperty::CURRENT, &self.globals.unit_defs);
                     self.scope.borrow_mut().units_view.add_class(&UnitProperty::RESISTANCE, &self.globals.unit_defs);
                 },
-                Strict => self.scope.borrow_mut().strict = true,
-                DecimalDot => {
+                T::Strict => self.scope.borrow_mut().strict = true,
+                T::DecimalDot => {
                     self.scope.borrow_mut().decimal_char = '.';
                     self.scope.borrow_mut().thou_char = ',';
                 },
-                DecimalComma => {
+                T::DecimalComma => {
                     self.scope.borrow_mut().decimal_char = ',';
                     self.scope.borrow_mut().thou_char = '.';
                 },
-                Trig => self.scope.borrow_mut().function_view.add_type(FunctionType::Trig, self.globals),
-                Arithm => self.scope.borrow_mut().function_view.add_type(FunctionType::Arithm, self.globals),
-                Date => self.scope.borrow_mut().function_view.add_type(FunctionType::Date, self.globals),
-                All => self.scope.borrow_mut().function_view.add_all(&self.globals.global_function_defs),
+                T::Trig => self.scope.borrow_mut().function_view.add_type(FunctionType::Trig, self.globals),
+                T::Arithm => self.scope.borrow_mut().function_view.add_type(FunctionType::Arithm, self.globals),
+                T::Date => self.scope.borrow_mut().function_view.add_type(FunctionType::Date, self.globals),
+                T::Default => self.scope.borrow_mut().function_view.add_all(&self.globals.global_function_defs),
             }
         }
     }

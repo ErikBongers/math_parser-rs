@@ -295,7 +295,7 @@ pub enum DefineType {
     Trig,
     Arithm,
     Date,
-    All,
+    Default,
     Electric,
     Strict,
     DecimalDot,

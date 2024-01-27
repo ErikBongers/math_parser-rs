@@ -140,7 +140,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             "trig" => DefineType::Trig,
             "arithm" => DefineType::Arithm,
             "date" => DefineType::Date,
-            "all" => DefineType::All,
+            "all" => DefineType::Default,
             "electric" => DefineType::Electric,
             "strict" => DefineType::Strict,
             "decimal_dot" => DefineType::DecimalDot,

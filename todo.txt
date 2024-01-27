@@ -30,8 +30,6 @@
   > see if Scope, which changes during resolving, can be moved into a ResolverState object,
   > See formatted_date_parser.
 
-* exponents
-
 * to examine TokenStream for macros:
   > https://github.com/dtolnay/proc-macro-workshop
   > https://dev.to/dandyvica/rust-procedural-macros-step-by-step-tutorial-36n8

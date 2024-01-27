@@ -104,7 +104,7 @@ impl UnitsView {
         self.units.retain(|unit| unit_defs[unit].tags.contains(&tag) == false);
     }
 
-    pub fn add_all_classes(&mut self, unit_defs: &HashMap<String, UnitDef>) {
+    pub fn add_default_classes(&mut self, unit_defs: &HashMap<String, UnitDef>) {
         self.add_class(&UnitProperty::UNDEFINED, unit_defs); //needed to include the empty unit.
         self.add_class(&UnitProperty::ANGLE, unit_defs);
         self.add_class(&UnitProperty::LENGTH, unit_defs);
@@ -112,7 +112,7 @@ impl UnitsView {
         self.add_class(&UnitProperty::MassWeight, unit_defs);
         self.add_class(&UnitProperty::DURATION, unit_defs);
         self.add_class(&UnitProperty::VOLUME, unit_defs);
-        //TODO: electricity
+        //electricity not set by default.
     }
 }
 
