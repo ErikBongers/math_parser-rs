@@ -30,10 +30,14 @@ pub struct Resolver<'g, 'a> {
     pub current_statement_muted: bool,
 }
 
-pub fn add_error<'s>(errors: &mut Vec<Error>, id: ErrorId, range: Range, args: &[&str], mut value: Value) -> Value { //TODO: try to remove the value arg here. It's not always needed.
+pub fn add_error_value<'s>(errors: &mut Vec<Error>, id: ErrorId, range: Range, args: &[&str]) -> Value {
+    let mut value = Value::error(range.clone());
     value.has_errors = true;
     errors.push(Error::build(id, range, args));
     value
+}
+pub fn add_error<'s>(errors: &mut Vec<Error>, id: ErrorId, range: Range, args: &[&str]){
+    errors.push(Error::build(id, range, args));
 }
 
 
@@ -81,10 +85,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
     }
 
     pub fn add_error_value(&mut self, id: ErrorId, range: Range, args: &[&str]) -> Value {
-        let mut value = Value::error(range.clone());
-        value.has_errors = true;
-        self.add_error(id, range, args);
-        value
+        add_error_value(self.errors, id, range, args)
     }
 
     pub fn resolve_node(&mut self, node: &Box<Node>) -> Value {

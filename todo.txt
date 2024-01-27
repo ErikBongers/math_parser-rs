@@ -1,6 +1,3 @@
-* function: check if all values are numbers, where applicable.
-  > with_num_vec defaults to 0.0 if non numeric.
-
 * ErrorId: implement with macro?
   > would allow for format!() with checking of number of args.
 

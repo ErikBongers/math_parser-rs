@@ -7,7 +7,7 @@ use crate::errors::{Error, ErrorId};
 use crate::date::{Timepoint, Day};
 use crate::date::{month_from_int};
 use crate::parser::nodes::{CodeBlock, FunctionDefExpr};
-use crate::resolver::{add_error, Resolver};
+use crate::resolver::{add_error, add_error_value, Resolver};
 use crate::globals::Globals;
 use crate::number::Number;
 use crate::resolver::unit::{Unit, UnitProperty};
@@ -56,7 +56,7 @@ impl FunctionDef for GlobalFunctionDef {
         if self.is_correct_arg_count(args.len()) {
             (self.execute)(&self, scope, args, range, errors, globals)
         } else {
-            add_error(errors, ErrorId::FuncArgWrong, range.clone(), &[""], Value::error(range.clone()))
+            add_error_value(errors, ErrorId::FuncArgWrong, range.clone(), &[""])
         }
     }
 
@@ -79,7 +79,7 @@ impl FunctionDef for CustomFunctionDef {
         if self.is_correct_arg_count(args.len()) {
             (self.execute)(&self, scope, args, range, errors, globals)
         } else {
-            add_error(errors, ErrorId::FuncArgWrong, range.clone(), &[""], Value::error(range.clone()))
+            add_error_value(errors, ErrorId::FuncArgWrong, range.clone(), &[""])
         }
     }
 
@@ -342,7 +342,7 @@ fn with_num_vec(function_def: &dyn FunctionDef, args: &Vec<Value>, range: &Range
 
 fn match_arg_number<'a>(function_def: &dyn FunctionDef, args: &'a Value, range: &Range, errors: &mut Vec<Error>) -> Option<&'a Number> {
     let Variant::Numeric { number, .. } = &args.variant else {
-        add_error(errors, ErrorId::FuncArgWrongType, range.clone(), &[function_def.get_name()], Value::error(range.clone()));
+        add_error(errors, ErrorId::FuncArgWrongType, range.clone(), &[function_def.get_name()]);
         return None;
     };
     Some(number)
@@ -350,7 +350,7 @@ fn match_arg_number<'a>(function_def: &dyn FunctionDef, args: &'a Value, range: 
 
 fn to_num_iter<'a>(function_name: &'a str, args: &'a Vec<Value>, _range: &'a Range, errors: &'a mut Vec<Error>, globals: &'a Globals) -> Result<impl Iterator<Item=f64> + 'a, Value> {
     if let Some(wrong_value) = args.iter().find(|v| v.as_number().is_none()) {
-        return Err(add_error(errors, ErrorId::FuncArgWrongType, wrong_value.stmt_range.clone(), &[function_name], Value::error(wrong_value.stmt_range.clone())));
+        return Err(add_error_value(errors, ErrorId::FuncArgWrongType, wrong_value.stmt_range.clone(), &[function_name]));
     }
     Ok(args.iter()
         .map(|value| {
@@ -467,7 +467,7 @@ pub fn execute_custom_function(local_function_def: &CustomFunctionDef, _scope: &
     let mut resolver = Resolver {globals, scope: local_function_def.code_block.scope.clone(), results: Vec::new(), errors, muted: true, current_statement_muted: false};
     let result = resolver.resolve_to_result(&local_function_def.code_block.statements);
     let Some(result) = result else {
-        add_error(errors, ErrorId::FuncNoBody, range.clone(),&[&local_function_def.name], Value::error(range.clone()));
+        add_error(errors, ErrorId::FuncNoBody, range.clone(),&[&local_function_def.name]);
         return Value::error(range.clone())
     };
     result

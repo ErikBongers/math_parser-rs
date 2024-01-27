@@ -3,7 +3,7 @@ use crate::globals::Globals;
 use crate::resolver::add_error;
 use crate::resolver::scope::Scope;
 use crate::resolver::unit::{Unit, UnitsView};
-use crate::resolver::value::{NumberFormat, Value};
+use crate::resolver::value::NumberFormat;
 use crate::tokenizer::cursor::Range;
 
 #[derive(Clone)]
@@ -68,7 +68,7 @@ impl Number {
         if self.unit.is_empty() {
             self.unit = to.clone();
             if let None = units_view.get_def(&to.id, globals) {
-                add_error(errors, ErrorId::UnitNotDef, range.clone(), &[&to.id], Value::error(range.clone()));
+                add_error(errors, ErrorId::UnitNotDef, range.clone(), &[&to.id]);
             }
             return;
         }
@@ -76,11 +76,11 @@ impl Number {
             return; //should already have been detected.
         }
         if let None = units_view.get_def(&to.id, globals) {
-            add_error(errors, ErrorId::UnitNotDef, range.clone(), &[&to.id], Value::error(range.clone()));
+            add_error(errors, ErrorId::UnitNotDef, range.clone(), &[&to.id]);
             return;
         }
         if units_view.get_def(&self.unit.id, globals).unwrap().property != units_view.get_def(&to.id, globals).unwrap().property {
-            add_error(errors, ErrorId::UnitPropDiff, range.clone(), &[""], Value::error(range.clone()));
+            add_error(errors, ErrorId::UnitPropDiff, range.clone(), &[""]);
             return;
         }
         let si_val = units_view.get_def(&self.unit.id, globals).unwrap().convert_to_si(self.to_double());
