@@ -1,3 +1,4 @@
+use math_parser::test_api::test_exponent;
 use math_parser::test_api::{test_compiles, test_result, test_error, test_date, test_no_error};
 use math_parser::errors::ErrorId;
 
@@ -164,4 +165,19 @@ fn test_strict () {
     test_error("mm=23", ErrorId::WVarIsUnit);
     test_error("#define strict\n  mm=23", ErrorId::VarIsUnit);
 
+}
+
+#[test]
+fn test_exponents () {
+    test_exponent("123E10 + 234E10", 357.0, "", 10);
+    test_exponent("123E10 + 2340E9", 357.0, "", 10);
+    test_exponent("234E10 - 123E10", 111.0, "", 10);
+    test_exponent("123E10 * 2E10", 246.0, "", 20);
+    test_exponent("123E10 * 20E9", 2460.0, "", 19);
+    test_exponent("246E10 / 2E10", 123.0, "", 0);
+    test_exponent("1E-2", 1.0, "", -2);
+    //combined with units:
+    test_exponent("1E2mm.cm", 0.1, "cm", 2);
+    test_exponent("1E3m + 1km", 2.0, "m", 3);
+    test_exponent("1E5cm + 1km", 2.0, "cm", 5);
 }

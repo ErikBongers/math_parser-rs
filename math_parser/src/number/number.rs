@@ -1,3 +1,5 @@
+use std::cmp::max;
+use std::ops::{Add, Div, Mul, Sub};
 use crate::errors::{Error, ErrorId};
 use crate::globals::Globals;
 use crate::resolver::add_error;
@@ -60,14 +62,28 @@ impl Number {
         Number::new(self.significand/10_f64.powf(sig_base), self.exponent+(sig_base as i32))
     }
 
-
-
-    pub fn to_si(&self, globals: &Globals) -> f64 {
-        if globals.unit_defs.contains_key(&*self.unit.id) {
-            globals.unit_defs[&*self.unit.id].convert_to_si(self.to_double())
-        } else {
-            self.to_double()
+    pub fn convert_to_exponent(&mut self, e: i32) {
+        while self.exponent < e {
+            self.exponent += 1;
+            self.significand /= 10.0;
         }
+        while self.exponent > e {
+            self.exponent -= 1;
+            self.significand *= 10.0;
+        }
+    }
+
+    pub fn to_si(&self, globals: &Globals) -> Number {
+        let mut num = self.clone();
+        if globals.unit_defs.contains_key(&*self.unit.id) {
+            num.significand = globals.unit_defs[&*self.unit.id].convert_to_si(self.to_double());
+            num.exponent = 0;
+            num.unit = Unit::from_id(globals.unit_defs[&*self.unit.id].si_id);
+        } else {
+            //ignore
+        }
+        num.convert_to_exponent(self.exponent);
+        num
     }
 
     pub fn convert_to_unit(&mut self, to: &Unit, units_view: &UnitsView, range: &Range, errors: &mut Vec<Error>, globals: &Globals) {
@@ -92,8 +108,10 @@ impl Number {
         let si_val = units_view.get_def(&self.unit.id, globals).unwrap().convert_to_si(self.to_double());
         let val = units_view.get_def(&to.id, globals).unwrap().convert_from_si(si_val);
         self.significand = val;
-        self.exponent = 0;
         self.unit = to.clone();
+        let exponent = self.exponent;
+        self.exponent = 0;
+        self.convert_to_exponent(exponent);
     }
 
     #[inline]
@@ -106,6 +124,72 @@ impl Number {
     pub fn is_int(&self) -> bool {
         let d = self.to_double();
         d == d.trunc()
+    }
+}
+
+impl Add for &Number {
+    type Output = Number;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        let max_exponent = max(self.exponent, rhs.exponent);
+        let mut n1 = self.clone();
+        n1.convert_to_exponent(max_exponent);
+        let mut n2 = rhs.clone();
+        n2.convert_to_exponent(max_exponent);
+        n1.significand += n2.significand;
+        n1
+    }
+}
+
+impl Sub for &Number {
+    type Output = Number;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        let max_exponent = max(self.exponent, rhs.exponent);
+        let mut n1 = self.clone();
+        n1.convert_to_exponent(max_exponent);
+        let mut n2 = rhs.clone();
+        n2.convert_to_exponent(max_exponent);
+        n1.significand -= n2.significand;
+        n1
+    }
+}
+
+impl Mul for &Number {
+    type Output = Number;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        Number {
+            significand: self.significand*rhs.significand,
+            exponent: self.exponent +rhs.exponent,
+            unit: if rhs.unit.is_empty() {
+                self.unit.clone()
+            } else {
+                if self.unit.is_empty() {
+                    rhs.unit.clone()
+                } else {
+                    Unit::none() //reserved for combined units. Don't report an error.
+                }
+            },
+            fmt: self.fmt.clone(),
+        }
+    }
+}
+
+impl Div for &Number {
+    type Output = Number;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        Number {
+            significand: self.significand/rhs.significand,
+            exponent: self.exponent-rhs.exponent,
+            unit: if rhs.unit.is_empty() {
+                self.unit.clone()
+            } else {
+                Unit::none() //reserved for combined units. Don't report an error.
+            },
+            fmt: self.fmt.clone(),
+        }
     }
 }
 

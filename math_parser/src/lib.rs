@@ -135,9 +135,15 @@ pub mod test_api {
     use crate::parser::nodes::CodeBlock;
     use crate::tokenizer::cursor::Range;
 
-    pub fn test_result(text: &str, expected_result: f64, unit: &str) {
-        let (results, _errors) = get_results(text);
-        let value = results.last().expect("No result found.");
+    pub fn test_exponent(text: &str, expected_result: f64, unit: &str, exponent: i32) {
+        let result = test_result(text, expected_result*10.0_f64.powf( exponent as f64), unit);
+        assert_eq!(result.as_number().unwrap().exponent, exponent);
+    }
+
+
+    pub fn test_result(text: &str, expected_result: f64, unit: &str) -> Value {
+        let (mut results, _errors) = get_results(text);
+        let value = results.pop().expect("No result found.");
         let Variant::Numeric { number, .. } = &value.variant else {
             panic!("Result isn't a number.");
         };
@@ -147,6 +153,7 @@ pub mod test_api {
         let val = (val*precision).round()/precision;
         assert_eq!(val, expected_result);
         assert_eq!(number.unit.id, unit);
+        value
     }
 
     pub fn test_date(text: &str, day: i8, month: i32, year: i32) {

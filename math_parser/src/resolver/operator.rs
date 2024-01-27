@@ -68,13 +68,13 @@ pub fn op_num_min_num(globals: &Globals, args: &Vec<Value>, range: &Range, error
 pub fn op_num_mult_num(_globals: &Globals, args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>) -> Value {
     let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!(); };
     let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!(); };
-    Value::from_number(Number { significand: n1.significand * n2.significand, exponent: 0, unit : Unit { id: "".to_string() }, fmt: NumberFormat::Dec }, range.clone())
+    Value::from_number(n1 * n2, range.clone())
 }
 
 pub fn op_num_div_num(_globals: &Globals, args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>) -> Value {
     let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!(); };
     let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!(); };
-    Value::from_number(Number { significand: n1.significand / n2.significand, exponent: 0, unit : Unit { id: "".to_string() }, fmt: NumberFormat::Dec }, range.clone())
+    Value::from_number(n1 / n2, range.clone())
 }
 
 pub fn op_num_rem_num(_globals: &Globals, args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>) -> Value {
@@ -127,22 +127,20 @@ fn do_term(v1: &Number, adding: bool, v2: &Number, range: &Range, globals: &Glob
         }
         let d1 = v1.to_si(&globals);
         let d2 = v2.to_si(&globals);
-        let result = match adding {
-            true => d1 + d2,
-            false => d1 - d2
+        let mut result = match adding {
+            true => &d1 + &d2,
+            false => &d1 - &d2
         };
-        let mut num = Number::from(result);
-        num.significand = u1.convert_from_si(result);
-        num.exponent = 0;
-        num.unit = v1.unit.clone();
-        num
+        result.significand = globals.unit_defs[&v1.unit.id].convert_from_si(result.significand); //ok for now, but would not work for custom units as this requires Scope.
+        result.unit = v1.unit.clone();
+        result
         //if a unit is missing, just do operation.
     } else {
         let result = match adding {
-            true => v1.to_double() + v2.to_double(), //TODO: see Number.operator+ for exponents
-            false => v1.to_double() - v2.to_double()
+            true => v1 + v2,
+            false => v1 - v2,
         };
-        Number::from(result)
+        result
     }
 }
 

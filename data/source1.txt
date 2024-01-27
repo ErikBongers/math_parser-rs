@@ -1,2 +1,1 @@
-#define strict
-function ff(a) { a+1; } function ff(b) { b+1; }
+1E3m + 1km
