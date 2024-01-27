@@ -128,21 +128,19 @@ impl Value {
         }
     }
 
-    pub fn as_date(&mut self) -> Option<&mut Timepoint> {
-        if let Variant::Date { ref mut date, ..} = self.variant {
-            Some(date)
+    pub fn as_sortable_number(&self) -> Option<f64> {
+        if let Variant::Numeric { ref number, ..} = self.variant {
+            Some(number.sortable_value())
         } else {
             None
         }
     }
 
-    /// converts a Value to an f64 where NaN is replaced with 0.0
-    pub fn sortable_value(&self) -> f64 {
-        if let Variant::Numeric { ref number, ..} = self.variant {
-            if number.to_double().is_nan() { 0.0 }
-            else { number.to_double() }
+    pub fn as_date(&mut self) -> Option<&mut Timepoint> {
+        if let Variant::Date { ref mut date, ..} = self.variant {
+            Some(date)
         } else {
-            todo!("no sortable value defined for this value type.")
+            None
         }
     }
 

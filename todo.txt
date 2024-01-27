@@ -1,9 +1,6 @@
 * ErrorId: implement with macro?
   > would allow for format!() with checking of number of args.
 
-* implement strict
-  > no unit overrides or function overrides.
-
 * number strings.
   > allow underscores? Currency signs? Minus? Exponential?
   > merge with the normal parse_decimal function?

@@ -92,7 +92,7 @@ pub static ERROR_MAP: Lazy<HashMap<ErrorId, ErrorDef>>  = Lazy::new(|| HashMap::
 (ErrorId::ExpHasUnit, ErrorDef{id: ErrorId::ExpHasUnit, error_type: ErrorType::E, name: "ExpHasUnit", message: "Exponent has a unit ({0})."}),
 
 (ErrorId::FuncArgWrong, ErrorDef{id: ErrorId::FuncArgWrong, error_type: ErrorType::E, name: "FuncArgWrong", message: "Number of argument(s) for function `{0}` are wrong."}),
-(ErrorId::FuncArgWrongType, ErrorDef{id: ErrorId::FuncArgWrongType, error_type: ErrorType::E, name: "FuncArgWrongType", message: "Argument(s) for function `{0}` are off the wrong type."}),
+(ErrorId::FuncArgWrongType, ErrorDef{id: ErrorId::FuncArgWrongType, error_type: ErrorType::E, name: "FuncArgWrongType", message: "Argument(s) for function `{0}` are off the wrong type. {1}"}),
 (ErrorId::FuncNoBody, ErrorDef{id: ErrorId::FuncNoBody, error_type: ErrorType::E, name: "FuncNoBody", message: "Function body is empty for function `{0}`."}),
 (ErrorId::FuncNoOpenPar, ErrorDef{id: ErrorId::FuncNoOpenPar, error_type: ErrorType::E, name: "FuncNoOpenPar", message: "Missing `(` for function `{0}`."}),
 (ErrorId::FuncFailed, ErrorDef{id: ErrorId::FuncFailed, error_type: ErrorType::E, name: "FuncFailed", message: "Error in function `0}`."}),

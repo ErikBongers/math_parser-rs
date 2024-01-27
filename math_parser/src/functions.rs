@@ -227,9 +227,17 @@ fn reverse(_global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>
     }
 }
 
-fn sort(_global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>, _globals: &Globals) -> Value {
+fn sort(_global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
+    if args.iter().find(|v| v.as_number().is_none()).is_some() {
+        return add_error_value(errors, ErrorId::FuncArgWrongType, range.clone(), &["sort", "They must be numeric."]);
+    }
     let mut sorted: Vec<Value> = args.clone();
-    sorted.sort_by(|a, b| a.sortable_value().partial_cmp(&b.sortable_value()).unwrap());
+    sorted.sort_by(|a, b| a
+        .as_sortable_number()
+        .unwrap()
+        .partial_cmp(&b.as_sortable_number().unwrap())
+        .unwrap()); //unwrap: checked all values are numeric and as_sortable_number replaces NaN with 0.0
+
     Value {
         id: None,
         stmt_range: range.clone(),
@@ -350,7 +358,7 @@ fn match_arg_number<'a>(function_def: &dyn FunctionDef, args: &'a Value, range: 
 
 fn to_num_iter<'a>(function_name: &'a str, args: &'a Vec<Value>, _range: &'a Range, errors: &'a mut Vec<Error>, globals: &'a Globals) -> Result<impl Iterator<Item=f64> + 'a, Value> {
     if let Some(wrong_value) = args.iter().find(|v| v.as_number().is_none()) {
-        return Err(add_error_value(errors, ErrorId::FuncArgWrongType, wrong_value.stmt_range.clone(), &[function_name]));
+        return Err(add_error_value(errors, ErrorId::FuncArgWrongType, wrong_value.stmt_range.clone(), &[function_name, "They must be numeric."]));
     }
     Ok(args.iter()
         .map(|value| {

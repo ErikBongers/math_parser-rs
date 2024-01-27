@@ -33,6 +33,12 @@ impl Number {
         }
     }
 
+    /// converts a Number to an f64 where NaN is replaced with 0.0
+    pub fn sortable_value(&self) -> f64 {
+        if self.to_double().is_nan() { 0.0 }
+        else { self.to_double() }
+    }
+
     pub fn normalize_number (&self) -> Number {
         //don't use to_double() to avoid loss of precision.
 
