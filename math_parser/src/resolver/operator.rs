@@ -114,9 +114,14 @@ pub fn load_operators(globals: &mut Globals) {
 fn do_term(v1: &Number, adding: bool, v2: &Number, range: &Range, globals: &Globals, errors: &mut Vec<Error>) -> Number {
     //if both values have units: convert them to SI before operation.
     if !v1.unit.is_empty() && !v2.unit.is_empty() {
-        //TODO: don't I have to check if the ids are valid?
-        let u1 = &globals.unit_defs[&v1.unit.id];
-        let u2 = &globals.unit_defs[&v2.unit.id];
+        let Some(u1) = &globals.unit_defs.get(&v1.unit.id) else {
+            add_error(errors, ErrorId::UnitNotDef, range.clone(), &[&v1.unit.id]);
+            return Number::from(0.0);
+        };
+        let Some(u2) = &globals.unit_defs.get(&v2.unit.id) else {
+            add_error(errors, ErrorId::UnitNotDef, range.clone(), &[&v2.unit.id]);
+            return Number::from(0.0);
+        };
         if u1.property != u2.property {
             add_error(errors, ErrorId::UnitPropDiff, range.clone(), &[]);
         }
@@ -127,12 +132,9 @@ fn do_term(v1: &Number, adding: bool, v2: &Number, range: &Range, globals: &Glob
             false => d1 - d2
         };
         let mut num = Number::from(result);
-        if globals.unit_defs.contains_key(&*v1.unit.id) {
-            num.significand = globals.unit_defs[&*v1.unit.id].convert_from_si(result);
-            num.exponent = 0;
-            num.unit = v1.unit.clone();
-            return num;
-        }
+        num.significand = u1.convert_from_si(result);
+        num.exponent = 0;
+        num.unit = v1.unit.clone();
         num
         //if a unit is missing, just do operation.
     } else {
