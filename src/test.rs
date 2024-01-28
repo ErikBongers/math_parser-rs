@@ -8,6 +8,10 @@ fn test_numbers (){
     test_result("0.123", 0.123, "");
     test_result("-1", -1.0, "");
 }
+#[test]
+fn test_constaants (){
+    test_result("trunc(PI)", 3.0, "");
+}
 
 #[test]
 fn test_dates (){
@@ -78,6 +82,7 @@ fn test_assign_expr () {
 #[test]
 fn test_global_funcs () {
     test_result("abs(-1)", 1.0, "");
+    test_result("abs(0-123)", 123.0, "");
     test_result("a=1; a++", 2.0, "");
     test_result("a=2; a--", 1.0, "");
     test_result("sum(1,2,3)", 6.0, "");
@@ -94,8 +99,54 @@ fn test_global_funcs () {
 }
 
 #[test]
-fn test_function_calls () {
-    test_result("abs(0-123)", 123.0, "");
+fn test_functions () {
+    test_error("factorial(-1);", ErrorId::ValueError);
+
+    test_result("\
+    a=3;
+function hundred(a)
+  {
+  a*100;
+  }; //semi-colon should be ignored.
+hundred(a);
+", 300.0, "");
+    test_result("\
+            //outer scope var not changed
+a=3;
+function hundred(a)
+  {
+  a*100;
+  }
+hundred(a);
+a;
+", 3.0, "");
+    test_error("\
+            //inner scope var not visible outside.
+a=3;
+function hundred(a)
+  {
+  x = 123;
+  a*100;
+  }
+hundred(a);
+x;
+
+", ErrorId::VarNotDef);
+
+    test_result("\
+            //nested functions
+a=3;
+function hundred(a)
+  {
+  function getFactor(z) { z*5; }
+  a*getFactor(20);
+  }
+hundred(a);
+", 300.0, "");
+    test_error("function doppel(x) {}; function doppel(x){}", ErrorId::WFunctionOverride);
+    test_result("sum(1,2,3,4);", 10.0, "");
+    test_result("lizt=1,2,3; sum(lizt,4);", 10.0, "");
+    test_error("sum(1, now());", ErrorId::ExpectedNumericValue);
 }
 
 #[test]
