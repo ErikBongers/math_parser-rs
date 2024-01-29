@@ -188,14 +188,6 @@ fn sqrt(global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, ar
     let Some(number) = match_arg_number(global_function_def, &args[0], range, errors) else { return Value::error(range.clone()); };
     Value::from_number(Number {significand: number.to_double().sqrt(), exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range.clone())
 }
-fn sum(global_function_def: &GlobalFunctionDef, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
-    let mut res = with_num_vec(global_function_def, &args, range, errors, globals, |num_vec| {
-        num_vec.into_iter().reduce(|tot, num| tot+num).unwrap_or(0.0)
-    });
-    res.as_number_mut().unwrap().convert_to_unit(&args[0].as_number().unwrap().unit, &scope.borrow().units_view, range, errors, globals);
-    res
-}
-
 fn max(global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
     with_num_vec(global_function_def, &args, range, errors, globals, |num_vec| {
         num_vec.into_iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(0.0)
@@ -494,6 +486,19 @@ pub fn explode_args<'a>(args: &'a Vec<Value>, exploded_args: &'a mut Vec<Value>)
     }
 }
 
+pub fn explode_args_recursive<'a>(args: &'a Vec<Value>, exploded_args: &'a mut Vec<Value>) -> &'a Vec<Value> {
+    if args.len() != 1 {
+        return args;
+    }
+
+    if let Variant::List{values} = &args[0].variant {
+        exploded_args.clone_from(values);
+        exploded_args
+    } else {
+        args
+    }
+}
+
 fn now(_global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, _args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>, _globals: &Globals) -> Value {
 
     let current_date = Utc::now();
@@ -534,3 +539,79 @@ fn date_func(global_function_def: &GlobalFunctionDef, scope: &Rc<RefCell<Scope>>
     }
     Value::from_date(date, range.clone())
 }
+
+fn sum(global_function_def: &GlobalFunctionDef, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
+    let (mut number, first_unit) =
+    { //`errors` is borrowed by iterators, so get iterators out of scope before using `errors` again.
+        let num_iter = match to_num_iter_test(global_function_def.get_name(), &args, range, errors, globals) {
+            Ok(num_iter) => num_iter,
+            Err(error_value) => { return error_value; }
+        };
+
+        let mut res = num_iter.reduce(|tot, num| tot + num).unwrap_or(0.0);
+        //get si_unit of first arg:
+        //TODO: rename these new iterators to "...exploding_iter..."
+        //TODO: perhaps start with an exploding_value_iter and then pass it to an as_number_iter...although that would just be a map()...
+        let mut num_value_iter = match to_num_value_iter_test(global_function_def.get_name(), &args, range, errors, globals) {
+            Ok(num_iter) => num_iter,
+            Err(error_value) => { return error_value; }
+        };
+
+        let first_num_value = num_value_iter.next();
+        let Some(first_num_value) = first_num_value else { return Value::error(range.clone()); };
+        let Some(first_number) = first_num_value.as_number()  else { return Value::error(range.clone()); };
+        let si_id = globals.unit_defs.get(&first_number.unit.id).unwrap().si_id;
+        let first_unit = first_number.unit.clone();
+        let mut number = Number { significand: res, exponent: 0, unit: Unit::from_id(si_id), fmt: NumberFormat::Dec };
+        (number, first_unit)
+    };
+    number.convert_to_unit(&first_unit, &scope.borrow().units_view, range, errors, globals);
+    Value::from_number(number, range.clone())
+}
+
+fn with_num_vec_test(function_def: &dyn FunctionDef, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals, func: impl Fn(Vec<f64>) -> f64) -> Result<Value, Value> {
+    let num_iter = match  to_num_iter_test(function_def.get_name(), &args, range, errors, globals) {
+        Ok(num_iter) => num_iter,
+        Err(error_value) => { return Err(error_value); }
+    };
+
+    let num_vec = num_iter.collect();
+    let Some(first_number) = match_arg_number(function_def, &args[0], range, errors) else { return Err(Value::error(range.clone())); };
+    let si_id = globals.unit_defs.get(&first_number.unit.id).unwrap().si_id;
+    //create a value with the func applied to the vec<f64>
+    let value = Value::from_number(Number { significand: func(num_vec), exponent: 0, unit: Unit::from_id(si_id), fmt: NumberFormat::Dec }, range.clone());
+    Ok(value)
+}
+
+fn to_num_iter_test<'a>(function_name: &'a str, args: &'a Vec<Value>, _range: &'a Range, errors: &'a mut Vec<Error>, globals: &'a Globals) -> Result<impl Iterator<Item=f64> + 'a, Value> {
+    if let Some(wrong_value) = args.iter().map(|v| v.iter()).flatten().find(|v| v.as_number().is_none()) {
+        return Err(add_error_value(errors, ErrorId::FuncArgWrongType, wrong_value.stmt_range.clone(), &[function_name, "They must be numeric."]));
+    }
+    Ok(args.iter()
+        .map(|v| v.iter())
+        .flatten()
+        .map(|value| {
+            if let Variant::Numeric { number, .. } = &value.variant {
+                number.to_si(globals).to_double()
+            } else {
+                unreachable!("checked above.")
+            }
+        }))
+}
+
+fn to_num_value_iter_test<'a>(function_name: &'a str, args: &'a Vec<Value>, _range: &'a Range, errors: &'a mut Vec<Error>, globals: &'a Globals) -> Result<impl Iterator<Item=&'a Value> + 'a, Value> {
+    if let Some(wrong_value) = args.iter().map(|v| v.iter()).flatten().find(|v| v.as_number().is_none()) {
+        return Err(add_error_value(errors, ErrorId::FuncArgWrongType, wrong_value.stmt_range.clone(), &[function_name, "They must be numeric."]));
+    }
+    Ok(args.iter()
+        .map(|v| v.iter())
+        .flatten()
+        .map(|value| {
+            if let Variant::Numeric { .. } = &value.variant {
+                value
+            } else {
+                unreachable!("checked above.")
+            }
+        }))
+}
+

@@ -1,1 +1,2 @@
-lizt=1,2,3; sum(lizt,4);
+lizt=1,2,3,4; sum(lizt,5);
+//sum(1,2,3,4);

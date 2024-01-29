@@ -144,4 +144,55 @@ impl Value {
         }
     }
 
+    pub fn iter(&self) -> Iter {
+        Iter {
+            inner: Box::new(Item { parent: None, opt: Some(self), iter: None }),
+        }
+    }
+
+}
+
+struct Item<'a> {
+    parent: Option<&'a Box<Item<'a>>>,
+    opt: Option<&'a Value>,
+    iter: Option<Box<dyn Iterator<Item=&'a Value> + 'a>>,
+}
+
+//https://fasterthanli.me/articles/recursive-iterators-rust
+
+impl<'a> Iterator for Item<'a> {
+    type Item = &'a Value;
+
+    fn next(&mut self) -> Option<&'a Value> {
+        if let Some(value) = self.opt {
+            match &value.variant {
+                Variant::List { values } => {
+                    match &mut self.iter {
+                        None => {
+                            self.iter = Some(Box::new(values.iter()));
+                            self.iter.as_mut().unwrap().next() //unwrap: just created it.
+                        }
+                        Some(ref mut iter) => {
+                            iter.next()
+                        }
+                    }
+                },
+                _ => self.opt.take()
+            }
+        } else {
+            self.opt.take()
+        }
+    }
+}
+
+pub struct Iter<'a> {
+    inner: Box<Item<'a>>,
+}
+
+impl<'a> Iterator for Iter<'a> {
+    type Item = &'a Value;
+
+    fn next(&mut self) -> Option<&'a Value> {
+        self.inner.next()
+    }
 }
