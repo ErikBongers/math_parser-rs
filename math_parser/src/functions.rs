@@ -150,6 +150,7 @@ pub fn create_global_function_defs() -> HashMap<String, GlobalFunctionDef> {
         ("max".to_string(), GlobalFunctionDef { name: "max".to_string(), min_args: 2, max_args: 999, execute: max, func_type: FunctionType::Arithm}),
         ("min".to_string(), GlobalFunctionDef { name: "min".to_string(), min_args: 2, max_args: 999, execute: min, func_type: FunctionType::Arithm}),
 
+        ("flatten".to_string(), GlobalFunctionDef { name: "flatten".to_string(), min_args: 1, max_args: 999, execute: flatten, func_type: FunctionType::Arithm}),
         ("reverse".to_string(), GlobalFunctionDef { name: "reverse".to_string(), min_args: 2, max_args: 999, execute: reverse, func_type: FunctionType::Arithm}),
         ("sort".to_string(), GlobalFunctionDef { name: "sort".to_string(), min_args: 2, max_args: 999, execute: sort, func_type: FunctionType::Arithm}),
         ("first".to_string(), GlobalFunctionDef { name: "first".to_string(), min_args: 2, max_args: 999, execute: first, func_type: FunctionType::Arithm}),
@@ -507,6 +508,11 @@ fn sum(global_function_def: &GlobalFunctionDef, scope: &Rc<RefCell<Scope>>, args
     };
     number.convert_to_unit(&first_unit, &scope.borrow().units_view, range, errors, globals);
     Value::from_number(number, range.clone())
+}
+
+fn flatten(_global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>, _globals: &Globals) -> Value {
+    let flat_vec = recursive_iter(args).cloned().collect();
+    Value::from_list(flat_vec, range.clone())
 }
 
 #[inline]

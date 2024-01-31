@@ -130,7 +130,8 @@ Like units, an output format can be specified with dot notation.
 * ```max(randomNumbers); // lists (arrays) can also be used as arguments```
 * `|x|` is the same as `abs(x)`
 * Dates: `now(), date(year, month, day)`
-* Lists: `sort(), reverse(), max(), min(), avg()`
+* Lists: `sort(), reverse(), max(), min(), avg(), flatten(), first(), last()`\
+The `flatten()` function flattens nested lists: `(1, ((2,3), 4, 5), 6)` -> `(1,2,3,4,5,6)`
 
 ### Custom functions
 Statements can be grouped in functions as well.

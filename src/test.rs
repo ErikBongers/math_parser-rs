@@ -149,11 +149,9 @@ hundred(a);
     test_result("lizt=1,2,3; sum(lizt,4);", 10.0, "");
     test_result("lizt=(1,(2,3),4); list2=(5, lizt); sum(1, list2,6);", 22.0, "");
     test_result("lizt=((5, (1,(2,3),4)), 1); sum(lizt);", 16.0, "");
-    //TODO: implement flatten()
-
-    // test_result("lizt=((5, (1,(2,3),4)), 1); first(lizt);", 5.0, "");
-    // test_result("lizt=((5, (1,(2,3),4)), 1); last(lizt);", 1.0, "");
-    // test_result("lizt=((5, (1,(2,3),4)), 3); avg(lizt);", 3.0, "");
+    test_result("lizt=((5, (1,(2,3),4)), 1); first(flatten(lizt));", 5.0, "");
+    test_result("lizt=((5, (1,(2,3),4)), 1); last(flatten(lizt));", 1.0, "");
+    test_result("lizt=((5, (1,(2,3),4)), 3); avg(flatten(lizt));", 3.0, "");
     test_error("sum(1, now());", ErrorId::FuncArgWrongType);
 }
 

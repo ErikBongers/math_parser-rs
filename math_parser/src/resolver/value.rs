@@ -95,6 +95,15 @@ impl Value {
         }
     }
 
+    pub fn from_list(values: Vec<Value>, range: Range) -> Self {
+        Value {
+            id: None,
+            stmt_range: range,
+            variant: Variant::List { values },
+            has_errors: false,
+        }
+    }
+
     pub fn from_date(date: Timepoint, range: Range) -> Self {
         Value {
             id: None,
