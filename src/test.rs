@@ -146,7 +146,9 @@ hundred(a);
     test_error("function doppel(x) {}; function doppel(x){}", ErrorId::WFunctionOverride);
     test_result("sum(1,2,3,4);", 10.0, "");
     test_result("lizt=1,2,3; sum(lizt,4);", 10.0, "");
-    test_error("sum(1, now());", ErrorId::ExpectedNumericValue);
+    test_result("lizt=(1,(2,3),4); list2=(5, lizt); sum(1, list2,6);", 22.0, "");
+    test_result("lizt=((5, (1,(2,3),4)), 1); sum(lizt);", 16.0, "");
+    test_error("sum(1, now());", ErrorId::FuncArgWrongType);
 }
 
 #[test]

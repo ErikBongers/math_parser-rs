@@ -1,2 +1,3 @@
-lizt=1,2,3,4; sum(lizt,5);
+sum(1, now());
+//lizt=(1,(2,3),4); list2=(5, lizt); sum(1, list2,6);
 //sum(1,2,3,4);

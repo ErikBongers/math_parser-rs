@@ -584,12 +584,10 @@ fn with_num_vec_test(function_def: &dyn FunctionDef, args: &Vec<Value>, range: &
 }
 
 fn to_num_iter_test<'a>(function_name: &'a str, args: &'a Vec<Value>, _range: &'a Range, errors: &'a mut Vec<Error>, globals: &'a Globals) -> Result<impl Iterator<Item=f64> + 'a, Value> {
-    if let Some(wrong_value) = args.iter().map(|v| v.iter()).flatten().find(|v| v.as_number().is_none()) {
+    if let Some(wrong_value) = flatten_iter(args).find(|v| v.as_number().is_none()) {
         return Err(add_error_value(errors, ErrorId::FuncArgWrongType, wrong_value.stmt_range.clone(), &[function_name, "They must be numeric."]));
     }
-    Ok(args.iter()
-        .map(|v| v.iter())
-        .flatten()
+    Ok(flatten_iter(args)
         .map(|value| {
             if let Variant::Numeric { number, .. } = &value.variant {
                 number.to_si(globals).to_double()
@@ -600,12 +598,10 @@ fn to_num_iter_test<'a>(function_name: &'a str, args: &'a Vec<Value>, _range: &'
 }
 
 fn to_num_value_iter_test<'a>(function_name: &'a str, args: &'a Vec<Value>, _range: &'a Range, errors: &'a mut Vec<Error>, globals: &'a Globals) -> Result<impl Iterator<Item=&'a Value> + 'a, Value> {
-    if let Some(wrong_value) = args.iter().map(|v| v.iter()).flatten().find(|v| v.as_number().is_none()) {
+    if let Some(wrong_value) = flatten_iter(args).find(|v| v.as_number().is_none()) {
         return Err(add_error_value(errors, ErrorId::FuncArgWrongType, wrong_value.stmt_range.clone(), &[function_name, "They must be numeric."]));
     }
-    Ok(args.iter()
-        .map(|v| v.iter())
-        .flatten()
+    Ok(flatten_iter(args)
         .map(|value| {
             if let Variant::Numeric { .. } = &value.variant {
                 value
@@ -613,5 +609,65 @@ fn to_num_value_iter_test<'a>(function_name: &'a str, args: &'a Vec<Value>, _ran
                 unreachable!("checked above.")
             }
         }))
+}
+
+pub fn flatten_iter(value_list: &Vec<Value>) -> FlattenIter {
+    FlattenIter {
+        inner: VecValueIterHolder { iter: Box::new(value_list.iter()), child_iter: None },
+    }
+}
+
+pub struct FlattenIter<'a> {
+    inner: VecValueIterHolder<'a>,
+}
+
+impl<'a> Iterator for FlattenIter<'a> {
+    type Item = &'a Value;
+
+    fn next(&mut self) -> Option<&'a Value> {
+        self.inner.next()
+    }
+}
+
+struct VecValueIterHolder<'a> {
+    iter: Box<dyn Iterator<Item=&'a Value> + 'a>,
+    child_iter: Option<Box<FlattenIter<'a>>>,
+}
+
+impl<'a> Iterator for VecValueIterHolder<'a> {
+    type Item = &'a Value;
+
+    fn next(&mut self) -> Option<&'a Value> {
+        //first check if we're iterating childs.
+        if let Some(ref mut child_iter) = self.child_iter {
+            let the_next = child_iter.next();
+            if the_next.is_some() {
+                return the_next;
+            }
+            //child_iter is finished.
+            self.child_iter = None;
+            return self.get_next();
+        } else {
+            return self.get_next();
+        }
+    }
+}
+
+impl<'a> VecValueIterHolder<'a> {
+    pub fn get_next(&mut self) -> Option<&'a Value> {
+        let Some(value) = self.iter.next() else {
+            return None;
+        };
+        match &value.variant {
+            Variant::List { values } => {
+                if values.is_empty() {
+                    return self.next();
+                }
+                self.child_iter = Some(Box::new(FlattenIter{ inner: VecValueIterHolder { iter: Box::new(values.iter()), child_iter: None } }));
+                self.child_iter.as_mut().unwrap().next() //unwrap: we just set the child_iter.
+            },
+            _ => Some(value)
+        }
+    }
 }
 
