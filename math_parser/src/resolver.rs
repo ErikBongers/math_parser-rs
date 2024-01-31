@@ -307,7 +307,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
             let mut args_ref = &arg_values;
             let mut exploded_args = Vec::new();
             if fd.get_min_args() > 1 {
-                args_ref = explode_args(&arg_values, &mut exploded_args);
+                args_ref = explode_if_one_arg(&arg_values, &mut exploded_args);
             }
 
             if !fd.is_correct_arg_count(args_ref.len()) {
@@ -565,7 +565,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
     }
 }
 
-pub fn explode_args<'a>(args: &'a Vec<Value>, exploded_args: &'a mut Vec<Value>) -> &'a Vec<Value> {
+pub fn explode_if_one_arg<'a>(args: &'a Vec<Value>, exploded_args: &'a mut Vec<Value>) -> &'a Vec<Value> {
     if args.len() != 1 {
         return args;
     }
