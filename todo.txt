@@ -1,36 +1,4 @@
-* : sum((1,2,3),4) -> error : needs to explode the args recursively.
-  > Option.iter:
-    >
-pub const fn iter(&self) -> Iter<'_, T> {
-        Iter { inner: Item { opt: self.as_ref() } }
-    }
-
-pub struct Iter<'a, A: 'a> {
-    inner: Item<&'a A>,
-}
-
-#[stable(feature = "rust1", since = "1.0.0")]
-impl<'a, A> Iterator for Iter<'a, A> {
-    type Item = &'a A;
-
-    #[inline]
-    fn next(&mut self) -> Option<&'a A> {
-        self.inner.next()
-    }
-}
-
-struct Item<A> {
-    opt: Option<A>,
-}
-
-impl<A> Iterator for Item<A> {
-    type Item = A;
-
-    #[inline]
-    fn next(&mut self) -> Option<A> {
-        self.opt.take()
-    }
-}
+* implement flatten()
 
 * ErrorId: implement with macro?
   > Can't split a string literal.

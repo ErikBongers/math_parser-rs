@@ -4,12 +4,13 @@ use std::rc::Rc;
 use chrono::{Datelike, Utc};
 use crate::resolver::scope::Scope;
 use crate::errors::{Error, ErrorId};
-use crate::date::{Timepoint, Day};
-use crate::date::{month_from_int};
+use crate::date::{Day, Timepoint};
+use crate::date::month_from_int;
 use crate::parser::nodes::{CodeBlock, FunctionDefExpr};
 use crate::resolver::{add_error, add_error_value, Resolver};
 use crate::globals::Globals;
 use crate::number::Number;
+use crate::resolver::recursive_iterator::recursive_iter;
 use crate::resolver::unit::{Unit, UnitProperty};
 use crate::resolver::value::{NumberFormat, Value};
 use crate::resolver::value::Variant;
@@ -189,19 +190,19 @@ fn sqrt(global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, ar
     Value::from_number(Number {significand: number.to_double().sqrt(), exponent: 0, unit: number.unit.clone(), fmt: NumberFormat::Dec }, range.clone())
 }
 fn max(global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
-    with_num_vec(global_function_def, &args, range, errors, globals, |num_vec| {
+    with_num_vec_or_error_value(global_function_def, &args, range, errors, globals, |num_vec| {
         num_vec.into_iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(0.0)
     })
 }
 
 fn min(global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
-    with_num_vec(global_function_def, &args, range, errors, globals, |num_vec| {
+    with_num_vec_or_error_value(global_function_def, &args, range, errors, globals, |num_vec| {
         num_vec.into_iter().min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(0.0)
     })
 }
 
 fn avg(global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
-    with_num_vec(global_function_def, &args, range, errors, globals, |num_vec| {
+    with_num_vec_or_error_value(global_function_def, &args, range, errors, globals, |num_vec| {
         let val = num_vec.into_iter().reduce(|tot, num| tot + num).unwrap_or(0.0);
         val / args.len() as f64
     })
@@ -326,40 +327,12 @@ fn last(_global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, a
     args.last().unwrap().clone()
 }
 
-fn with_num_vec(function_def: &dyn FunctionDef, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals, func: impl Fn(Vec<f64>) -> f64) -> Value {
-    let num_iter = match  to_num_iter(function_def.get_name(), &args, range, errors, globals) {
-        Ok(num_iter) => num_iter,
-        Err(error_value) => { return error_value; }
-    };
-
-    let num_vec = num_iter.collect();
-    let mut val = Value::from_number(Number { significand: func(num_vec), exponent: 0, unit: Unit::none(), fmt: NumberFormat::Dec }, range.clone());
-    let Some(number) = match_arg_number(function_def, &args[0], range, errors) else { return Value::error(range.clone()); };
-    let si_id = globals.unit_defs.get(&number.unit.id).unwrap().si_id;
-    val.as_number_mut().unwrap().unit.id = si_id.to_string();
-    val
-}
-
 fn match_arg_number<'a>(function_def: &dyn FunctionDef, args: &'a Value, range: &Range, errors: &mut Vec<Error>) -> Option<&'a Number> {
     let Variant::Numeric { number, .. } = &args.variant else {
         add_error(errors, ErrorId::FuncArgWrongType, range.clone(), &[function_def.get_name()]);
         return None;
     };
     Some(number)
-}
-
-fn to_num_iter<'a>(function_name: &'a str, args: &'a Vec<Value>, _range: &'a Range, errors: &'a mut Vec<Error>, globals: &'a Globals) -> Result<impl Iterator<Item=f64> + 'a, Value> {
-    if let Some(wrong_value) = args.iter().find(|v| v.as_number().is_none()) {
-        return Err(add_error_value(errors, ErrorId::FuncArgWrongType, wrong_value.stmt_range.clone(), &[function_name, "They must be numeric."]));
-    }
-    Ok(args.iter()
-        .map(|value| {
-            if let Variant::Numeric { number, .. } = &value.variant {
-                number.to_si(globals).to_double()
-            } else {
-                unreachable!("checked above.")
-            }
-        }))
 }
 
 fn inc(global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
@@ -473,32 +446,6 @@ pub fn execute_custom_function(local_function_def: &CustomFunctionDef, _scope: &
     result
 }
 
-pub fn explode_args<'a>(args: &'a Vec<Value>, exploded_args: &'a mut Vec<Value>) -> &'a Vec<Value> {
-    if args.len() != 1 {
-        return args;
-    }
-
-    if let Variant::List{values} = &args[0].variant {
-        exploded_args.clone_from(values);
-        exploded_args
-    } else {
-        args
-    }
-}
-
-pub fn explode_args_recursive<'a>(args: &'a Vec<Value>, exploded_args: &'a mut Vec<Value>) -> &'a Vec<Value> {
-    if args.len() != 1 {
-        return args;
-    }
-
-    if let Variant::List{values} = &args[0].variant {
-        exploded_args.clone_from(values);
-        exploded_args
-    } else {
-        args
-    }
-}
-
 fn now(_global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, _args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>, _globals: &Globals) -> Value {
 
     let current_date = Utc::now();
@@ -543,34 +490,32 @@ fn date_func(global_function_def: &GlobalFunctionDef, scope: &Rc<RefCell<Scope>>
 fn sum(global_function_def: &GlobalFunctionDef, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
     let (mut number, first_unit) =
     { //`errors` is borrowed by iterators, so get iterators out of scope before using `errors` again.
-        let num_iter = match to_num_iter_test(global_function_def.get_name(), &args, range, errors, globals) {
+        let num_iter = match to_num_iter(global_function_def.get_name(), &args, range, errors, globals) {
             Ok(num_iter) => num_iter,
             Err(error_value) => { return error_value; }
         };
 
-        let mut res = num_iter.reduce(|tot, num| tot + num).unwrap_or(0.0);
+        let res = num_iter.reduce(|tot, num| tot + num).unwrap_or(0.0);
         //get si_unit of first arg:
-        //TODO: rename these new iterators to "...exploding_iter..."
-        //TODO: perhaps start with an exploding_value_iter and then pass it to an as_number_iter...although that would just be a map()...
-        let mut num_value_iter = match to_num_value_iter_test(global_function_def.get_name(), &args, range, errors, globals) {
-            Ok(num_iter) => num_iter,
-            Err(error_value) => { return error_value; }
-        };
-
-        let first_num_value = num_value_iter.next();
-        let Some(first_num_value) = first_num_value else { return Value::error(range.clone()); };
+        let first_value = recursive_iter(args).next();
+        let Some(first_num_value) = first_value else { return Value::error(range.clone()); };
         let Some(first_number) = first_num_value.as_number()  else { return Value::error(range.clone()); };
         let si_id = globals.unit_defs.get(&first_number.unit.id).unwrap().si_id;
         let first_unit = first_number.unit.clone();
-        let mut number = Number { significand: res, exponent: 0, unit: Unit::from_id(si_id), fmt: NumberFormat::Dec };
+        let number = Number { significand: res, exponent: 0, unit: Unit::from_id(si_id), fmt: NumberFormat::Dec };
         (number, first_unit)
     };
     number.convert_to_unit(&first_unit, &scope.borrow().units_view, range, errors, globals);
     Value::from_number(number, range.clone())
 }
 
-fn with_num_vec_test(function_def: &dyn FunctionDef, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals, func: impl Fn(Vec<f64>) -> f64) -> Result<Value, Value> {
-    let num_iter = match  to_num_iter_test(function_def.get_name(), &args, range, errors, globals) {
+#[inline]
+fn with_num_vec_or_error_value(function_def: &dyn FunctionDef, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals, func: impl Fn(Vec<f64>) -> f64) -> Value {
+    with_num_vec(function_def, args, range, errors, globals, func).unwrap_or_else(|err_value| err_value)
+}
+
+fn with_num_vec(function_def: &dyn FunctionDef, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals, func: impl Fn(Vec<f64>) -> f64) -> Result<Value, Value> {
+    let num_iter = match  to_num_iter(function_def.get_name(), &args, range, errors, globals) {
         Ok(num_iter) => num_iter,
         Err(error_value) => { return Err(error_value); }
     };
@@ -583,11 +528,11 @@ fn with_num_vec_test(function_def: &dyn FunctionDef, args: &Vec<Value>, range: &
     Ok(value)
 }
 
-fn to_num_iter_test<'a>(function_name: &'a str, args: &'a Vec<Value>, _range: &'a Range, errors: &'a mut Vec<Error>, globals: &'a Globals) -> Result<impl Iterator<Item=f64> + 'a, Value> {
-    if let Some(wrong_value) = flatten_iter(args).find(|v| v.as_number().is_none()) {
+fn to_num_iter<'a>(function_name: &'a str, args: &'a Vec<Value>, _range: &'a Range, errors: &'a mut Vec<Error>, globals: &'a Globals) -> Result<impl Iterator<Item=f64> + 'a, Value> {
+    if let Some(wrong_value) = recursive_iter(args).find(|v| v.as_number().is_none()) {
         return Err(add_error_value(errors, ErrorId::FuncArgWrongType, wrong_value.stmt_range.clone(), &[function_name, "They must be numeric."]));
     }
-    Ok(flatten_iter(args)
+    Ok(recursive_iter(args)
         .map(|value| {
             if let Variant::Numeric { number, .. } = &value.variant {
                 number.to_si(globals).to_double()
@@ -596,78 +541,3 @@ fn to_num_iter_test<'a>(function_name: &'a str, args: &'a Vec<Value>, _range: &'
             }
         }))
 }
-
-fn to_num_value_iter_test<'a>(function_name: &'a str, args: &'a Vec<Value>, _range: &'a Range, errors: &'a mut Vec<Error>, globals: &'a Globals) -> Result<impl Iterator<Item=&'a Value> + 'a, Value> {
-    if let Some(wrong_value) = flatten_iter(args).find(|v| v.as_number().is_none()) {
-        return Err(add_error_value(errors, ErrorId::FuncArgWrongType, wrong_value.stmt_range.clone(), &[function_name, "They must be numeric."]));
-    }
-    Ok(flatten_iter(args)
-        .map(|value| {
-            if let Variant::Numeric { .. } = &value.variant {
-                value
-            } else {
-                unreachable!("checked above.")
-            }
-        }))
-}
-
-pub fn flatten_iter(value_list: &Vec<Value>) -> FlattenIter {
-    FlattenIter {
-        inner: VecValueIterHolder { iter: Box::new(value_list.iter()), child_iter: None },
-    }
-}
-
-pub struct FlattenIter<'a> {
-    inner: VecValueIterHolder<'a>,
-}
-
-impl<'a> Iterator for FlattenIter<'a> {
-    type Item = &'a Value;
-
-    fn next(&mut self) -> Option<&'a Value> {
-        self.inner.next()
-    }
-}
-
-struct VecValueIterHolder<'a> {
-    iter: Box<dyn Iterator<Item=&'a Value> + 'a>,
-    child_iter: Option<Box<FlattenIter<'a>>>,
-}
-
-impl<'a> Iterator for VecValueIterHolder<'a> {
-    type Item = &'a Value;
-
-    fn next(&mut self) -> Option<&'a Value> {
-        //first check if we're iterating childs.
-        if let Some(ref mut child_iter) = self.child_iter {
-            let the_next = child_iter.next();
-            if the_next.is_some() {
-                return the_next;
-            }
-            //child_iter is finished.
-            self.child_iter = None;
-            return self.get_next();
-        } else {
-            return self.get_next();
-        }
-    }
-}
-
-impl<'a> VecValueIterHolder<'a> {
-    pub fn get_next(&mut self) -> Option<&'a Value> {
-        let Some(value) = self.iter.next() else {
-            return None;
-        };
-        match &value.variant {
-            Variant::List { values } => {
-                if values.is_empty() {
-                    return self.next();
-                }
-                self.child_iter = Some(Box::new(FlattenIter{ inner: VecValueIterHolder { iter: Box::new(values.iter()), child_iter: None } }));
-                self.child_iter.as_mut().unwrap().next() //unwrap: we just set the child_iter.
-            },
-            _ => Some(value)
-        }
-    }
-}
-

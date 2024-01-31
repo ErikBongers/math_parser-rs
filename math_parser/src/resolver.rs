@@ -3,12 +3,13 @@ pub mod operator;
 pub mod scope;
 mod serialize;
 pub mod unit;
+pub mod recursive_iterator;
 
 use std::cell::RefCell;
 use std::rc::Rc;
 use crate::date::{DateFormat, Duration, parse_date_string};
 use crate::errors::{Error, ErrorId, has_real_errors};
-use crate::functions::{explode_args, FunctionType};
+use crate::functions::FunctionType;
 use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, DefineExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NodeType, PostfixExpr, Statement, UnaryExpr, UnitExpr};
 use crate::globals::Globals;
 use crate::number::{Number, parse_formatted_number};
@@ -561,5 +562,18 @@ impl<'g, 'a> Resolver<'g, 'a> {
             }
         }
         result
+    }
+}
+
+pub fn explode_args<'a>(args: &'a Vec<Value>, exploded_args: &'a mut Vec<Value>) -> &'a Vec<Value> {
+    if args.len() != 1 {
+        return args;
+    }
+
+    if let Variant::List{values} = &args[0].variant {
+        exploded_args.clone_from(values);
+        exploded_args
+    } else {
+        args
     }
 }
