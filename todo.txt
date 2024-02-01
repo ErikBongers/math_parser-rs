@@ -1,4 +1,5 @@
-* implement flatten()
+* Update NPM
+  :  npm install -g npm@10.4.0
 
 * ErrorId: implement with macro?
   > Can't split a string literal.
@@ -9,6 +10,9 @@
     ...
   > Perhaps a macro that takes the ID and generates a constant &str with the ID_STR name?
     > another macro that 'takes' the ID_STR based on the ID to format!() the message?
+
+* dark mode :
+  : @media (prefers-color-scheme: dark) {...}
 
 * number strings.
   > allow underscores? Currency signs? Minus? Exponential?

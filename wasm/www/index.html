@@ -20,16 +20,26 @@
             Math Parser
         </h1>
     </div>
-    <div id="script-selector">
-        <select name="script" id="scriptSelector" onchange="onScriptSwitch()">
-            <option value="start">Startup script</option>
-            <option value="script1" selected>Script 1</option>
-        </select>
+    <div id="script-name">
+        main script
     </div>
     <div class="right">
         <div id="userName">Not logged in...</div>
-        <div class="help">
-            <a href="https://github.com/ErikBongers/MathParser#readme" target="_blank">Help</a>
+        <div class="dropdown">
+            <img src="./images/gear.png" alt="Menu" width="30" height="30">
+            <div class="dropdown-content">
+                <a href="javascript:void(0);" class="bullet" id="viewMainScript">View main script</a>
+                <a href="javascript:void(0);" id="viewStartupScript">View startup script</a>
+                <hr>
+                <a href="javascript:void(0);" id="setDarkMode">Dark mode</a>
+                <a href="javascript:void(0);" class="bullet" id="setLightMode">Light mode</a>
+                <hr>
+                <p>Show</p>
+                <a href="javascript:void(0);" class="checked" id="hideShowLineNumbers">Line numbers</a>
+                <a href="javascript:void(0);" class="checked" id="hideShowErrorColumn">Error column</a>
+                <hr>
+                <a href="https://github.com/ErikBongers/MathParser#readme" target="_blank">Help</a>
+            </div>
         </div>
     </div>
 </header>
@@ -42,9 +52,6 @@
             </div>
             <div id="input">
                 <div id="txtInput"></div>
-            </div>
-            <div id="output">
-                <div id="txtOutput" spellcheck="false" rows="8"></div>
             </div>
         </div>
     </div>
@@ -61,6 +68,7 @@
 </script>
 <script type="module" src="./api.wasm.js"></script>
 <script src="editor.bundle.js"></script>
+<script type="module" src="./menu.js"></script>
 <script type="module" src="./parser.js"></script>
 <script type="module" src="./cloud.js"></script>
 <script defer type="text/javascript" src="keyboard.js"></script>

@@ -86,27 +86,6 @@ function prefixErrorMessage(e) {
 	return sourcePrefix + e.msg;
 }
 
-function lineToOutputString (line) {
-	if (line.onlyComment === true) {
-		return "//" + line.comment;
-	}
-	let strComment = "";
-	if (line.comment)
-		strComment = " //" + line.comment;
-	let strNL = "";
-	let strText = "";
-	if (line.text)
-		strText = " " + line.text;
-	let strLine = "";
-	let strFormatted = formatResult(line);
-
-	if (!line.mute)
-		strLine += (line.id ? line.id + "=" : "") + strFormatted;
-	strLine += strText;
-	strLine += strComment;
-	return strLine;
-}
-
 export function linetoResultString (line) {
 	if (line.type === "Comment") {
 		return line.comment;
@@ -125,31 +104,6 @@ export function linetoResultString (line) {
 	return strLine;
 }
 
-/*
-function formatFloatString (floatString, exponent) {
-	var sFixed = parseFloat(floatString).toFixed(5);
-	if (sFixed.search(".") == -1)
-		return sFixed;
-	var sResult = "";
-	var removeLastZero = true;
-	[...sFixed].slice().reverse().forEach(function (c) {
-		if (c === '.' && removeLastZero) //all decimals are zero > remove dot
-		{
-			removeLastZero = false;
-			return;
-		}
-		if (c !== '0' || !removeLastZero) {
-			removeLastZero = false;
-			sResult = c + sResult;
-		}
-	});
-	if (exponent !== 0) {
-		sResult += "E" + exponent;
-	}
-	return sResult;
-}
-*/
-
 export function outputResult(result, sourceIndex) {
 	activeDocumentIndex = sourceIndex;
 	console.debug(result);
@@ -158,11 +112,6 @@ export function outputResult(result, sourceIndex) {
 	var strResult = "";
 	try {
 		result = JSON.parse(result); //may throw...
-		for (let line of result.result) {
-			let strLine = lineToOutputString(line);
-			if (strLine.length > 0)
-				strOutput += strLine + "\n";
-		}
 		let lineCnt = 0;
 		let lineAlreadyFilled = false;
 		for (let line of result.result) {

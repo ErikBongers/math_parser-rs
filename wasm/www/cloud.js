@@ -1,4 +1,5 @@
 import * as mp from "./parser.js"
+import * as menu from "./menu.js"
 import { MathParser } from './pack/wasm.js';
 
 let userSession = {};
@@ -19,7 +20,7 @@ export function onSignedIn(googleUserToken) {
             document.getElementById("userName").innerHTML = jsonUserSession.user.name;
             userSession = jsonUserSession;
             setCookie("mathparserSession", JSON.stringify(userSession), 1);
-            let scriptId = document.getElementById("scriptSelector").value;
+            let scriptId = getCurrentScriptId();
             promptAndUseServerFile(scriptId);
         });
 }
@@ -97,7 +98,7 @@ async function downloadScript(scriptId) {
 
 function getLocalScript(scriptId) {
     let txt = "";
-    if (scriptId == "start")
+    if (scriptId === "start")
         txt = localStorage.savedStartCode;
 
     else
@@ -108,22 +109,22 @@ function getLocalScript(scriptId) {
 
 export function saveScript(scriptId) {
     uploadScript(scriptId, cm.editor.state.doc.toString());
-    if (scriptId == "start") {
+    if (scriptId === "start") {
         localStorage.savedStartCode = cm.editor.state.doc.toString();
     } else {
         localStorage.savedCode = cm.editor.state.doc.toString();
     }
 }
 
-export function onScriptSwitch() {
-    let scriptId = document.getElementById("scriptSelector").value
-    if (scriptId == "start") {
+export function switchToScript(scriptId) {
+    if (scriptId === "start") {
         promptAndUseServerFile("start");
         localStorage.lastScript = "start";
     } else {
         promptAndUseServerFile("script1");
         localStorage.lastScript = "script1";
     }
+    document.getElementById("script-name").innerHTML = getCurrentScriptName();
 }
 
 let parserInstance = {}
@@ -139,22 +140,32 @@ export function startUp() {
         return mp.errorsForLint;
     });
 
-    if (window.innerWidth > 480)
-        cm.showGutter();
-    else
-        cm.hideGutter();
-
-    let startScript = "script1";
-    if (localStorage.lastScript)
-        startScript = localStorage.lastScript;
-    document.getElementById("scriptSelector").value = startScript;
+    menu.updateMenu();
+    menu.updateGutter();
+    let startScript = getCurrentScriptId();
+    menu.setScript(startScript);
+    document.getElementById("script-name").innerHTML = getCurrentScriptName();
     let txt = getLocalScript(startScript);
     let transaction = cm.editor.state.update({ changes: { from: 0, to: cm.editor.state.doc.length, insert: txt } });
     cm.editor.update([transaction]);
 }
 
+function getCurrentScriptId() {
+    let startScript = "script1";
+    if (localStorage.lastScript)
+        startScript = localStorage.lastScript;
+    return startScript;
+}
+
+function getCurrentScriptName() {
+    if (getCurrentScriptId() === "start")
+        return "start script";
+    else
+        return "main script";
+}
+
 export function afterEditorChange() {
-    let scriptId = document.getElementById("scriptSelector").value
+    let scriptId = getCurrentScriptId();
     saveScript(scriptId);
     parseAfterChange(scriptId);
 }
