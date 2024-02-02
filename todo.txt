@@ -1,6 +1,3 @@
-* Update NPM
-  :  npm install -g npm@10.4.0
-
 * ErrorId: implement with macro?
   > Can't split a string literal.
   > Macro should create an Error object containing

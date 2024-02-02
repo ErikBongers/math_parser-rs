@@ -51,6 +51,7 @@ fn test_simple_expr (){
     test_result("7-2*3", 1.0, "");
     test_result("7-(2*3)", 1.0, "");
     test_result("(7-2)*3", 15.0, "");
+    test_result("1*2+3*4+5*6", 44.0, "");
 }
 
 #[test]

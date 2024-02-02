@@ -333,15 +333,18 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     }
 
     fn parse_add_expr(&mut self) -> Box<Node> {
-        let expr1 = self.parse_mult_expr();
-        match self.tok.peek().kind {
-            TokenType::Plus | TokenType::Min => {
-                let op = self.tok.next().clone();
-                let expr2 = self.parse_mult_expr();
-                Node::boxed(NodeType::Binary(BinExpr { expr1, op, expr2, implicit_mult: false }))
-            },
-            _ => expr1
-        }
+        let mut expr1 = self.parse_mult_expr();
+        loop {
+            match self.tok.peek().kind {
+                TokenType::Plus | TokenType::Min => {
+                    let op = self.tok.next().clone();
+                    let expr2 = self.parse_mult_expr();
+                    expr1 = Node::boxed(NodeType::Binary(BinExpr { expr1, op, expr2, implicit_mult: false }))
+                }
+                _ => break
+            }
+        };
+        expr1
     }
 
     fn parse_mult_expr(&mut self) -> Box<Node> {
