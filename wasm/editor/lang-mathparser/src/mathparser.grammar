@@ -1,0 +1,169 @@
+@precedence {
+  intersection @left,
+  member,
+  call,
+  prefix,
+  postfix,
+  exp @left,
+  times @left,
+  plus @left,
+  shift @left,
+  rel @left,
+  equal @left,
+  assign @right,
+  comma @left,
+  statement @cut
+}
+
+@top Script { statement+ }
+
+statement[@isGroup=Statement] {
+  AnnotatedStatement
+}
+
+AnnotatedStatement {
+  Annot? ExpressionStatement
+}
+
+ExpressionStatement { expression semi }
+
+expression[@isGroup=Expression] {
+  expressionNoComma | SequenceExpression
+}
+
+SequenceExpression {
+  expressionNoComma !comma ("," expressionNoComma)+
+}
+
+expressionNoComma {
+  Number |
+  String |
+  VariableName |
+  boolean |
+  UnaryExpression |
+  ParenthesizedExpression |
+  MemberExpression |
+  BinaryExpression |
+  AssignmentExpression |
+  PostfixExpression { expressionNoComma !postfix incdec } |
+  CallExpression { identifier ArgList }
+}
+
+ParenthesizedExpression { "(" expression ")" }
+
+UnaryExpression {
+  !prefix (BitOp<"~"> | incdec | incdecPrefix | ArithOp<"+" | "-">)
+  expressionNoComma
+}
+
+BinaryExpression { 
+  expressionNoComma !exp ArithOp<"**"> expressionNoComma |
+  expressionNoComma !times (divide | ArithOp<"%"> | ArithOp<"*">) expressionNoComma |
+  expressionNoComma !plus ArithOp<"+" | "-"> expressionNoComma |
+  expressionNoComma !shift BitOp<">>" ">"? | "<<"> expressionNoComma |
+  expressionNoComma !rel (LessThan | CompareOp<"<=" | ">" "="?> | kw<"instanceof">) expressionNoComma |
+  expressionNoComma !equal CompareOp<"==" "="? | "!=" "="?> expressionNoComma
+}
+
+AssignmentExpression {
+  (VariableName | MemberExpression) !assign UpdateOp<($[+\-/%^] | "*" "*"? | "|" "|"? | "&" "&"? | "<<" | ">>" ">"? | "??") "=">
+    expressionNoComma |
+  (VariableName | MemberExpression) !assign "=" expressionNoComma
+}
+
+MemberExpression {
+  expressionNoComma !member ("." identifier | "[" expression "]")
+}
+
+ArgList {
+  "(" commaSep<expressionNoComma> ")"
+}
+
+commaSep<content> {
+  "" | content ("," content?)*
+}
+
+// Keywords
+
+kw<term> { @specialize[@name={term}]<identifier, term> }
+
+semi { ";" }
+
+boolean { @specialize[@name=BooleanLiteral]<identifier, "true" | "false"> }
+
+VariableName { identifier ~arrow }
+
+@skip { spaces | newline | LineComment | BlockComment | Define }
+
+@context trackNewline from "./tokens.js"
+
+@external tokens incdecToken from "./tokens" {
+ incdec[@name=ArithOp],
+ incdecPrefix[@name=ArithOp]
+}
+
+@tokens {
+  spaces[@export] { $[\u0009 \u000b\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000\ufeff]+ }
+  newline[@export] { $[\r\n\u2028\u2029] }
+
+  LineComment { "//" ![\n]* }
+
+  Define { "#define" ![\n]* }
+
+  Mute { "#" }
+
+  Echo { "!" }
+
+  Annot { Mute | Echo }
+
+  @precedence { Define, Annot }
+
+  // FIXME split into multiple tokens
+  BlockComment { "/*" blockCommentRest }
+
+  blockCommentRest { ![*] blockCommentRest | "*" blockCommentAfterStar }
+
+  blockCommentAfterStar { "/" | "*" blockCommentAfterStar | ![/*] blockCommentRest }
+
+  divide[@name=ArithOp] { "/" }
+
+  @precedence { BlockComment, LineComment, divide }
+
+  @precedence { BlockComment, LineComment }
+
+  identifierChar { std.asciiLetter | $[_$\u{a1}-\u{10ffff}] }
+
+  identifier { identifierChar (identifierChar | std.digit)* }
+
+
+  @precedence { spaces, newline, identifier }
+
+  Number {
+    (std.digit ("_" | std.digit)* ("." ("_" | std.digit)*)? | "." std.digit ("_" | std.digit)*)
+      (("e" | "E") ("+" | "-")? ("_" | std.digit)+)? |
+    std.digit ("_" | std.digit)* "n" |
+    "0x" (std.digit | $[a-fA-F] | "_")+ "n"? |
+    "0b" $[01_]+ "n"? |
+    "0o" $[0-7_]+ "n"?
+  }
+
+  String {
+    '"' (![\\\n"] | "\\" _)* '"'? |
+    "'" (![\\\n'] | "\\" _)* "'"?
+  }
+
+  ArithOp<expr> { expr }
+  BitOp<expr> { expr }
+  CompareOp<expr> { expr }
+  UpdateOp<expr> { expr }
+
+  LessThan[@name=CompareOp] { "<" }
+
+  "="[@name=Equals]
+  "(" ")" "[" "]" "{" "}"
+
+  "?." "." "," ";" ":"
+
+}
+
+@detectDelim
