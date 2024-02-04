@@ -29,7 +29,7 @@
 
 * implement delta symbol shortcut...ctrl D?
 
-* google login: failes more than not.
+* google login: fails more than not.
   > order of scripts?
 
 * document all unwraps.
@@ -48,6 +48,7 @@
 
 * Range: replace { start, end } with &str? It's essentially the same and it's safer.
   > byte indexes can probably still be calculated -> see cursor?
+  > or implement the same way as SourceIndex?
 
 * rethink echo comments
   > only allowed on a separate line and in between statements!

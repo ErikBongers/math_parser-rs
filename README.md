@@ -1,6 +1,3 @@
-12/2023: CURRENTLY CONVERTING FROM CPP TO RUST.
-The online project will still be using the cpp code base.
-
 [![experimental](http://badges.github.io/stability-badges/dist/experimental.svg)](http://github.com/badges/stability-badges)
 # MathParser
 ## Introduction
@@ -261,24 +258,17 @@ theDot = '1,234.56';
 
 ## Technical
 
-### Previous version
-Theprevi project is **MathParserDll** and is written in C++. It is a homebrew recursive descent parser with 2 look-aheads. Advantages of this parser type are that it's intuitive to read and mimicks the grammar definition (EBNF).
-
-### Projects
-* **MathParserDll** main parser project.
-* **MathParserWASM** is a web project that compiles the dll into a WASM file. It is the main user interface.
-* **MathParserWPF** a Windows desktop GUI for the parser dll. 
-* **MathParserLib** C# version. [![deprecated](http://badges.github.io/stability-badges/dist/deprecated.svg)](http://github.com/badges/stability-badges)
-* **MathParserLibTests** C# tests. [![deprecated](http://badges.github.io/stability-badges/dist/deprecated.svg)](http://github.com/badges/stability-badges)
-
+It is a homebrew recursive descent parser with 2 look-aheads. Advantages of this parser type are that it's intuitive to read and mimicks the grammar definition (EBNF).
 Those who are into parser development may want to take a look at the `.ebnf` file (which stands for *Erik's BNF* :))
 
+### Previous version
+The previous verson of this project is written in C++ and can also be found on my github. 
+
 ## Build stack
-All projects in **Visual Studio**, except for the WASM project, which is build in **VS Code**.
-The WASM compilation obviously uses `emscripten`.
-In addition `rollup` is used to bundle the CodeMirror 6 online editor.
+The parser is written in rust and compiled to wasm. 
+In addition `rollup` is used to bundle the CodeMirror 6 online editor for the front end.
 Note that a separate parser is written for CodeMirror syntax highlighting.
-The (json) output of the C++ parser is fed to CodeMirror's *linter* for error annotation.
+The (json) output of the rust parser is fed to CodeMirror's *linter* for error annotation.
 ## Try it
 There's a online version available at [Google Cloud Platform](https://storage.googleapis.com/mathparser/index.html).
 
