@@ -1,0 +1,92 @@
+﻿Note: EBNF means Erik's BNF :) In nonterminals, a newline implies an alternation (another option)
+EBNF of C++ : http://www.externsoft.ch/download/cpp-iso.html
+left or right associativity: https://stackoverflow.com/questions/41784524/preferred-way-of-removing-left-recursion-of-ebnf
+Also note that this language description is never up-to-date.
+I just use this file to sketch out new syntax and search for conflicts or ambiguity.
+
+program = scope EOF
+
+scope = statementBlock
+        '/#' statementsBlock [ '#/' ]  //closing tag is optional.
+
+statementsBlock = { statement | comment }
+
+statement = ('!' | '#') exprStatement ( ';' | EOF )
+            define
+            functionDef
+            '{' scope '}'
+
+define = ('#define' | '#undef') defineOptions EOL
+
+defineOptions = ('date_format' ('mdy' | 'dmy') |  'date_units'
+
+echoComment = '!//' rest_of_line
+
+comment = '//' rest_of_line
+
+functionDef = 'function' id '(' [functionParamDefs] ')' '{' statementBlock '}' [';']
+
+functionParamDefs = { id [ ',' id ] }
+
+exprStatement = addExpr 
+                assignment
+
+assignment = id '=' listExpr
+             id ('+=' | '-=' | '*=' | '/=') addExpr 
+
+addExpr = multExpr [ ("+" | "-") multExpr ]
+
+multExpr = powerExpr [ ("*" | "/" | "%" | "%%") powerExpr ]
+
+powerExpr = impliedMultExpr
+            powerExpr "^" impliedMultExpr
+
+impliedMultExpr = unaryExpr
+                  unaryExpr (id | 
+                             const | 
+                             '(' postFixExpr ')'
+                            )
+
+unaryExpr = postFixExpr
+            ("-" | "+") postFixExpr
+
+postFixExpr = unitExpr 
+            postFixExpr '.' ( "dec" | "hex" | "bin")
+            postFixExpr '.'             // clear unit
+            postFixExpr '.'  id         // assuming a unit
+            postFixExpr '.' ("day" | "year" | "month")
+            postFixExpr '!'
+            primaryExpr ("++" | "--")
+            
+unitExpr = primaryExpr [unit]   //note that the unit is 'glued' to the primary with a dot in between, so this doesn't work for ids.
+
+primaryExpr = const
+              id
+              "(", listExpr, ")"
+              callExpr
+              absExpr
+
+absExpr = '|' addExpr '|'
+
+const = {-} [0..9] unit
+        QUOT formattedDateString QUOT     // a string containing a date that needs parsing 'at runtime', that is, in the Resolver (interpreter)
+        QUOT formattedNumberString QUOT  // a string containing a number that needs parsing 'at runtime', that is, in the Resolver (interpreter)
+
+unit = id
+
+callExpr = funcId '(' listExpr ')'
+
+listExpr = addExpr [ ',' addExpr ]
+
+//how a date string could be parsed:
+//times aren't parsed yet. It's a bit difficult to figure out if a numeric value is a date or time component.
+//perhaps add the requirement that time components MUST be separated by a COLON?
+
+dateString = dateElement dateSeparator dateElement dateSeparator dateElement
+
+dateElement = integer | 'last' | monthName | dayName | timeString
+
+dateSeparator = ' ' | '/' | '-'
+
+timeSeparator = ':'
+timeString = ...

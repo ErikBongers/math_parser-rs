@@ -7,6 +7,9 @@ The online project will still be using the cpp code base.
 Mathparser is a mathematical expression language based on C-style syntax.
 It was created out of a desire for a simple mathematical script language outside of spreadsheets, online c-compilers, mathlab and other math tools.
 I think it may feel more familiar to programmers than those other tools.
+Mathparser is usefull for simple arithmetic and some trigonometry. Don't expect much more than that.
+
+Mathparser is also a sandbox to try out some language design ideas. For example, the units notation and repl style immediate output or formatted output or muting output,....
 
 ## Language reference
 
