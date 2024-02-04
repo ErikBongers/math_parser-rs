@@ -9,38 +9,45 @@ import * as cloud from "./cloud.js"
 // .
 // but what about the startup code?
 
-let radioButtonsScript = ["viewMainScript", "viewStartupScript"];
-let radioButtonsTheme = ["setLightMode", "setDarkMode"];
+const ID_MENU_MAIN_SCRIPT = "viewMainScript";
+const ID_MENU_START_SCRIPT = "viewStartupScript";
+const ID_MENU_LIGHT_MODE = "setLightMode";
+const ID_MENU_DARK_MODE = "setDarkMode";
+const CLASS_BULLET = "bullet";
+const CLASS_CHECKED = "checked";
+
+let radioButtonsScript = [ID_MENU_MAIN_SCRIPT, ID_MENU_START_SCRIPT];
+let radioButtonsTheme = [ID_MENU_LIGHT_MODE, ID_MENU_DARK_MODE];
 
 function switchRadioButton(buttons, button) {
     for (const buttonId of buttons) {
-        document.getElementById(buttonId).classList.remove("bullet");
+        document.getElementById(buttonId).classList.remove(CLASS_BULLET);
     }
     if (typeof button === "string") {
         button = document.getElementById(button);
     }
-    button.classList.add("bullet");
+    button.classList.add(CLASS_BULLET);
 }
 
-document.getElementById("viewMainScript").addEventListener("click", function (e) {
-    if (this.classList.contains("bullet")) {
+document.getElementById(ID_MENU_MAIN_SCRIPT).addEventListener("click", function (e) {
+    if (this.classList.contains(CLASS_BULLET)) {
         return; //already at main script
     }
-    this.classList.add("bullet");
-    document.getElementById("viewStartupScript").classList.remove("bullet");
+    this.classList.add(CLASS_BULLET);
+    document.getElementById(ID_MENU_START_SCRIPT).classList.remove(CLASS_BULLET);
     cloud.switchToScript("script1")
 });
 
-document.getElementById("viewStartupScript").addEventListener("click", function (e) {
-    if (this.classList.contains("bullet")) {
+document.getElementById(ID_MENU_START_SCRIPT).addEventListener("click", function (e) {
+    if (this.classList.contains(CLASS_BULLET)) {
         return; //already at  start script
     }
-    this.classList.add("bullet");
-    document.getElementById("viewMainScript").classList.remove("bullet");
+    this.classList.add(CLASS_BULLET);
+    document.getElementById(ID_MENU_MAIN_SCRIPT).classList.remove(CLASS_BULLET);
     cloud.switchToScript("start")
 });
 
-document.getElementById("setDarkMode").addEventListener("click", function (e) {
+document.getElementById(ID_MENU_DARK_MODE).addEventListener("click", function (e) {
     setLocalStorageTheme(true);
     updateTheme();
     updateMenu();
@@ -51,7 +58,7 @@ function setLocalStorageTheme(dark) {
     localStorage.darkTheme = dark;
 }
 
-document.getElementById("setLightMode").addEventListener("click", function (e) {
+document.getElementById(ID_MENU_LIGHT_MODE).addEventListener("click", function (e) {
     setLocalStorageTheme(false);
     updateTheme();
     updateMenu();
@@ -71,16 +78,16 @@ document.getElementById("hideShowErrorColumn").addEventListener("click", functio
 
 export function menu_setScript(scriptId) {
     if(scriptId === "start") {
-        document.getElementById("viewMainScript").classList.remove("bullet");
-        document.getElementById("viewStartupScript").classList.add("bullet");
+        document.getElementById(ID_MENU_MAIN_SCRIPT).classList.remove(CLASS_BULLET);
+        document.getElementById(ID_MENU_START_SCRIPT).classList.add(CLASS_BULLET);
     } else {
-        document.getElementById("viewMainScript").classList.add("bullet");
-        document.getElementById("viewStartupScript").classList.remove("bullet");
+        document.getElementById(ID_MENU_MAIN_SCRIPT).classList.add(CLASS_BULLET);
+        document.getElementById(ID_MENU_START_SCRIPT).classList.remove(CLASS_BULLET);
     }
 }
 
 function menu_setTheme(dark) {
-    switchRadioButton(radioButtonsTheme, localStorage.darkTheme === "true" ? "setDarkMode" :"setLightMode");
+    switchRadioButton(radioButtonsTheme, localStorage.darkTheme === "true" ? ID_MENU_DARK_MODE :ID_MENU_LIGHT_MODE);
 }
 
 function toggleLocalStorage(id) {
@@ -98,6 +105,6 @@ function updateTheme() {
 export function updateMenu() {
     menu_setScript(localStorage.lastScript);
     menu_setTheme(localStorage.darkTheme==="true");
-    document.getElementById("hideShowLineNumbers").classList.toggle("checked", localStorage.showLineNumbers==="true");
-    document.getElementById("hideShowErrorColumn").classList.toggle("checked", localStorage.showErrors==="true");
+    document.getElementById("hideShowLineNumbers").classList.toggle(CLASS_CHECKED, localStorage.showLineNumbers==="true");
+    document.getElementById("hideShowErrorColumn").classList.toggle(CLASS_CHECKED, localStorage.showErrors==="true");
 }
