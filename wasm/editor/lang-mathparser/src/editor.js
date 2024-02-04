@@ -6,7 +6,7 @@ import { history, historyKeymap } from '@codemirror/commands';
 import { foldGutter, foldKeymap } from '@codemirror/language';
 import { lineNumbers, highlightActiveLineGutter } from '@codemirror/view';
 import { defaultKeymap } from '@codemirror/commands';
-import { bracketMatching, syntaxHighlighting } from '@codemirror/language';
+import { bracketMatching } from '@codemirror/language';
 import { closeBracketsKeymap } from '@codemirror/autocomplete';
 import { highlightSelectionMatches, searchKeymap } from '@codemirror/search';
 import { autocompletion, completionKeymap } from '@codemirror/autocomplete';
@@ -93,15 +93,15 @@ export let editor = new EditorView({
 })
 
 export function showGutter(showLineNumbers, showErrors) {
-    let gutter = [];
+    let gutters = [];
     if (showLineNumbers === true) {
-        gutter.push(lineNumbers());
+        gutters.push(lineNumbers());
     }
     if (showErrors === true) {
-        gutter.push(lintGutter());
+        gutters.push(lintGutter());
     }
     editor.dispatch({
-        effects: cm.gutter.reconfigure(gutter)
+        effects: gutter.reconfigure(gutters)
     });
 }
 
@@ -109,12 +109,12 @@ export function setDarkTheme(dark) {
     let theme1 = [];
     theme1.push(dark === true ? oneDark : oneLight)
     editor.dispatch({
-        effects: cm.editorTheme.reconfigure(theme1) //TODO: why does this reference the cm object?
+        effects: editorTheme.reconfigure(theme1)
     });
     let theme2 = [];
     theme2.push(dark === true ? oneDark : oneLight)
     cmResult.dispatch({
-        effects: cm.resultTheme.reconfigure(theme2)
+        effects: resultTheme.reconfigure(theme2)
     });
 }
 

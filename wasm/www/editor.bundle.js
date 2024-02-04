@@ -25607,15 +25607,15 @@ var cm = (function (exports) {
     });
 
     function showGutter(showLineNumbers, showErrors) {
-        let gutter = [];
+        let gutters = [];
         if (showLineNumbers === true) {
-            gutter.push(lineNumbers());
+            gutters.push(lineNumbers());
         }
         if (showErrors === true) {
-            gutter.push(lintGutter());
+            gutters.push(lintGutter());
         }
         editor.dispatch({
-            effects: cm.gutter.reconfigure(gutter)
+            effects: gutter.reconfigure(gutters)
         });
     }
 
@@ -25623,12 +25623,12 @@ var cm = (function (exports) {
         let theme1 = [];
         theme1.push(dark === true ? oneDark : oneLight);
         editor.dispatch({
-            effects: cm.editorTheme.reconfigure(theme1) //TODO: why does this reference the cm object?
+            effects: editorTheme.reconfigure(theme1)
         });
         let theme2 = [];
         theme2.push(dark === true ? oneDark : oneLight);
         cmResult.dispatch({
-            effects: cm.resultTheme.reconfigure(theme2)
+            effects: resultTheme.reconfigure(theme2)
         });
     }
 
