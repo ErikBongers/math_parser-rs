@@ -15,6 +15,8 @@ import { lintKeymap, linter, lintGutter } from '@codemirror/lint';
 import {mathparser} from "./mathparser.ts"
 import {mathparserLint} from "./mathparserlint.ts"
 
+import { oneDark } from "./darkTheme.js"
+
 export {setLintSource} from "./mathparserlint";
 
 
@@ -68,6 +70,8 @@ const fontTheme = EditorView.theme({
 });
 
 export let gutter = new Compartment;
+export let editorTheme = new Compartment;
+export let resultTheme = new Compartment;
 
 
 export let editor = new EditorView({
@@ -81,7 +85,8 @@ export let editor = new EditorView({
       autocompletion(),
       mathparser(),   
       linter( mathparserLint(), {delay: 200}),
-      fontTheme
+      fontTheme,
+      editorTheme.of([])
     ]
   }),
   parent: document.getElementById("txtInput")
@@ -100,6 +105,23 @@ export function showGutter(showLineNumbers, showErrors) {
     });
 }
 
+export function setDarkTheme(set) {
+    let theme1 = [];
+    if (set === true) {
+        theme1.push(oneDark);
+    }
+    editor.dispatch({
+        effects: cm.editorTheme.reconfigure(theme1) //TODO: why does this reference the cm object?
+    });
+    let theme2 = [];
+    if (set === true) {
+        theme2.push(oneDark);
+    }
+    cmResult.dispatch({
+        effects: cm.resultTheme.reconfigure(theme2)
+    });
+}
+
 export let cmOutput = new EditorView({
   state: EditorState.create({
     extensions: [basicSetup, mathparser()]
@@ -109,7 +131,10 @@ export let cmOutput = new EditorView({
 
 export let cmResult = new EditorView({
     state: EditorState.create({
-        extensions: [basicSetup, mathparser()]
+        extensions: [basicSetup,
+            mathparser(),
+            resultTheme.of([])
+        ]
     }),
     parent: document.getElementById("txtResult")
 })

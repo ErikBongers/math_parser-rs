@@ -143,7 +143,7 @@ export function startUp() {
     menu.updateMenu();
     menu.updateGutter();
     let startScript = getCurrentScriptId();
-    menu.setScript(startScript);
+    menu.menu_setScript(startScript);
     document.getElementById("script-name").innerHTML = getCurrentScriptName();
     let txt = getLocalScript(startScript);
     let transaction = cm.editor.state.update({ changes: { from: 0, to: cm.editor.state.doc.length, insert: txt } });

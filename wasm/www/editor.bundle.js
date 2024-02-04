@@ -25401,6 +25401,108 @@ var cm = (function (exports) {
         };
     }
 
+    // Using https://github.com/one-dark/vscode-one-dark-theme/ as reference for the colors
+    var chalky = "#e5c07b", coral = "#e06c75", cyan = "#56b6c2", invalid = "#ffffff", ivory = "#abb2bf", stone = "#7d8799", // Brightened compared to original to increase contrast
+    malibu = "#61afef", sage = "#98c379", whiskey = "#d19a66", violet = "#c678dd", darkBackground = "#21252b", highlightBackground = "#2c313a", background = "#282c34", tooltipBackground = "#353a42", selection = "#3E4451", cursor = "#528bff";
+    /// The editor theme styles for One Dark.
+    var oneDarkTheme = EditorView.theme({
+        "&": {
+            color: ivory,
+            backgroundColor: background
+        },
+        ".cm-content": {
+            caretColor: cursor
+        },
+        ".cm-cursor, .cm-dropCursor": { borderLeftColor: cursor },
+        "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection": { backgroundColor: selection },
+        ".cm-panels": { backgroundColor: darkBackground, color: ivory },
+        ".cm-panels.cm-panels-top": { borderBottom: "2px solid black" },
+        ".cm-panels.cm-panels-bottom": { borderTop: "2px solid black" },
+        ".cm-searchMatch": {
+            backgroundColor: "#72a1ff59",
+            outline: "1px solid #457dff"
+        },
+        ".cm-searchMatch.cm-searchMatch-selected": {
+            backgroundColor: "#6199ff2f"
+        },
+        ".cm-activeLine": { backgroundColor: "#6699ff0b" },
+        ".cm-selectionMatch": { backgroundColor: "#aafe661a" },
+        "&.cm-focused .cm-matchingBracket, &.cm-focused .cm-nonmatchingBracket": {
+            backgroundColor: "#bad0f847"
+        },
+        ".cm-gutters": {
+            backgroundColor: background,
+            color: stone,
+            border: "none"
+        },
+        ".cm-activeLineGutter": {
+            backgroundColor: highlightBackground
+        },
+        ".cm-foldPlaceholder": {
+            backgroundColor: "transparent",
+            border: "none",
+            color: "#ddd"
+        },
+        ".cm-tooltip": {
+            border: "none",
+            backgroundColor: tooltipBackground
+        },
+        ".cm-tooltip .cm-tooltip-arrow:before": {
+            borderTopColor: "transparent",
+            borderBottomColor: "transparent"
+        },
+        ".cm-tooltip .cm-tooltip-arrow:after": {
+            borderTopColor: tooltipBackground,
+            borderBottomColor: tooltipBackground
+        },
+        ".cm-tooltip-autocomplete": {
+            "& > ul > li[aria-selected]": {
+                backgroundColor: highlightBackground,
+                color: ivory
+            }
+        }
+    }, { dark: true });
+    /// The highlighting style for code in the One Dark theme.
+    var oneDarkHighlightStyle = HighlightStyle.define([
+        { tag: tags.keyword,
+            color: violet },
+        { tag: [tags.name, tags.deleted, tags.character, tags.propertyName, tags.macroName],
+            color: coral },
+        { tag: [tags.function(tags.variableName), tags.labelName],
+            color: malibu },
+        { tag: [tags.color, tags.constant(tags.name), tags.standard(tags.name)],
+            color: whiskey },
+        { tag: [tags.definition(tags.name), tags.separator],
+            color: ivory },
+        { tag: [tags.typeName, tags.className, tags.number, tags.changed, tags.annotation, tags.modifier, tags.self, tags.namespace],
+            color: chalky },
+        { tag: [tags.operator, tags.operatorKeyword, tags.url, tags.escape, tags.regexp, tags.link, tags.special(tags.string)],
+            color: cyan },
+        { tag: [tags.meta, tags.comment],
+            color: stone },
+        { tag: tags.strong,
+            fontWeight: "bold" },
+        { tag: tags.emphasis,
+            fontStyle: "italic" },
+        { tag: tags.strikethrough,
+            textDecoration: "line-through" },
+        { tag: tags.link,
+            color: stone,
+            textDecoration: "underline" },
+        { tag: tags.heading,
+            fontWeight: "bold",
+            color: coral },
+        { tag: [tags.atom, tags.bool, tags.special(tags.variableName)],
+            color: whiskey },
+        { tag: [tags.processingInstruction, tags.string, tags.inserted],
+            color: sage },
+        { tag: tags.invalid,
+            color: invalid },
+    ]);
+    /// Extension to enable the One Dark theme (both the editor theme and
+    /// the highlight style).
+    var oneDark = [oneDarkTheme, syntaxHighlighting(oneDarkHighlightStyle)];
+
     let mathParserStyle = HighlightStyle.define([
       { tag: tags.strong, fontWeight: "bold" },
       { tag: tags.keyword, color: "#708" },
@@ -25451,6 +25553,8 @@ var cm = (function (exports) {
     });
 
     let gutter = new Compartment;
+    let editorTheme = new Compartment;
+    let resultTheme = new Compartment;
 
 
     let editor = new EditorView({
@@ -25464,7 +25568,8 @@ var cm = (function (exports) {
           autocompletion(),
           mathparser(),   
           linter( mathparserLint(), {delay: 200}),
-          fontTheme
+          fontTheme,
+          editorTheme.of([])
         ]
       }),
       parent: document.getElementById("txtInput")
@@ -25483,6 +25588,23 @@ var cm = (function (exports) {
         });
     }
 
+    function setDarkTheme(set) {
+        let theme1 = [];
+        if (set === true) {
+            theme1.push(oneDark);
+        }
+        editor.dispatch({
+            effects: cm.editorTheme.reconfigure(theme1) //TODO: why does this reference the cm object?
+        });
+        let theme2 = [];
+        if (set === true) {
+            theme2.push(oneDark);
+        }
+        cmResult.dispatch({
+            effects: cm.resultTheme.reconfigure(theme2)
+        });
+    }
+
     let cmOutput = new EditorView({
       state: EditorState.create({
         extensions: [basicSetup, mathparser()]
@@ -25492,7 +25614,10 @@ var cm = (function (exports) {
 
     let cmResult = new EditorView({
         state: EditorState.create({
-            extensions: [basicSetup, mathparser()]
+            extensions: [basicSetup,
+                mathparser(),
+                resultTheme.of([])
+            ]
         }),
         parent: document.getElementById("txtResult")
     });
@@ -25500,7 +25625,10 @@ var cm = (function (exports) {
     exports.cmOutput = cmOutput;
     exports.cmResult = cmResult;
     exports.editor = editor;
+    exports.editorTheme = editorTheme;
     exports.gutter = gutter;
+    exports.resultTheme = resultTheme;
+    exports.setDarkTheme = setDarkTheme;
     exports.setLintSource = setLintSource;
     exports.showGutter = showGutter;
 
