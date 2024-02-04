@@ -73,13 +73,6 @@ class MenuState {
 
 export let menuState = new MenuState();
 
-//TODO: MVC:
-// user clicks > controller (handler)
-// controller > model (state/localStorage)
-// model > view via listeners (menu items, codeMirror, html, ...)
-// .
-// but what about the startup code?
-
 const ID_MENU_MAIN_SCRIPT = "viewMainScript";
 const ID_MENU_START_SCRIPT = "viewStartupScript";
 const ID_MENU_LIGHT_MODE = "setLightMode";
@@ -131,10 +124,10 @@ export function updateTheme() {
 }
 
 export function updateScript() {
-    //TODO: these are 2 separate "views" and thus listeners
+    //These are 2 separate "views" and thus listeners
     cloud.promptAndUseServerFile(menuState.getScriptId());
-    document.getElementById("script-name").innerHTML = getCurrentScriptName();
 
+    document.getElementById("script-name").innerHTML = getCurrentScriptName();
 }
 
 export function updateMenu() {

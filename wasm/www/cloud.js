@@ -133,12 +133,7 @@ export function startUp() {
     menu.updateMenu();
     menu.updateTheme();
     menu.updateGutter();
-    //start with loading the local script. If a google login occurs, user will be asked to get the server version of the file.
-    let startScript = menu.menuState.getScriptId();
-    let txt = getLocalScript(startScript);
-    document.getElementById("script-name").innerHTML = menu.getCurrentScriptName(); //TODO: is it really not possible to just call menu.updateScript()? Problem is that it calls prompt..., and this must only be called when google is logged in.
-    let transaction = cm.editor.state.update({ changes: { from: 0, to: cm.editor.state.doc.length, insert: txt } });
-    cm.editor.update([transaction]);
+    menu.updateScript();
 }
 
 export function afterEditorChange() {
