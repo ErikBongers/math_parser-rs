@@ -26,7 +26,7 @@
     <div class="right">
         <div id="userName">Not logged in...</div>
         <div class="dropdown">
-            <img src="./images/gear.png" alt="Menu" width="30" height="30">
+            <img src="./images/gear.png" alt="Menu" width="25" height="25">
             <div class="dropdown-content">
                 <a href="javascript:void(0);" class="bullet" id="viewMainScript">View main script</a>
                 <a href="javascript:void(0);" id="viewStartupScript">View startup script</a>
@@ -62,7 +62,6 @@
     //make module functions global for event listeners.
     import("./cloud.js").then((cloud) => {
         window.onSignedIn = cloud.onSignedIn;
-        window.onScriptSwitch = cloud.onScriptSwitch;
     });
 
 </script>
@@ -72,6 +71,6 @@
 <script type="module" src="./parser.js"></script>
 <script type="module" src="./cloud.js"></script>
 <script defer type="text/javascript" src="keyboard.js"></script>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://accounts.google.com/gsi/client" defer></script>
 </body>
 </html >

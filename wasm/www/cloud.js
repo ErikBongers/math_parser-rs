@@ -20,7 +20,7 @@ export function onSignedIn(googleUserToken) {
             document.getElementById("userName").innerHTML = jsonUserSession.user.name;
             userSession = jsonUserSession;
             setCookie("mathparserSession", JSON.stringify(userSession), 1);
-            let scriptId = getCurrentScriptId();
+            let scriptId = menu.menuState.getScriptId();
             promptAndUseServerFile(scriptId);
         });
 }
@@ -42,7 +42,7 @@ async function promptServerFile(scriptId) {
     return localText;
 }
 
-function promptAndUseServerFile(scriptId) {
+export function promptAndUseServerFile(scriptId) {
     promptServerFile(scriptId).then( text => {
         let transaction = cm.editor.state.update({ changes: { from: 0, to: cm.editor.state.doc.length, insert: text} });
         cm.editor.update([transaction]);
@@ -106,7 +106,6 @@ function getLocalScript(scriptId) {
     return txt;
 }
 
-
 export function saveScript(scriptId) {
     uploadScript(scriptId, cm.editor.state.doc.toString());
     if (scriptId === "start") {
@@ -114,17 +113,6 @@ export function saveScript(scriptId) {
     } else {
         localStorage.savedCode = cm.editor.state.doc.toString();
     }
-}
-
-export function switchToScript(scriptId) {
-    if (scriptId === "start") {
-        promptAndUseServerFile("start");
-        localStorage.lastScript = "start";
-    } else {
-        promptAndUseServerFile("script1");
-        localStorage.lastScript = "script1";
-    }
-    document.getElementById("script-name").innerHTML = getCurrentScriptName();
 }
 
 let parserInstance = {}
@@ -140,32 +128,21 @@ export function startUp() {
         return mp.errorsForLint;
     });
 
+    //trigger menu changes.
+    menu.menuState.saveInLocalStorage();
     menu.updateMenu();
+    menu.updateTheme();
     menu.updateGutter();
-    let startScript = getCurrentScriptId();
-    menu.menu_setScript(startScript);
-    document.getElementById("script-name").innerHTML = getCurrentScriptName();
+    //start with loading the local script. If a google login occurs, user will be asked to get the server version of the file.
+    let startScript = menu.menuState.getScriptId();
     let txt = getLocalScript(startScript);
+    document.getElementById("script-name").innerHTML = menu.getCurrentScriptName(); //TODO: is it really not possible to just call menu.updateScript()? Problem is that it calls prompt..., and this must only be called when google is logged in.
     let transaction = cm.editor.state.update({ changes: { from: 0, to: cm.editor.state.doc.length, insert: txt } });
     cm.editor.update([transaction]);
 }
 
-function getCurrentScriptId() {
-    let startScript = "script1";
-    if (localStorage.lastScript)
-        startScript = localStorage.lastScript;
-    return startScript;
-}
-
-function getCurrentScriptName() {
-    if (getCurrentScriptId() === "start")
-        return "start script";
-    else
-        return "main script";
-}
-
 export function afterEditorChange() {
-    let scriptId = getCurrentScriptId();
+    let scriptId = menu.menuState.getScriptId();
     saveScript(scriptId);
     parseAfterChange(scriptId);
 }
@@ -193,7 +170,8 @@ function setCookie(name, value, days) {
     }
     document.cookie = name + "=" + (value || "") + expires + "; path=/";
 }
-function getCookie(name) {
+
+function getCookie(name){
     var nameEQ = name + "=";
     var ca = document.cookie.split(';');
     for (let i = 0; i < ca.length; i++) {
@@ -204,3 +182,6 @@ function getCookie(name) {
     return null;
 }
 
+export function setPageTheme(dark) {
+    document.body.classList.toggle("dark", dark);
+}

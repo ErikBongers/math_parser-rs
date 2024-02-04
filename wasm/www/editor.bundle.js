@@ -23188,11 +23188,11 @@ var cm = (function (exports) {
         }
         static open(view) { return new LintPanel(view); }
     }
-    function svg(content, attrs = `viewBox="0 0 40 40"`) {
+    function svg$1(content, attrs = `viewBox="0 0 40 40"`) {
         return `url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" ${attrs}>${encodeURIComponent(content)}</svg>')`;
     }
-    function underline(color) {
-        return svg(`<path d="m0 2.5 l2 -1.5 l1 0 l2 1.5 l1 0" stroke="${color}" fill="none" stroke-width=".7"/>`, `width="6" height="3"`);
+    function underline$1(color) {
+        return svg$1(`<path d="m0 2.5 l2 -1.5 l1 0 l2 1.5 l1 0" stroke="${color}" fill="none" stroke-width=".7"/>`, `width="6" height="3"`);
     }
     const baseTheme = /*@__PURE__*/EditorView.baseTheme({
         ".cm-diagnostic": {
@@ -23224,10 +23224,10 @@ var cm = (function (exports) {
             backgroundRepeat: "repeat-x",
             paddingBottom: "0.7px",
         },
-        ".cm-lintRange-error": { backgroundImage: /*@__PURE__*/underline("#d11") },
-        ".cm-lintRange-warning": { backgroundImage: /*@__PURE__*/underline("orange") },
-        ".cm-lintRange-info": { backgroundImage: /*@__PURE__*/underline("#999") },
-        ".cm-lintRange-hint": { backgroundImage: /*@__PURE__*/underline("#66d") },
+        ".cm-lintRange-error": { backgroundImage: /*@__PURE__*/underline$1("#d11") },
+        ".cm-lintRange-warning": { backgroundImage: /*@__PURE__*/underline$1("orange") },
+        ".cm-lintRange-info": { backgroundImage: /*@__PURE__*/underline$1("#999") },
+        ".cm-lintRange-hint": { backgroundImage: /*@__PURE__*/underline$1("#66d") },
         ".cm-lintRange-active": { backgroundColor: "#ffdd9980" },
         ".cm-tooltip-lint": {
             padding: 0,
@@ -23408,13 +23408,13 @@ var cm = (function (exports) {
             height: "1em"
         },
         ".cm-lint-marker-info": {
-            content: /*@__PURE__*/svg(`<path fill="#aaf" stroke="#77e" stroke-width="6" stroke-linejoin="round" d="M5 5L35 5L35 35L5 35Z"/>`)
+            content: /*@__PURE__*/svg$1(`<path fill="#aaf" stroke="#77e" stroke-width="6" stroke-linejoin="round" d="M5 5L35 5L35 35L5 35Z"/>`)
         },
         ".cm-lint-marker-warning": {
-            content: /*@__PURE__*/svg(`<path fill="#fe8" stroke="#fd7" stroke-width="6" stroke-linejoin="round" d="M20 6L37 35L3 35Z"/>`),
+            content: /*@__PURE__*/svg$1(`<path fill="#fe8" stroke="#fd7" stroke-width="6" stroke-linejoin="round" d="M20 6L37 35L3 35Z"/>`),
         },
         ".cm-lint-marker-error": {
-            content: /*@__PURE__*/svg(`<circle cx="20" cy="20" r="15" fill="#f87" stroke="#f43" stroke-width="6"/>`)
+            content: /*@__PURE__*/svg$1(`<circle cx="20" cy="20" r="15" fill="#f87" stroke="#f43" stroke-width="6"/>`)
         },
     });
     const lintExtensions = [
@@ -25401,9 +25401,17 @@ var cm = (function (exports) {
         };
     }
 
+    function underline(color) {
+        return svg("<path d=\"m0 2.5 l2 -1.5 l1 0 l2 1.5 l1 0\" stroke=\"".concat(color, "\" fill=\"none\" stroke-width=\".7\"/>"), "width=\"6\" height=\"3\"");
+    }
+    function svg(content, attrs) {
+        if (attrs === void 0) { attrs = "viewBox=\"0 0 40 40\""; }
+        return "url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" ".concat(attrs, ">").concat(encodeURIComponent(content), "</svg>')");
+    }
+
     // Using https://github.com/one-dark/vscode-one-dark-theme/ as reference for the colors
-    var chalky = "#e5c07b", coral = "#e06c75", cyan = "#56b6c2", invalid = "#ffffff", ivory = "#abb2bf", stone = "#7d8799", // Brightened compared to original to increase contrast
-    malibu = "#61afef", sage = "#98c379", whiskey = "#d19a66", violet = "#c678dd", darkBackground = "#21252b", highlightBackground = "#2c313a", background = "#282c34", tooltipBackground = "#353a42", selection = "#3E4451", cursor = "#528bff";
+    var chalky = "#aba18f", coral = "#a6676c", cyan = "#56b6c2", invalid = "#ffffff", ivory = "#abb2bf", stone = "#727883", // Brightened compared to original to increase contrast
+    malibu = "#6292b7", whiskey = "#9a8776", violet = "#c678dd", darkBackground = "#202025", highlightBackground = "#2c313a", background = "#25252b", tooltipBackground = "#353a42", selection = "#3E4451", cursor = "#528bff";
     /// The editor theme styles for One Dark.
     var oneDarkTheme = EditorView.theme({
         "&": {
@@ -25443,6 +25451,14 @@ var cm = (function (exports) {
             border: "none",
             color: "#ddd"
         },
+        ".cm-lintRange-error": { backgroundImage: /*@__PURE__*/ underline("#f88") },
+        ".cm-lintRange-warning": { backgroundImage: /*@__PURE__*/ underline("#ff8") },
+        ".cm-lint-marker-warning": {
+            content: /*@__PURE__*/ svg("<path fill=\"#ff8\" stroke=\"#ff8\" stroke-width=\"0\" stroke-linejoin=\"round\" d=\"M20 6L37 35L3 35Z\"/>"),
+        },
+        ".cm-lint-marker-error": {
+            content: /*@__PURE__*/ svg("<circle cx=\"20\" cy=\"20\" r=\"13\" fill=\"#f55\" stroke=\"#f55\" stroke-width=\"2\"/>")
+        },
         ".cm-tooltip": {
             border: "none",
             backgroundColor: tooltipBackground
@@ -25464,46 +25480,62 @@ var cm = (function (exports) {
     }, { dark: true });
     /// The highlighting style for code in the One Dark theme.
     var oneDarkHighlightStyle = HighlightStyle.define([
-        { tag: tags.keyword,
-            color: violet },
-        { tag: [tags.name, tags.deleted, tags.character, tags.propertyName, tags.macroName],
-            color: coral },
-        { tag: [tags.function(tags.variableName), tags.labelName],
-            color: malibu },
-        { tag: [tags.color, tags.constant(tags.name), tags.standard(tags.name)],
-            color: whiskey },
-        { tag: [tags.definition(tags.name), tags.separator],
-            color: ivory },
-        { tag: [tags.typeName, tags.className, tags.number, tags.changed, tags.annotation, tags.modifier, tags.self, tags.namespace],
-            color: chalky },
-        { tag: [tags.operator, tags.operatorKeyword, tags.url, tags.escape, tags.regexp, tags.link, tags.special(tags.string)],
-            color: cyan },
-        { tag: [tags.meta, tags.comment],
-            color: stone },
-        { tag: tags.strong,
-            fontWeight: "bold" },
-        { tag: tags.emphasis,
-            fontStyle: "italic" },
-        { tag: tags.strikethrough,
-            textDecoration: "line-through" },
-        { tag: tags.link,
-            color: stone,
-            textDecoration: "underline" },
-        { tag: tags.heading,
-            fontWeight: "bold",
-            color: coral },
-        { tag: [tags.atom, tags.bool, tags.special(tags.variableName)],
-            color: whiskey },
-        { tag: [tags.processingInstruction, tags.string, tags.inserted],
-            color: sage },
-        { tag: tags.invalid,
-            color: invalid },
+        { tag: tags.keyword, color: violet },
+        { tag: [tags.name, tags.deleted, tags.character, tags.propertyName, tags.macroName], color: ivory },
+        { tag: [tags.function(tags.variableName), tags.labelName], color: malibu },
+        { tag: [tags.color, tags.constant(tags.name), tags.standard(tags.name)], color: whiskey },
+        { tag: [tags.definition(tags.name), tags.separator], color: ivory },
+        { tag: [tags.typeName, tags.className, tags.number, tags.changed, tags.annotation, tags.modifier, tags.self, tags.namespace], color: chalky },
+        { tag: [tags.operator, tags.operatorKeyword, tags.url, tags.escape, tags.regexp, tags.link, tags.special(tags.string)], color: cyan },
+        { tag: [tags.meta, tags.comment], color: stone },
+        { tag: tags.strong, fontWeight: "bold" },
+        { tag: tags.emphasis, fontStyle: "italic" },
+        { tag: tags.strikethrough, textDecoration: "line-through" },
+        { tag: tags.link, color: stone, textDecoration: "underline" },
+        { tag: tags.heading, fontWeight: "bold", color: coral },
+        { tag: [tags.atom, tags.bool, tags.special(tags.variableName)], color: whiskey },
+        { tag: [tags.processingInstruction, tags.inserted], color: stone },
+        { tag: tags.string, color: malibu },
+        { tag: tags.invalid, color: invalid },
+        { tag: tags.definitionKeyword, color: "#6d9a6d" },
     ]);
     /// Extension to enable the One Dark theme (both the editor theme and
     /// the highlight style).
     var oneDark = [oneDarkTheme, syntaxHighlighting(oneDarkHighlightStyle)];
 
-    let mathParserStyle = HighlightStyle.define([
+    var lightStyle = HighlightStyle.define([
+        { tag: tags.strong, fontWeight: "bold" },
+        { tag: tags.keyword, color: "#708" },
+        { tag: [tags.atom, tags.bool, tags.url, tags.contentSeparator, tags.labelName], color: "#219" },
+        { tag: [tags.literal, tags.inserted], color: "#164" },
+        { tag: [tags.string, tags.deleted], color: "#446" },
+        { tag: [tags.regexp, tags.escape, tags.special(tags.string)], color: "#e40" },
+        { tag: tags.definition(tags.variableName), color: "#00f" },
+        { tag: tags.local(tags.variableName), color: "#30a" },
+        { tag: [tags.typeName, tags.namespace], color: "#085" },
+        { tag: tags.className, color: "#167" },
+        { tag: [tags.special(tags.variableName), tags.macroName], color: "#256" },
+        { tag: tags.definition(tags.propertyName), color: "#00c" },
+        { tag: tags.comment, color: "#666" },
+        { tag: tags.meta, color: "#7a757a" },
+        { tag: tags.invalid, color: "#f00" },
+        { tag: tags.definitionKeyword, color: "#464" },
+        //custom styles:
+        { tag: tags.processingInstruction, color: "#bbb" }
+    ]);
+    var lightTheme = EditorView.theme({
+        ".cm-lintRange-error": { backgroundImage: /*@__PURE__*/ underline("#f88") },
+        ".cm-lintRange-warning": { backgroundImage: /*@__PURE__*/ underline("#ff8") },
+        ".cm-lint-marker-warning": {
+            content: /*@__PURE__*/ svg("<path fill=\"#ff8\" stroke=\"#888\" stroke-width=\"1\" stroke-linejoin=\"round\" d=\"M20 6L37 35L3 35Z\"/>"),
+        },
+        ".cm-lint-marker-error": {
+            content: /*@__PURE__*/ svg("<circle cx=\"20\" cy=\"20\" r=\"13\" fill=\"#f55\" stroke=\"#f55\" stroke-width=\"2\"/>")
+        },
+    }, { dark: false });
+    var oneLight = [lightTheme, syntaxHighlighting(lightStyle)];
+
+    HighlightStyle.define([
       { tag: tags.strong, fontWeight: "bold" },
       { tag: tags.keyword, color: "#708" },
       { tag: [tags.atom, tags.bool, tags.url, tags.contentSeparator, tags.labelName], color: "#219" },
@@ -25531,7 +25563,6 @@ var cm = (function (exports) {
       drawSelection(),
       dropCursor(),
       EditorState.allowMultipleSelections.of(true),
-      syntaxHighlighting(mathParserStyle),
       bracketMatching(),
       highlightActiveLine(),
       highlightSelectionMatches(),
@@ -25588,18 +25619,14 @@ var cm = (function (exports) {
         });
     }
 
-    function setDarkTheme(set) {
+    function setDarkTheme(dark) {
         let theme1 = [];
-        if (set === true) {
-            theme1.push(oneDark);
-        }
+        theme1.push(dark === true ? oneDark : oneLight);
         editor.dispatch({
             effects: cm.editorTheme.reconfigure(theme1) //TODO: why does this reference the cm object?
         });
         let theme2 = [];
-        if (set === true) {
-            theme2.push(oneDark);
-        }
+        theme2.push(dark === true ? oneDark : oneLight);
         cmResult.dispatch({
             effects: cm.resultTheme.reconfigure(theme2)
         });

@@ -16,6 +16,7 @@ import {mathparser} from "./mathparser.ts"
 import {mathparserLint} from "./mathparserlint.ts"
 
 import { oneDark } from "./darkTheme.js"
+import {oneLight} from "./lightTheme.js";
 
 export {setLintSource} from "./mathparserlint";
 
@@ -48,7 +49,6 @@ const basicSetup = [
   drawSelection(),
   dropCursor(),
   EditorState.allowMultipleSelections.of(true),
-  syntaxHighlighting(mathParserStyle),
   bracketMatching(),
   highlightActiveLine(),
   highlightSelectionMatches(),
@@ -105,18 +105,14 @@ export function showGutter(showLineNumbers, showErrors) {
     });
 }
 
-export function setDarkTheme(set) {
+export function setDarkTheme(dark) {
     let theme1 = [];
-    if (set === true) {
-        theme1.push(oneDark);
-    }
+    theme1.push(dark === true ? oneDark : oneLight)
     editor.dispatch({
         effects: cm.editorTheme.reconfigure(theme1) //TODO: why does this reference the cm object?
     });
     let theme2 = [];
-    if (set === true) {
-        theme2.push(oneDark);
-    }
+    theme2.push(dark === true ? oneDark : oneLight)
     cmResult.dispatch({
         effects: cm.resultTheme.reconfigure(theme2)
     });

@@ -46,8 +46,10 @@ header .help {
 
 #userName {
 	align-self: flex-end;
-	opacity: .7;
+	opacity: 5;
 	padding-right: 10px;
+	margin-bottom: 5px;
+	font-size: .9em;
 }
 
 
@@ -62,7 +64,7 @@ header .help {
 #result, #input {
 	border-top-style: solid;
 	border-width: 1px;
-	overflow-x: scroll;
+	overflow-x: auto;
 }
 
 #scrollWrapper {
@@ -202,11 +204,6 @@ header .help {
 	content: "• ";
 }
 
-.dropdown-content a:hover {
-	background: #eee;
-	opacity: 1;
-}
-
 .dropdown-content hr {
 	margin: 3px;
 }
@@ -229,6 +226,11 @@ header .help {
 h1 {
     color: #ffbb88;
 }
+
+.dark h1 {
+	opacity: .5;
+}
+
 #result, #input {
     border-color: #999;
 }
@@ -246,4 +248,27 @@ h1 {
 
 .dropdown-content {
     background-color: #f9f9f9;
+}
+
+.dark .dropdown-content {
+    background-color: #25252b;
+}
+
+body.dark {
+	background-color: #25252b;
+	color: white;
+}
+
+.dropdown-content a:hover {
+	background: #eee;
+	opacity: 1;
+}
+
+.dark .dropdown-content a:hover {
+	background: #334;
+	opacity: 1;
+}
+
+.dark .dropdown img {
+	filter: invert(100%);
 }
