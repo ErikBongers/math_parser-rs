@@ -72,25 +72,41 @@ const fontTheme = EditorView.theme({
 export let gutter = new Compartment;
 export let editorTheme = new Compartment;
 export let resultTheme = new Compartment;
+export let undoRedo = new Compartment; //TODO: need to be exported?
 
 
 export let editor = new EditorView({
-  state: EditorState.create({
-    extensions: [
-      basicSetup, 
-      gutter.of([lineNumbers(),
-            foldGutter(),
-            lintGutter(),]),
-      history(),
-      autocompletion(),
-      mathparser(),   
-      linter( mathparserLint(), {delay: 200}),
-      fontTheme,
-      editorTheme.of([])
-    ]
-  }),
-  parent: document.getElementById("txtInput")
+    state: EditorState.create({
+        extensions: [
+            basicSetup,
+            gutter.of([lineNumbers(),
+                foldGutter(),
+                lintGutter(),]),
+            autocompletion(),
+            mathparser(),
+            linter( mathparserLint(), {delay: 200}),
+            fontTheme,
+            editorTheme.of([]),
+            undoRedo.of([history()]),
+        ]
+    }),
+    parent: document.getElementById("txtInput")
 })
+
+export function resetUndoRedo() {
+    editor.dispatch({
+        effects: undoRedo.reconfigure([])
+    });
+    editor.dispatch({
+        effects: undoRedo.reconfigure([history()])
+    });
+}
+
+export function setEditorText(text) {
+    let transaction = editor.state.update({ changes: { from: 0, to: editor.state.doc.length, insert: text} });
+    editor.update([transaction]);
+    resetUndoRedo();
+}
 
 export function showGutter(showLineNumbers, showErrors) {
     let gutters = [];

@@ -25586,25 +25586,41 @@ var cm = (function (exports) {
     let gutter = new Compartment;
     let editorTheme = new Compartment;
     let resultTheme = new Compartment;
+    let undoRedo = new Compartment; //TODO: need to be exported?
 
 
     let editor = new EditorView({
-      state: EditorState.create({
-        extensions: [
-          basicSetup, 
-          gutter.of([lineNumbers(),
-                foldGutter(),
-                lintGutter(),]),
-          history(),
-          autocompletion(),
-          mathparser(),   
-          linter( mathparserLint(), {delay: 200}),
-          fontTheme,
-          editorTheme.of([])
-        ]
-      }),
-      parent: document.getElementById("txtInput")
+        state: EditorState.create({
+            extensions: [
+                basicSetup,
+                gutter.of([lineNumbers(),
+                    foldGutter(),
+                    lintGutter(),]),
+                autocompletion(),
+                mathparser(),
+                linter( mathparserLint(), {delay: 200}),
+                fontTheme,
+                editorTheme.of([]),
+                undoRedo.of([history()]),
+            ]
+        }),
+        parent: document.getElementById("txtInput")
     });
+
+    function resetUndoRedo() {
+        editor.dispatch({
+            effects: undoRedo.reconfigure([])
+        });
+        editor.dispatch({
+            effects: undoRedo.reconfigure([history()])
+        });
+    }
+
+    function setEditorText(text) {
+        let transaction = editor.state.update({ changes: { from: 0, to: editor.state.doc.length, insert: text} });
+        editor.update([transaction]);
+        resetUndoRedo();
+    }
 
     function showGutter(showLineNumbers, showErrors) {
         let gutters = [];
@@ -25655,10 +25671,13 @@ var cm = (function (exports) {
     exports.editor = editor;
     exports.editorTheme = editorTheme;
     exports.gutter = gutter;
+    exports.resetUndoRedo = resetUndoRedo;
     exports.resultTheme = resultTheme;
     exports.setDarkTheme = setDarkTheme;
+    exports.setEditorText = setEditorText;
     exports.setLintSource = setLintSource;
     exports.showGutter = showGutter;
+    exports.undoRedo = undoRedo;
 
     return exports;
 

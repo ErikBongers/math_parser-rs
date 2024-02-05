@@ -44,8 +44,9 @@ async function promptServerFile(scriptId) {
 
 export function promptAndUseServerFile(scriptId) {
     promptServerFile(scriptId).then( text => {
-        let transaction = cm.editor.state.update({ changes: { from: 0, to: cm.editor.state.doc.length, insert: text} });
-        cm.editor.update([transaction]);
+        // let transaction = cm.editor.state.update({ changes: { from: 0, to: cm.editor.state.doc.length, insert: text} });
+        // cm.editor.update([transaction]);
+        cm.setEditorText(text);
     });
 }
 
