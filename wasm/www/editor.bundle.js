@@ -25643,6 +25643,7 @@ var cm = (function (exports) {
         state: EditorState.create({
             extensions: [basicSetup,
                 mathparser(),
+                EditorState.readOnly.of(true),
                 resultTheme.of([])
             ]
         }),

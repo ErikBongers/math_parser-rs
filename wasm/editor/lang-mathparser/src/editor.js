@@ -129,6 +129,7 @@ export let cmResult = new EditorView({
     state: EditorState.create({
         extensions: [basicSetup,
             mathparser(),
+            EditorState.readOnly.of(true),
             resultTheme.of([])
         ]
     }),
