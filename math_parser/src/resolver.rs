@@ -8,6 +8,7 @@ pub mod recursive_iterator;
 use std::cell::RefCell;
 use std::rc::Rc;
 use crate::date::{DateFormat, Duration, parse_date_string};
+use crate::errors;
 use crate::errors::{Error, ErrorId, has_real_errors};
 use crate::functions::FunctionType;
 use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, DefineExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NodeType, PostfixExpr, Statement, UnaryExpr, UnitExpr};
@@ -37,6 +38,14 @@ pub fn add_error_value<'s>(errors: &mut Vec<Error>, id: ErrorId, range: Range, a
     errors.push(Error::build(id, range, args));
     value
 }
+
+pub fn add_error_value2<'s>(errors: &mut Vec<Error>, error: Error) -> Value {
+    let mut value = Value::error(error.range.clone());
+    value.has_errors = true;
+    errors.push(error);
+    value
+}
+
 pub fn add_error<'s>(errors: &mut Vec<Error>, id: ErrorId, range: Range, args: &[&str]){
     errors.push(Error::build(id, range, args));
 }
@@ -87,6 +96,10 @@ impl<'g, 'a> Resolver<'g, 'a> {
 
     pub fn add_error_value(&mut self, id: ErrorId, range: Range, args: &[&str]) -> Value {
         add_error_value(self.errors, id, range, args)
+    }
+
+    pub fn add_error_value2(&mut self, error: Error) -> Value {
+        add_error_value2(self.errors, error)
     }
 
     pub fn resolve_node(&mut self, node: &Box<Node>) -> Value {
@@ -546,7 +559,8 @@ impl<'g, 'a> Resolver<'g, 'a> {
             let op_str = operator_type.to_string();
             let val_type1 = &expr1.variant.name();
             let val_type2 = &expr2.variant.name();
-            return self.add_error_value(ErrorId::NoOp, bin_expr.get_range().clone(), &[&op_str, &val_type1, &val_type2]);
+            return self.add_error_value2(errors::no_op(&op_str, &val_type1, &val_type2, bin_expr.get_range().clone()));
+            // return self.add_error_value(ErrorId::NoOp, bin_expr.get_range().clone(), &[&op_str, &val_type1, &val_type2]);
         }
 
         let args = vec![expr1, expr2];

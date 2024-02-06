@@ -1,6 +1,3 @@
-* editor undo: clear it after initial load.
-  > otherwise it will undo up to an empty editor!
-
 * ErrorId: implement with macro?
   > Can't split a string literal.
   > Macro should create an Error object containing
@@ -65,9 +62,6 @@
   > !`a+b` ==> executed and the code is output.
 
  source_index is a 'pointer': replace with a life-timed value?
-
-* add tests to cursor.rs
-  > move the tests from main.rs.
 
 * AST
   - trait AstNode to cast: https://github.com/rust-lang/rust-analyzer/blob/337e2abb670d403ae05609c5f1aafcffbd3369a6/crates/syntax/src/ast.rs#L43

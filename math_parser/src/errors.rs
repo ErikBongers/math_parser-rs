@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use macros::{define_errors, print_tokens};
 use once_cell::sync::Lazy;
 use serde::Serialize;
 use crate::tokenizer::cursor::Range;
@@ -78,8 +79,33 @@ pub struct Error {
     pub stack_trace: Option<Vec<Error>>,
 }
 
+//THIS MACRO...
+define_errors!(
+    UnknownExpr: "Unknown expression `{expression}`.",
+    NoOp:  "No operator `{operator}` defined for `{operand1}` and `{operand2}`.",
+);
+//SHOULD BUILD...
+print_tokens!(
+#[derive(Clone, Serialize)]
+enum NewErrors {
+    UnknownExpr,
+});
+
+const X: NewErrors = NewErrors::NoOp;
+const Y: NewErrors = NewErrors::UnknownExpr;
+
+// fn unknown_expr(expression: &str, range: Range) -> Error {
+//     Error {
+//         id: ErrorId::UnknownExpr,
+//         message: format!("Unknown expression `{expression}`.", expression=expression),
+//         range,
+//         stack_trace: None,
+//     }
+// }
+//END MACRO BUILD
+
 pub static ERROR_MAP: Lazy<HashMap<ErrorId, ErrorDef>>  = Lazy::new(|| HashMap::from( [
-(ErrorId::UnknownExpr, ErrorDef{id: ErrorId::UnknownExpr, error_type: ErrorType::E, name: "UnknownExpr", message: "Unknown expression `{0}`."}),
+(ErrorId::UnknownExpr, ErrorDef{id: ErrorId::UnknownExpr, error_type: ErrorType::E, name: "UNKNOWN_EXPR", message: "Unknown expression `{0}`."}),
 (ErrorId::NoOp, ErrorDef{id: ErrorId::NoOp, error_type: ErrorType::E, name: "NoOp", message: "No operator `{0}` defined for `{1}` and `{2}`."}),
 (ErrorId::Eos, ErrorDef{id: ErrorId::Eos, error_type: ErrorType::E, name: "EOS", message: "Unexpected end of file."}),
 

@@ -1,0 +1,58 @@
+[
+    Ident { ident: "UnknownExpr", span: #0 bytes(128775..128786) },
+    Punct { ch: ':', spacing: Alone, span: #0 bytes(128786..128787) },
+    Literal { kind: Str, symbol: "Unknown expression `{0}`.", suffix: None, span: #0 bytes(128788..128815) },
+    Punct { ch: ',', spacing: Alone, span: #0 bytes(128815..128816) }
+]
+
+-------------------------
+enum NewErrors {
+    UnknownExpr,
+}
+-------------------------
+TokenStream [
+    Ident { ident: "enum", span: #0 bytes(128795..128799) },
+    Ident { ident: "NewErrors", span: #0 bytes(128800..128809) },
+    Group { delimiter: Brace, stream:
+        TokenStream [
+            Ident { ident: "UnknownExpr", span: #0 bytes(128816..128827) },
+            Punct { ch: ',', spacing: Alone, span: #0 bytes(128827..128828) }
+        ], span: #0 bytes(128810..128830)
+    }
+]
+
+TokenStream [
+    Punct { ch: '#', spacing: Alone, span: #0 bytes(128795..128796) },
+    Group { delimiter: Bracket, stream: TokenStream [
+        Ident { ident: "derive", span: #0 bytes(128797..128803) },
+        Group { delimiter: Parenthesis, stream: TokenStream [
+            Ident { ident: "Clone", span: #0 bytes(128804..128809) },
+            Punct { ch: ',', spacing: Alone, span: #0 bytes(128809..128810) },
+            Ident { ident: "Serialize", span: #0 bytes(128811..128820) }
+        ], span: #0 bytes(128803..128821) }
+    ], span: #0 bytes(128796..128822)},
+    Ident { ident: "enum", span: #0 bytes(128823..128827) },
+    Ident { ident: "NewErrors", span: #0 bytes(128828..128837) },
+    Group { delimiter: Brace, stream: TokenStream [
+        Ident { ident: "UnknownExpr", span: #0 bytes(128844..128855) },
+        Punct { ch: ',', spacing: Alone, span: #0 bytes(128855..128856) }], span: #0 bytes(128838..128858)
+    }
+]
+
+
+ #[derive(Clone, Serialize)]
+ enum NewErrors { UnknownExpr, NoOp }
+
+#[inline]
+fn unknown_expr(expression: &str, range: Range) -> Error {
+          {
+          id: ErrorId::UnknownExpr,
+          message: format!("Unknown expression `{expression}`.", expression = expression),
+          range,
+          stack_trace: None,
+          }
+  }
+
+  #[inline]     fn no_op(operator: &str, operand1: &str, operand2: &str, ,   range: Range) -> Error {         {             id: ErrorId::NoOp, message: format!("No operator `{operator}` defined for `{operand1}` and `{operand2}`.",                                                 operator = operator, operand1 = operand1, operand2 = operand2), range, stack_trace: None,
+          }
+      }
