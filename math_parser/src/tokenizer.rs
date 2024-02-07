@@ -148,15 +148,12 @@ impl Cursor<'_> {
                 }
             },
             '\'' => {
-                self.eat_while(
-                     |c| if let '\'' = c {
-                        false
-                    } else {
-                        true
-                    }
-                );
-                self.next(); //eat end quote
-                QuotedStr
+                start_pos += 1; //exclude the quote from the range.
+                self.eat_while(|c| c != '\'');
+                let end_pos = self.get_pos(); //end pos without quote.
+                self.next(); //eat end quote, if any. (eot?)
+
+                return Token::new(QuotedStr, self.source.index, start_pos, end_pos, self.source.get_text()[start_pos..end_pos].to_string())
             },
             c @ ('0'..='9') => {
                 self.number = self.parse_number(c);
@@ -173,8 +170,8 @@ impl Cursor<'_> {
 
             _ => Unknown
         };
-        let res = Token::new(token_type, self.source.index, start_pos, self.get_pos(), self.source.get_text()[start_pos..self.get_pos()].to_string());
-        res
+
+        Token::new(token_type, self.source.index, start_pos, self.get_pos(), self.source.get_text()[start_pos..self.get_pos()].to_string())
     }
 
     fn match_word(&mut self, word: &str) -> bool{

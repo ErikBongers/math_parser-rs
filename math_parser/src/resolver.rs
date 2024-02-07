@@ -494,21 +494,16 @@ impl<'g, 'a> Resolver<'g, 'a> {
                 Value::from_number(n, const_expr.get_range())
            },
             ConstType::FormattedString => {
-                let mut trimmed_range = const_expr.range.clone();
-                if (trimmed_range.end - trimmed_range.start) >=2 {
-                    trimmed_range.start += 1;
-                    trimmed_range.end -= 1;
-                }
-                let num_error = match parse_formatted_number(self.globals.get_text(&trimmed_range), &trimmed_range, self.scope.borrow().decimal_char) {
+                let num_error = match parse_formatted_number(self.globals.get_text(&const_expr.range), &const_expr.range, self.scope.borrow().decimal_char) {
                     Ok(number) => {
-                       return Value::from_number(number, trimmed_range);
+                       return Value::from_number(number, const_expr.range.clone());
                     }
                     Err(error) => {
                         error
                     }
                 };
 
-                let string = self.globals.get_text(&trimmed_range);
+                let string = self.globals.get_text(&const_expr.range);
                 if string == "last" {
                     return Value::last_variant(const_expr.range.clone());
                 }

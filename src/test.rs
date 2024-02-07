@@ -62,6 +62,7 @@ fn test_implicit_mult () {
 }
 #[test]
 fn test_formatted_number () {
+    test_result("a='123", 123.0, ""); //string is not closed before EOS: no error!
     test_result("a='123,456.789'", 123456.789, "");
     test_result("a='123.456,789'", 123456.789, "");
     test_result("a='123456789'", 123456789.0, "");

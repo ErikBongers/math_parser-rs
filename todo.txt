@@ -1,3 +1,5 @@
+* Token: exclude _text from new() for release builds.
+
 * non closes quoted value: last char is not parsed.
  : '123  --> value 12 !!!
 
