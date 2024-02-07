@@ -193,13 +193,13 @@ fn sqrt(global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, ar
 }
 fn max(global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
     with_num_vec_or_error_value(global_function_def, &args, range, errors, globals, |num_vec| {
-        num_vec.into_iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(0.0)
+        num_vec.into_iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(0.0) //unwrap() ok: NaN not possible
     })
 }
 
 fn min(global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
     with_num_vec_or_error_value(global_function_def, &args, range, errors, globals, |num_vec| {
-        num_vec.into_iter().min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(0.0)
+        num_vec.into_iter().min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(0.0) //unwrap() ok: NaN not possible
     })
 }
 
@@ -229,7 +229,7 @@ fn sort(_global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, a
     let mut sorted: Vec<Value> = args.clone();
     sorted.sort_by(|a, b| a
         .as_sortable_number()
-        .unwrap()
+        .unwrap()//TODO: crashes if value is not numeric.
         .partial_cmp(&b.as_sortable_number().unwrap())
         .unwrap()); //unwrap: checked all values are numeric and as_sortable_number replaces NaN with 0.0
 
@@ -322,11 +322,11 @@ const PRIMES: [i32; 168] = [
 ];
 
 fn first(_global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, _range: &Range, _errors: &mut Vec<Error>, _globals: &Globals) -> Value {
-    args.first().unwrap().clone()
+    args.first().unwrap().clone() //unwrap: arg cnt checked.
 }
 
 fn last(_global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, _range: &Range, _errors: &mut Vec<Error>, _globals: &Globals) -> Value {
-    args.last().unwrap().clone()
+    args.last().unwrap().clone() //unwrap: arg cnt checked.
 }
 
 fn match_arg_number<'a>(function_def: &dyn FunctionDef, args: &'a Value, range: &Range, errors: &mut Vec<Error>) -> Option<&'a Number> {
@@ -502,7 +502,7 @@ fn sum(global_function_def: &GlobalFunctionDef, scope: &Rc<RefCell<Scope>>, args
         let first_value = recursive_iter(args).next();
         let Some(first_num_value) = first_value else { return Value::error(range.clone()); };
         let Some(first_number) = first_num_value.as_number()  else { return Value::error(range.clone()); };
-        let si_id = globals.unit_defs.get(&first_number.unit.id).unwrap().si_id;
+        let si_id = globals.unit_defs.get(&first_number.unit.id).unwrap().si_id; //unwrap: unit MUST exist.
         let first_unit = first_number.unit.clone();
         let number = Number { significand: res, exponent: 0, unit: Unit::from_id(si_id), fmt: NumberFormat::Dec };
         (number, first_unit)
@@ -529,7 +529,7 @@ fn with_num_vec(function_def: &dyn FunctionDef, args: &Vec<Value>, range: &Range
 
     let num_vec = num_iter.collect();
     let Some(first_number) = match_arg_number(function_def, &args[0], range, errors) else { return Err(Value::error(range.clone())); };
-    let si_id = globals.unit_defs.get(&first_number.unit.id).unwrap().si_id;
+    let si_id = globals.unit_defs.get(&first_number.unit.id).unwrap().si_id; //unwrap: unit MUST exist.
     //create a value with the func applied to the vec<f64>
     let value = Value::from_number(Number { significand: func(num_vec), exponent: 0, unit: Unit::from_id(si_id), fmt: NumberFormat::Dec }, range.clone());
     Ok(value)

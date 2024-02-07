@@ -52,7 +52,7 @@ impl Source {
                     self.lines.push(pos + 1);
                 }
             } else if byte >= 127 {
-                let c = self.text[i..].chars().next().unwrap();
+                let c = self.text[i..].chars().next().unwrap(); //unwrap: original rust code :)
                 char_len = c.len_utf8();
 
                 let pos = i;

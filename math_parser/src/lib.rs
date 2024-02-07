@@ -65,7 +65,7 @@ impl Api {
 
         resolver.results.sort_by(|v1, v2| v1.stmt_range.start.cmp(&v2.stmt_range.start)); //fast if list is nearly sorted, which it is.
 
-        serde_json::to_string_pretty(&resolver).unwrap()
+        serde_json::to_string_pretty(&resolver).unwrap() //unwrap: should always be possible to create a json string.
     }
 
     ///parse a file with either a given block or scope.

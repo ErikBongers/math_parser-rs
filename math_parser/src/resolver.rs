@@ -545,7 +545,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
         let args = vec![expr1, expr2];
         let range = Range { source_index: bin_expr.get_range().source_index, start: 0, end: 0};
 
-        let result = (self.globals.get_operator(op_id).unwrap())(&self.globals, &args, &range, &mut self.errors);
+        let result = (self.globals.get_operator(op_id).unwrap())(&self.globals, &args, &range, &mut self.errors); //unwrap: op_id already checked.
         if bin_expr.implicit_mult {
             if let NodeType::Id(id_expr) = &bin_expr.expr2.expr {
                 let id_str = self.globals.get_text(&id_expr.id.range);

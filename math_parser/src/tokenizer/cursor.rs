@@ -259,7 +259,7 @@ impl<'a> Cursor<'a> {
             if self.peek() != '0' && self.peek() != '1' && self.peek() != '_' {
                 break;
             }
-            let c = self.next().unwrap(); //checked.
+            let c = self.next().unwrap(); //unwrap: checked.
             if c == '_' { continue;}
             bin <<= 1;
             if c == '1' {
@@ -276,7 +276,7 @@ impl<'a> Cursor<'a> {
             if (self.peek() < '0' || self.peek() > '7') && self.peek() != '_' {
                 break;
             }
-            let c = self.next().unwrap(); //checked
+            let c = self.next().unwrap(); //unwrap: checked
             if c == '_' { continue;}
             oct *= 8;
             oct += c as u64 - '0' as u64;

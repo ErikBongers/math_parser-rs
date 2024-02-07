@@ -197,10 +197,14 @@ pub fn create_unit_defs() -> HashMap<String, UnitDef> {
     insert_def(&mut defs, "V", "V", 1.0, UnitProperty::VOLTAGE, &[]);
     insert_def(&mut defs, "mV", "V", 0.001, UnitProperty::VOLTAGE, &[]);
 
-    defs.get_mut("C").unwrap().to_si_fn = |_ud, d| d + 273.15;
-    defs.get_mut("C").unwrap().from_si_fn = |_ud, d| d - 273.15;
-    defs.get_mut("F").unwrap().to_si_fn = |_ud, d| (d - 32.0) * 5.0 / 9.0 + 273.15;
-    defs.get_mut("F").unwrap().from_si_fn = |_ud, d| (d - 273.15) * 9.0 / 5.0 + 32.0;
+    if let Some(def) = defs.get_mut("C") {
+        def.to_si_fn = |_ud, d| d + 273.15;
+        def.from_si_fn = |_ud, d| d - 273.15;
+    }
+    if let Some(def) = defs.get_mut("F") {
+        def.to_si_fn = |_ud, d| (d - 32.0) * 5.0 / 9.0 + 273.15;
+        def.from_si_fn = |_ud, d| (d - 273.15) * 9.0 / 5.0 + 32.0;
+    }
     defs
 }
 

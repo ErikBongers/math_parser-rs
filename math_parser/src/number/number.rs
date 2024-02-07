@@ -101,12 +101,12 @@ impl Number {
             errors.push(errors::unit_not_def(&to.id, range.clone()));
             return;
         }
-        if units_view.get_def(&self.unit.id, globals).unwrap().property != units_view.get_def(&to.id, globals).unwrap().property {
+        if units_view.get_def(&self.unit.id, globals).unwrap().property != units_view.get_def(&to.id, globals).unwrap().property { //unit ids already checked.
             errors.push(errors::unit_prop_diff(range.clone()));
             return;
         }
-        let si_val = units_view.get_def(&self.unit.id, globals).unwrap().convert_to_si(self.to_double());
-        let val = units_view.get_def(&to.id, globals).unwrap().convert_from_si(si_val);
+        let si_val = units_view.get_def(&self.unit.id, globals).unwrap().convert_to_si(self.to_double()); //unit ids already checked.
+        let val = units_view.get_def(&to.id, globals).unwrap().convert_from_si(si_val); //unit ids already checked.
         self.significand = val;
         self.unit = to.clone();
         let exponent = self.exponent;

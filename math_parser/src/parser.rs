@@ -531,7 +531,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         let mut list_expr = self.parse_list_expr();
         //first argument may be NONE, with a token EOT, which is an invalid argument list in this case.
         if list_expr.nodes.len() == 1 {
-            if let NodeType::None(none_expr) = &list_expr.nodes.first().unwrap().expr {
+            if let NodeType::None(none_expr) = &list_expr.nodes.first().unwrap().expr { //unwrap: len == 1
                 if none_expr.token.kind == TokenType::Eot {
                     let error =errors::eos(function_name.range.clone());
                     self.errors.push(error);
@@ -632,7 +632,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         loop {
             let expr = self.parse_add_expr();
             list_expr.nodes.push(expr);
-            if let NodeType::None(_) = list_expr.nodes.last().unwrap().expr {
+            if let NodeType::None(_) = list_expr.nodes.last().unwrap().expr { //unwrap: push() guarantees there's a last()
                 break;
             }
             if self.tok.peek().kind != TokenType::Comma {
