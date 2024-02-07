@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::errors::{Error, ErrorId};
+use crate::errors::Error;
 use crate::globals::Globals;
 use crate::number::Number;
 use crate::resolver::scope::Scope;
@@ -206,8 +206,8 @@ impl HasRange for Statement {
 }
 
 impl Statement {
-    pub fn error(errors: &mut Vec<Error>, id: ErrorId, token: Token, arg1: &str) -> Statement {
-        errors.push( Error::build(id, token.range.clone(), &[arg1]) );
+    pub fn error(errors: &mut Vec<Error>, error: Error, token: Token) -> Statement {
+        errors.push( error);
         Statement {
             node: Box::new( Node { expr: N::None(NoneExpr { token }), unit: Unit::none(), has_errors: true }),
             mute: false

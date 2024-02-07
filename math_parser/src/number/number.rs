@@ -1,8 +1,8 @@
 use std::cmp::max;
 use std::ops::{Add, Div, Mul, Sub};
-use crate::errors::{Error, ErrorId};
+use crate::errors;
+use crate::errors::Error;
 use crate::globals::Globals;
-use crate::resolver::add_error;
 use crate::resolver::scope::Scope;
 use crate::resolver::unit::{Unit, UnitsView};
 use crate::resolver::value::NumberFormat;
@@ -90,7 +90,7 @@ impl Number {
         if self.unit.is_empty() {
             self.unit = to.clone();
             if let None = units_view.get_def(&to.id, globals) {
-                add_error(errors, ErrorId::UnitNotDef, range.clone(), &[&to.id]);
+                errors.push(errors::unit_not_def(&to.id, range.clone()));
             }
             return;
         }
@@ -98,11 +98,11 @@ impl Number {
             return; //should already have been detected.
         }
         if let None = units_view.get_def(&to.id, globals) {
-            add_error(errors, ErrorId::UnitNotDef, range.clone(), &[&to.id]);
+            errors.push(errors::unit_not_def(&to.id, range.clone()));
             return;
         }
         if units_view.get_def(&self.unit.id, globals).unwrap().property != units_view.get_def(&to.id, globals).unwrap().property {
-            add_error(errors, ErrorId::UnitPropDiff, range.clone(), &[""]);
+            errors.push(errors::unit_prop_diff(range.clone()));
             return;
         }
         let si_val = units_view.get_def(&self.unit.id, globals).unwrap().convert_to_si(self.to_double());
@@ -208,12 +208,7 @@ pub fn parse_formatted_number<'s>(stream: &str, range: &Range, scope: &Scope) ->
         } else {
             if c == scope.thou_char {
                 if decimal_divider != 1.0 {
-                    return Err(Error{
-                        id: ErrorId::InvNumberStr,
-                        message: "thousands divider char not allowed after decimal point".to_string(),
-                        range: range.clone(),
-                        stack_trace: None,
-                    });
+                    return Err(errors::inv_number_str("thousands divider char not allowed after decimal point", range.clone()));
                 }
                 //note that the thou_char is currently allowed everywhere before the decimal_char !
             } else {
@@ -221,20 +216,10 @@ pub fn parse_formatted_number<'s>(stream: &str, range: &Range, scope: &Scope) ->
                     if decimal_divider == 1.0 {
                         decimal_divider = 10.0;
                     } else {
-                        return Err(Error{
-                            id: ErrorId::InvNumberStr,
-                            message: "decimal point encountered more than once".to_string(),
-                            range: range.clone(),
-                            stack_trace: None,
-                        });
+                        return Err(errors::inv_number_str("decimal point encountered more than once", range.clone()));
                     }
                 } else {
-                    return Err(Error{
-                        id: ErrorId::InvNumberStr,
-                        message: "unexpected character".to_string(),
-                        range: range.clone(),
-                        stack_trace: None,
-                    });
+                    return Err(errors::inv_number_str("unexpected character", range.clone()));
                 }
             }
         }

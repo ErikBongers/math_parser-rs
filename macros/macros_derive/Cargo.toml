@@ -9,3 +9,4 @@ proc-macro = true
 [dependencies]
 syn = "2.0.42"
 quote = "1.0"
+unicode-xid = "0.2.4"

@@ -1,4 +1,5 @@
-use crate::errors::{Error, ErrorId};
+use crate::errors;
+use crate::errors::Error;
 use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, Define, DefineExpr, DefineType, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NodeType, NoneExpr, PostfixExpr, Statement, UnaryExpr, UnitExpr};
 use crate::parser::nodes::DefineType::Precision;
 use crate::globals::Globals;
@@ -46,7 +47,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 if for_block {
                     return;
                 } else {
-                    self.add_error(ErrorId::UnknownExpr, self.tok.peek().range.clone(), &["}"]);
+                    self.errors.push(errors::unknown_expr("}", self.tok.peek().range.clone()));
                     self.tok.next();//avoid deadloop
                 }
             }
@@ -70,7 +71,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             let curl_open = self.tok.next();
             let block = self.parse_block(curl_open.range.clone());
             if !self.match_token(&TokenType::CurlClose) {
-                self.add_error(ErrorId::Expected, self.tok.peek().range.clone(), &["}"]);
+                self.errors.push(errors::expected("}", self.tok.peek().range.clone()));
             }
             return Statement { node: Node::boxed(NodeType::Block(block)), mute: mute_line | self.mute_block };
         }
@@ -121,13 +122,13 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             "precision" => {
                 let eq = self.tok.peek();
                 if eq.kind != TokenType::Eq {
-                    self.add_error(ErrorId::Expected, eq.range.clone(), &["="]);
+                    self.errors.push(errors::expected("=", eq.range.clone()));
                     return None;
                 }
                 self.tok.next(); //eq
                 let int = self.tok.peek();
                 if int.kind != TokenType::Number {
-                    self.add_error(ErrorId::Expected, int.range.clone(), &["an integer"]);
+                    self.errors.push(errors::expected("an integer", int.range.clone()));
                     return None;
                 }
                 let number_token = self.tok.next();
@@ -146,7 +147,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             "decimal_dot" => DefineType::DecimalDot,
             "decimal_comma" => DefineType::DecimalComma,
             _ => {
-                self.add_error(ErrorId::DefineNotDef, token.range.clone(), &[&txt]);
+                self.errors.push(errors::define_not_def(&txt, token.range.clone()));
                 return None;
             }
         };
@@ -174,12 +175,12 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         };
         let start_range = self.tok.next().range;
         if self.tok.peek().kind != TokenType::Id {
-            return Some(Statement::error(&mut self.errors, ErrorId::ExpectedId, self.tok.peek().clone(), ""));
+            return Some(Statement::error(&mut self.errors, errors::expected_id(self.tok.peek().range.clone()), self.tok.peek().clone()));
         };
         let id = self.tok.next();
 
         if !self.match_token(&TokenType::ParOpen) {
-            return Some(Statement::error(&mut self.errors, ErrorId::Expected, self.tok.peek().clone(), "("));
+            return Some(Statement::error(&mut self.errors, errors::expected("(", self.tok.peek().range.clone()), self.tok.peek().clone()));
         };
 
         let mut param_defs: Vec<String> = Vec::new();
@@ -193,20 +194,20 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             if self.tok.peek().kind == TokenType::ParClose {
                 break;
             }
-            return Some(Statement::error(&mut self.errors, ErrorId::Expected, self.tok.peek().clone(), ",` or `)"));
+            return Some(Statement::error(&mut self.errors, errors::expected(",` or `)", self.tok.peek().range.clone()), self.tok.peek().clone()));
         };
 
         if !self.match_token(&TokenType::ParClose) {
-            return Some(Statement::error(&mut self.errors, ErrorId::Expected, self.tok.peek().clone(), ")"));
+            return Some(Statement::error(&mut self.errors, errors::expected(")", self.tok.peek().range.clone()), self.tok.peek().clone()));
         };
         if self.tok.peek().kind != TokenType::CurlOpen {
-            return Some(Statement::error(&mut self.errors, ErrorId::Expected, self.tok.peek().clone(), "{"));
+            return Some(Statement::error(&mut self.errors, errors::expected("{", self.tok.peek().range.clone()), self.tok.peek().clone()));
         };
         let curl_open = self.tok.next();
         let new_code_block = self.parse_block(curl_open.range.clone());
 
         if self.tok.peek().kind != TokenType::CurlClose {
-            return Some(Statement::error(&mut self.errors, ErrorId::Expected, self.tok.peek().clone(), "}"));
+            return Some(Statement::error(&mut self.errors, errors::expected("}", self.tok.peek().range.clone()), self.tok.peek().clone()));
         };
         let token_end = self.tok.next();
         let fun_def_expr = FunctionDefExpr {
@@ -244,7 +245,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             TokenType::CurlClose => (), //possible end of block
             _ => {
                 let t = self.tok.next(); //avoid dead loop!
-                self.errors.push(Error::build(ErrorId::Expected, t.range.clone(), &[";"]));
+                self.errors.push(errors::expected(";", t.range.clone()));
                 stmt.node.has_errors = true;
             }
         };
@@ -271,7 +272,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
 
             if let NodeType::None(none_expr) = &assign_expr.expr.expr {
                 if none_expr.token.kind == TokenType::Eot {
-                    self.add_error(ErrorId::Eos, Range { start: eq.range.end, ..eq.range }, &[]);
+                    self.errors.push(errors::eos(Range { start: eq.range.end, ..eq.range }));
                 }
             }
 
@@ -356,7 +357,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                     let expr2 = self.parse_power_expr();
                     if op.kind == Div {
                         if expr2.expr.is_implicit_mult() {
-                            self.add_error(ErrorId::WDivImplMult, expr2.get_range().clone(), &[""]);
+                            self.errors.push(errors::w_div_impl_mult(expr2.get_range().clone()));
                         }
                     }
                     expr1 = Node::boxed(NodeType::Binary(BinExpr { expr1, op, expr2, implicit_mult: false }))
@@ -376,7 +377,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                     let expr2 = self.parse_power_expr(); //right associative!
                     let bin_expr = BinExpr { expr1, op, expr2, implicit_mult: false };
                     if bin_expr.expr1.expr.is_implicit_mult() || bin_expr.expr2.expr.is_implicit_mult() {
-                        self.add_error(ErrorId::WPowImplMult, bin_expr.get_range().clone(), &[""]);
+                        self.errors.push(errors::w_pow_impl_mult(bin_expr.get_range().clone()));
                     }
                     expr1 = Node::boxed(NodeType::Binary(bin_expr));
 
@@ -520,7 +521,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     fn parse_call_expr(&mut self, function_name: Token) -> Box<Node> {
         let func_name_str = self.globals.get_text(&function_name.range);
         if TokenType::ParOpen != self.tok.peek().kind {
-            let error = Error::build(ErrorId::FuncNoOpenPar, function_name.range.clone(), &[&func_name_str]);
+            let error = errors::func_no_open_par(&func_name_str, function_name.range.clone());
             self.errors.push(error);
             let mut node = Node::new(NodeType::None(NoneExpr{token: function_name.clone()}));
             node.has_errors = true;
@@ -532,7 +533,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         if list_expr.nodes.len() == 1 {
             if let NodeType::None(none_expr) = &list_expr.nodes.first().unwrap().expr {
                 if none_expr.token.kind == TokenType::Eot {
-                    let error = Error::build(ErrorId::Eos, function_name.range.clone(), &[&self.globals.get_text(&function_name.range)]);
+                    let error =errors::eos(function_name.range.clone());
                     self.errors.push(error);
                     let mut node =  Node::new(NodeType::None(NoneExpr{token: function_name}));
                     node.has_errors = true;
@@ -543,7 +544,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             }
         }
         if self.tok.peek().kind != TokenType::ParClose {
-            self.add_error(ErrorId::Expected, self.tok.peek().range.clone(), &[")"]);
+            self.errors.push(errors::expected(")", self.tok.peek().range.clone()));
         }
         let par_close = self.tok.next(); // ')'
         Node::boxed(NodeType::Call(CallExpr {
@@ -552,11 +553,6 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             arguments: list_expr.nodes,
             par_close_range: par_close.range
         }))
-    }
-
-    fn add_error(&mut self, id: ErrorId, range: Range, args: &[&str]) {
-        let error = Error::build(id, range, args);
-        self.errors.push(error);
     }
 
     fn parse_primary_expr(&mut self) -> Box<Node> {
@@ -576,7 +572,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 self.tok.next();
                 let mut expr = Parser::reduce_list(Node::boxed(NodeType::List(self.parse_list_expr())));
                 if !self.match_token(&TokenType::ParClose) {
-                    let error = Error::build(ErrorId::Expected, expr.get_range(), &[")"]);
+                    let error = errors::expected(")", expr.get_range());
                     self.errors.push(error);
                 }
                 if let NodeType::Binary(ref mut bin_expr) =  &mut expr.expr {
@@ -603,7 +599,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     fn parse_abs_operator(&mut self, token: Token) -> Box<Node> {
         let expr = self.parse_add_expr();
         if self.tok.peek().kind != TokenType::Pipe {
-            self.add_error(ErrorId::Expected, self.tok.peek().range.clone(), &["|"]);
+            self.errors.push(errors::expected("|", self.tok.peek().range.clone()));
         }
         let node = Node::boxed(NodeType::Call(CallExpr {
             function_name: "abs".to_string(),

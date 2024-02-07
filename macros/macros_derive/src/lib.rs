@@ -5,7 +5,6 @@ use proc_macro::TokenTree::{Ident, Literal};
 use std::iter::Peekable;
 use quote::quote;
 use syn;
-use syn::Token;
 
 #[proc_macro_derive(CastAny)]
 pub fn cast_any_macro_derive(input: TokenStream) -> TokenStream {
@@ -56,7 +55,7 @@ pub fn print_tokens(input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn define_errors(input: TokenStream) -> TokenStream {
     use proc_macro as pm;
-    let mut enum_stream = TokenStream::from_str("#[derive(Clone, Serialize)] enum ErrorId").unwrap(); //unwrap: static text
+    let mut enum_stream = TokenStream::from_str("#[derive(Clone, Serialize, PartialEq)] pub enum ErrorId").unwrap(); //unwrap: static text
     let mut functions_stream = TokenStream::new();
 
     let mut it = input.into_iter().peekable();
@@ -90,9 +89,6 @@ fn add_one_error(input: &mut Peekable<IntoIter>, enum_stream: &mut TokenStream, 
     ]);
 
     let camel_id = to_camel_case(error_id.to_string().as_str());
-    println!("{}", camel_id);
-
-    println!("{}", message.to_string());
 
     let message_str = message .to_string();
     let message_params: Vec<_> = message_str
@@ -119,11 +115,14 @@ fn add_one_error(input: &mut Peekable<IntoIter>, enum_stream: &mut TokenStream, 
     let mut arg_tokens = TokenStream::new();
     // ...param1: &str,...
     for param_id in &message_params {
+        if !is_ident(param_id) {
+            panic!("` param {0}` for error {1} is not a valid identifier", param_id, error_id.to_string());
+        }
         arg_tokens.extend([
-            TokenTree::from(pm::Ident::new(&param_id, Span::call_site())),
+            TokenTree::from(pm::Ident::new(&param_id, message_token.span())),
             TokenTree::from(pm::Punct::new(':', Spacing::Alone)),
             TokenTree::from(pm::Punct::new('&', Spacing::Alone)),
-            TokenTree::from(pm::Ident::new("str", Span::call_site())),
+            TokenTree::from(pm::Ident::new("str", message_token.span())),
             TokenTree::from(pm::Punct::new(',', Spacing::Alone)),
         ]);
     }
@@ -153,7 +152,7 @@ fn add_one_error(input: &mut Peekable<IntoIter>, enum_stream: &mut TokenStream, 
     let tmp_stream = TokenStream::from_str(", message: format!").unwrap(); //unwrap: static text
     error_fields_stream.extend(tmp_stream.into_iter());
     error_fields_stream.extend([format_arg_group]);
-    error_fields_stream.extend(TokenStream::from_str(", range, stack_trace: None,"));
+    error_fields_stream.extend(TokenStream::from_str(", range, stack_trace: None, error_type: ErrorType::E,")); //TODO: test for type Warning.
 
     let error_group = TokenTree::from(pm::Group::new(Delimiter::Brace, error_fields_stream));
     let funct_body_group = TokenTree::from(pm::Group::new(Delimiter::Brace, TokenStream::from_iter([
@@ -187,4 +186,22 @@ fn to_camel_case(id_str: &str) -> String {
     }
     camel_case.pop();
     camel_case
+}
+
+
+fn is_ident(string: &str) -> bool {
+    let mut chars = string.chars();
+    if let Some(start) = chars.next() {
+        is_id_start(start) && chars.all(is_id_continue)
+    } else {
+        false
+    }
+}
+
+fn is_id_start(c: char) -> bool {
+    // This is XID_Start OR '_' (which formally is not a XID_Start).
+    c == '_' || unicode_xid::UnicodeXID::is_xid_start(c)
+}
+fn is_id_continue(c: char) -> bool {
+    unicode_xid::UnicodeXID::is_xid_continue(c)
 }

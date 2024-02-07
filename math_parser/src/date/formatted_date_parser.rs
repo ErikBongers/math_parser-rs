@@ -1,6 +1,5 @@
 use errors::has_real_errors;
 use crate::errors;
-use crate::errors::{Error, ErrorId};
 use crate::date::{Timepoint, Day};
 use crate::date::{DateFormat, Month, month_from_int, month_from_str};
 use crate::tokenizer::cursor::Range;
@@ -58,7 +57,7 @@ impl<'s, 'r> DateParserState<'s, 'r> {
     fn parse_any_slice(&mut self, slice_no: usize, slice: &str) {
         if slice == "last" {
             if !self.date.day.is_none() {
-                self.date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), &["multiple values for day."]));
+                self.date.errors.push(errors::inv_date_str("multiple values for day.", self.range.clone()));
             } else {
                 self.date.day = Day::Last;
             }
@@ -71,22 +70,22 @@ impl<'s, 'r> DateParserState<'s, 'r> {
                 self.date.month = month;
                 return;
             } else {
-                self.date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), &["multiple values for month."]));
+                self.date.errors.push(errors::inv_date_str("multiple values for month.", self.range.clone()));
 
             }
         }
         //from here on, it should be all numbers.
         let Ok(n) = slice.parse::<i32>() else {
-            self.date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), &["invalid numeric value."]));
+            self.date.errors.push(errors::inv_date_str("invalid numeric value.", self.range.clone()));
             return;
         };
         if n < 0 {
-            self.date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), &["invalid numeric value."]));
+            self.date.errors.push(errors::inv_date_str("invalid numeric value.", self.range.clone()));
             return;
         }
         if n > 31 {
             if self.date.year.is_some() {
-                self.date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), &["multiple values for year."]));
+                self.date.errors.push(errors::inv_date_str("multiple values for year.", self.range.clone()));
                 return ;
             } else {
                 self.date.year = Some(n);
@@ -97,11 +96,11 @@ impl<'s, 'r> DateParserState<'s, 'r> {
         } else {
             if n > 12 {
                 if self.count_date_slices() >= 3 && !self.has_year_slice() {
-                    self.date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), &["values could be month or year."]));
+                    self.date.errors.push(errors::inv_date_str("values could be month or year.", self.range.clone()));
                     return;
                 }
                 if !self.date.day.is_none() {
-                    self.date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), &["multiple values for day."]));
+                    self.date.errors.push(errors::inv_date_str("multiple values for day.", self.range.clone()));
                     return;
                 }
                 self.date.day = Day::Value(n as i8);
@@ -119,7 +118,7 @@ impl<'s, 'r> DateParserState<'s, 'r> {
                             if self.date.day.is_none() {
                                 self.date.day = Day::Value(n as i8);
                             } else {
-                                self.date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), &["not clear which value is day or month."]));
+                                self.date.errors.push(errors::inv_date_str("not clear which value is day or month.", self.range.clone()));
                             }
                             return;
                         }
@@ -127,7 +126,7 @@ impl<'s, 'r> DateParserState<'s, 'r> {
                             if self.date.month == Month::NONE {
                                 self.date.month = month_from_int(n);
                             } else {
-                                self.date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), &["not clear which value is day or month."]));
+                                self.date.errors.push(errors::inv_date_str("not clear which value is day or month.", self.range.clone()));
                             }
                             return;
                         }
@@ -136,7 +135,7 @@ impl<'s, 'r> DateParserState<'s, 'r> {
                             self.date.month = month_from_int(n);
                             return;
                         }
-                        self.date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), &["not clear which value is day or month."]));
+                        self.date.errors.push(errors::inv_date_str("not clear which value is day or month.", self.range.clone()));
                     }
                     if self.ymd_format {
                         self.parse_ymd_slice_number(slice_no, n);
@@ -151,7 +150,7 @@ impl<'s, 'r> DateParserState<'s, 'r> {
                             self.date.day = Day::Value(n as  i8);
                             return;
                         }
-                        self.date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), &["not clear which value is day or month."]));
+                        self.date.errors.push(errors::inv_date_str("not clear which value is day or month.", self.range.clone()));
                     }
                 }
             }
@@ -164,21 +163,21 @@ impl<'s, 'r> DateParserState<'s, 'r> {
                 if self.date.year.is_none() {
                 self.date.year = Some(n)
                 } else {
-                self.date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), & ["assuming ymd format, but day is already filled."]));
+                self.date.errors.push(errors::inv_date_str("assuming ymd format, but day is already filled.", self.range.clone()));
                 }
             },
             1 => {
                 if self.date.month == Month::NONE {
                     self.date.month = month_from_int(n);
                 } else {
-                    self.date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), & ["assuming ymd but month is already filled."]));
+                    self.date.errors.push(errors::inv_date_str("assuming ymd but month is already filled.", self.range.clone()));
                 }
             },
             2 => {
                 if self.date.day.is_none() {
                     self.date.day = Day::Value(n as i8);
                 } else {
-                    self.date.errors.push(Error::build(ErrorId::InvDateStr, self.range.clone(), & ["assuming ymd but day is already filled."]));
+                    self.date.errors.push(errors::inv_date_str("assuming ymd but day is already filled.", self.range.clone()));
                 }
             },
             _ => () //ignore
@@ -227,7 +226,7 @@ impl<'s, 'r> DateParserState<'s, 'r> {
         self.parse_day(&mut tmp_date, self.slices[idx.day]);
 
         if !tmp_date.is_valid() {
-            tmp_date.errors.push(Error::build(ErrorId::InvDateStrForFormat, self.range.clone(), &[self.date_format.to_string().as_str()]));
+            tmp_date.errors.push(errors::inv_date_str_for_format(self.date_format.to_string().as_str(), self.range.clone()));
         }
         self.date = tmp_date;
    }

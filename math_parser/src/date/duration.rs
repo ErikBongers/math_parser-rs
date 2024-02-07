@@ -1,5 +1,6 @@
 use std::ops::{Add, Sub, Mul, Div};
-use crate::errors::{Error, ErrorId};
+use crate::errors;
+use crate::errors::Error;
     use crate::number::Number;
 use crate::tokenizer::cursor::Range;
 
@@ -76,7 +77,7 @@ impl Duration {
             "days" => duration.days = number.to_double() as i32,
             "months" => duration.months = number.to_double() as i32,
             "years" => duration.years = number.to_double() as i32,
-            _ => errors.push(Error::build(ErrorId::EExplicitUnitsExpected, range.clone(), &["days, months, years"])),
+            _ => errors.push(errors::e_explicit_units_expected("days, months, years", range.clone())),
         }
         duration
     }

@@ -3,7 +3,6 @@ use std::rc::Rc;
 use serde::{Serialize, Serializer};
 use serde::ser::SerializeStruct;
 use crate::{date, errors};
-use crate::errors::ERROR_MAP;
 use crate::globals::Globals;
 use crate::number::Number;
 use crate::resolver::Resolver;
@@ -148,7 +147,7 @@ impl<'a> Serialize for ErrorContext<'a> {
         let mut state = serializer.serialize_struct("error", cnt_fields)?;
 
         state.serialize_field("id", &self.error.id)?;
-        let error_type = &ERROR_MAP.get(&self.error.id).unwrap().error_type;
+        let error_type = &self.error.error_type;
         state.serialize_field("type", &error_type)?;
         state.serialize_field("msg", &self.error.message)?;
         state.serialize_field("range", &RangeContext{ range: &self.error.range, globals: self.globals })?;

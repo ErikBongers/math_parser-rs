@@ -1,12 +1,12 @@
 use std::fmt::{Display, Formatter};
-use crate::errors::{Error, ErrorId};
+use crate::errors;
+use crate::errors::Error;
 use crate::globals::Globals;
 use crate::resolver::unit::Unit;
 use crate::resolver::value::{NumberFormat, OperandType, Value, Variant};
 use crate::tokenizer::cursor::Range;
 use crate::tokenizer::token_type::TokenType;
 use crate::number::Number;
-use crate::resolver::add_error;
 
 #[repr(u8)]
 #[derive(Copy, Clone)]
@@ -115,15 +115,15 @@ fn do_term(v1: &Number, adding: bool, v2: &Number, range: &Range, globals: &Glob
     //if both values have units: convert them to SI before operation.
     if !v1.unit.is_empty() && !v2.unit.is_empty() {
         let Some(u1) = &globals.unit_defs.get(&v1.unit.id) else {
-            add_error(errors, ErrorId::UnitNotDef, range.clone(), &[&v1.unit.id]);
+            errors.push(errors::unit_not_def(&v1.unit.id, range.clone()));
             return Number::from(0.0);
         };
         let Some(u2) = &globals.unit_defs.get(&v2.unit.id) else {
-            add_error(errors, ErrorId::UnitNotDef, range.clone(), &[&v2.unit.id]);
+            errors.push(errors::unit_not_def(&v2.unit.id, range.clone()));
             return Number::from(0.0);
         };
         if u1.property != u2.property {
-            add_error(errors, ErrorId::UnitPropDiff, range.clone(), &[]);
+            errors.push(errors::unit_prop_diff(range.clone()));
         }
         let d1 = v1.to_si(&globals);
         let d2 = v2.to_si(&globals);

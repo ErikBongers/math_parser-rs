@@ -3,11 +3,12 @@ use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 use chrono::{Datelike, Utc};
 use crate::resolver::scope::Scope;
-use crate::errors::{Error, ErrorId};
+use crate::errors::Error;
 use crate::date::{Day, Timepoint};
 use crate::date::month_from_int;
+use crate::errors;
 use crate::parser::nodes::{CodeBlock, FunctionDefExpr};
-use crate::resolver::{add_error, add_error_value, Resolver};
+use crate::resolver::{add_error_value, Resolver};
 use crate::globals::Globals;
 use crate::number::Number;
 use crate::resolver::recursive_iterator::recursive_iter;
@@ -57,7 +58,7 @@ impl FunctionDef for GlobalFunctionDef {
         if self.is_correct_arg_count(args.len()) {
             (self.execute)(&self, scope, args, range, errors, globals)
         } else {
-            add_error_value(errors, ErrorId::FuncArgWrong, range.clone(), &[""])
+            add_error_value(errors, errors::func_arg_wrong("", range.clone()))
         }
     }
 
@@ -80,7 +81,7 @@ impl FunctionDef for CustomFunctionDef {
         if self.is_correct_arg_count(args.len()) {
             (self.execute)(&self, scope, args, range, errors, globals)
         } else {
-            add_error_value(errors, ErrorId::FuncArgWrong, range.clone(), &[""])
+            add_error_value(errors, errors::func_arg_wrong("", range.clone()))
         }
     }
 
@@ -223,7 +224,7 @@ fn reverse(_global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>
 
 fn sort(_global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, _globals: &Globals) -> Value {
     if args.iter().find(|v| v.as_number().is_none()).is_some() {
-        return add_error_value(errors, ErrorId::FuncArgWrongType, range.clone(), &["sort", "They must be numeric."]);
+        return add_error_value(errors, errors::func_arg_wrong_type("sort", "They must be numeric.", range.clone()));
     }
     let mut sorted: Vec<Value> = args.clone();
     sorted.sort_by(|a, b| a
@@ -330,7 +331,7 @@ fn last(_global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>>, a
 
 fn match_arg_number<'a>(function_def: &dyn FunctionDef, args: &'a Value, range: &Range, errors: &mut Vec<Error>) -> Option<&'a Number> {
     let Variant::Numeric { number, .. } = &args.variant else {
-        add_error(errors, ErrorId::FuncArgWrongType, range.clone(), &[function_def.get_name()]);
+        errors.push(errors::func_arg_wrong_type(function_def.get_name(), "must be numeric", range.clone()));
         return None;
     };
     Some(number)
@@ -363,11 +364,11 @@ fn check_trig_angle_arg(global_function_def: &GlobalFunctionDef, scope: &&Rc<Ref
     let mut number = number.clone();
     if number.unit.is_empty() {
         if scope.borrow().strict {
-            errors.push(Error::build(ErrorId::WExplicitUnitsExpected, range.clone(), &["rad, deg"]));
+            errors.push(errors::w_explicit_units_expected("rad, deg", range.clone()));
         }
     } else {
         if !globals.is_unit(&number.unit, UnitProperty::ANGLE) {
-            errors.push(Error::build(ErrorId::UnitPropWrong, range.clone(), &["angle: (rad, deg)"]));
+            errors.push(errors::unit_prop_wrong("angle: (rad, deg)", range.clone()));
             return Err(Value::error(range.clone()));
         }
     }
@@ -413,15 +414,15 @@ fn factorial(global_function_def: &GlobalFunctionDef, _scope: &Rc<RefCell<Scope>
     };
     let size = number.to_double();
     if size < 0.0 {
-        errors.push(Error { id: ErrorId::ValueError, message: "Factorial argument should be a non-negative integer".to_string(), range: range.clone(), stack_trace: None,});
+        errors.push(errors::value_error("Factorial argument should be a non-negative integer", range.clone()));
         return Value::error(range.clone());
     }
     if size !=  (size as i64) as f64 {
-        errors.push(Error { id: ErrorId::ValueError, message: "Factorial argument should be an integer value".to_string(), range: range.clone(), stack_trace: None,});
+        errors.push(errors::value_error("Factorial argument should be an integer value", range.clone()));
         return Value::error(range.clone());
     }
     if size > 20.0 {
-        errors.push(Error { id: ErrorId::ValueError, message: "Factorial argument should not be larger than 20 or it will produce a too large number.".to_string(), range: range.clone(), stack_trace: None,});
+        errors.push(errors::value_error("Factorial argument should not be larger than 20 or it will produce a too large number.", range.clone()));
         return Value::error(range.clone());
     }
     let size = size as i64;
@@ -441,7 +442,7 @@ pub fn execute_custom_function(local_function_def: &CustomFunctionDef, _scope: &
     let mut resolver = Resolver {globals, scope: local_function_def.code_block.scope.clone(), results: Vec::new(), errors, muted: true, current_statement_muted: false};
     let result = resolver.resolve_to_result(&local_function_def.code_block.statements);
     let Some(result) = result else {
-        add_error(errors, ErrorId::FuncNoBody, range.clone(),&[&local_function_def.name]);
+        errors.push(errors::func_no_body(&local_function_def.name, range.clone()));
         return Value::error(range.clone())
     };
     result
@@ -462,7 +463,7 @@ fn date_func(global_function_def: &GlobalFunctionDef, scope: &Rc<RefCell<Scope>>
 
     let  idx = scope.borrow().date_format.indices();
     if args.len() < 3 {
-        errors.push(Error::build(ErrorId::FuncArgWrong, range.clone(), &[global_function_def.get_name()]));
+        errors.push(errors::func_arg_wrong(global_function_def.get_name(), range.clone()));
         return Value::error(range.clone());
     }
     let day = &args[idx.day];
@@ -483,7 +484,7 @@ fn date_func(global_function_def: &GlobalFunctionDef, scope: &Rc<RefCell<Scope>>
         date.year = Some(year_num.to_double() as i32);
     }
     if !date.is_valid() {
-        errors.push(Error::build(ErrorId::InvDate, range.clone(), &[]));
+        errors.push(errors::inv_date(range.clone()));
     }
     Value::from_date(date, range.clone())
 }
@@ -536,7 +537,7 @@ fn with_num_vec(function_def: &dyn FunctionDef, args: &Vec<Value>, range: &Range
 
 fn to_num_iter<'a>(function_name: &'a str, args: &'a Vec<Value>, _range: &'a Range, errors: &'a mut Vec<Error>, globals: &'a Globals) -> Result<impl Iterator<Item=f64> + 'a, Value> {
     if let Some(wrong_value) = recursive_iter(args).find(|v| v.as_number().is_none()) {
-        return Err(add_error_value(errors, ErrorId::FuncArgWrongType, wrong_value.stmt_range.clone(), &[function_name, "They must be numeric."]));
+        return Err(add_error_value(errors, errors::func_arg_wrong_type(function_name, "They must be numeric.", wrong_value.stmt_range.clone())));
     }
     Ok(recursive_iter(args)
         .map(|value| {
