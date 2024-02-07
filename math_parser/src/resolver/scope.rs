@@ -78,15 +78,14 @@ impl Scope {
     }
 
     pub fn with_function<TReturnValue> (&self, id: &str, globals: &Globals, mut f: impl FnMut(&dyn FunctionDef) -> TReturnValue) -> Option<TReturnValue> {
-        if self.local_function_defs.contains_key(id) { //todo: replace with match?
-            Some(f(self.local_function_defs.get(id).unwrap())) //unwrap: just checked.
+        if let Some(fdef) = self.local_function_defs.get(id) {
+           Some(f(fdef))
         } else {
-            if self.parent_scope.is_some() { //todo: replace with match?
-                let scope = self.parent_scope.as_ref().unwrap(); //unwrap: just checked.
-                scope.borrow().with_function(id, globals, f)
+            if let Some(parent_scope) = self.parent_scope.as_ref() {
+                parent_scope.borrow().with_function(id, globals, f)
             } else {
-                if globals.global_function_defs.contains_key(id) {
-                    Some(f(&globals.global_function_defs[id]))
+                if let Some(fdef) = globals.global_function_defs.get(id) {
+                    Some(f(fdef))
                 } else {
                     None
                 }
