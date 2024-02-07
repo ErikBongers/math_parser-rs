@@ -3,7 +3,7 @@ use std::ops::{Add, Div, Mul, Sub};
 use crate::errors;
 use crate::errors::Error;
 use crate::globals::Globals;
-use crate::resolver::scope::Scope;
+use crate::resolver::scope::DecimalChar;
 use crate::resolver::unit::{Unit, UnitsView};
 use crate::resolver::value::NumberFormat;
 use crate::tokenizer::cursor::Range;
@@ -193,7 +193,33 @@ impl Div for &Number {
     }
 }
 
-pub fn parse_formatted_number(stream: &str, range: &Range, scope: &Scope) -> Result<Number, Error> {
+fn find_decimal_char(stream: &str, range: &Range) -> Result<DecimalChar, Error> {
+    let dots: Vec<_> = stream.match_indices('.').map(|tupple| tupple.0).collect();
+    let commas: Vec<_> = stream.match_indices(',').map(|tupple| tupple.0).collect();
+    if dots.len() + commas.len() == 0 {
+        return Ok(DecimalChar::Dot); //only digits, so irrelevant separator
+    }
+    if dots.len() + commas.len() < 2 {
+        return Err(errors::inv_number_str("ambiguous decimal point or thousands separator", range.clone()));
+    }
+    if dots.last().unwrap() > commas.first().unwrap() && commas.last().unwrap() > dots.first().unwrap() {
+        return Err(errors::inv_number_str("mixed dots and commas", range.clone()));
+    }
+    if dots.first().unwrap() > commas.first().unwrap() {
+        Ok(DecimalChar::Dot)
+    } else {
+        Ok(DecimalChar::Comma)
+    }
+}
+
+pub fn parse_formatted_number(stream: &str, range: &Range, decimal_char: DecimalChar) -> Result<Number, Error> {
+    let (decimal_char, thou_char) = match decimal_char {
+        DecimalChar::Comma => { (',', '.') },
+        DecimalChar::Dot => { ('.', ',') },
+        DecimalChar::Auto => {
+            return parse_formatted_number(stream, range, find_decimal_char(stream, range)?);
+        }
+    };
     let mut decimal_divider = 1.0;
     let chars = stream.chars();
     let mut d: f64 = 0.0;
@@ -206,13 +232,13 @@ pub fn parse_formatted_number(stream: &str, range: &Range, scope: &Scope) -> Res
                 decimal_divider *= 10.0;
             }
         } else {
-            if c == scope.thou_char {
+            if c == thou_char {
                 if decimal_divider != 1.0 {
                     return Err(errors::inv_number_str("thousands divider char not allowed after decimal point", range.clone()));
                 }
                 //note that the thou_char is currently allowed everywhere before the decimal_char !
             } else {
-                if c == scope.decimal_char {
+                if c == decimal_char {
                     if decimal_divider == 1.0 {
                         decimal_divider = 10.0;
                     } else {

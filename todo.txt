@@ -1,3 +1,6 @@
+* non closes quoted value: last char is not parsed.
+ : '123  --> value 12 !!!
+
 * number strings.
   > allow underscores? Currency signs? Minus? Exponential?
   > merge with the normal parse_decimal function?

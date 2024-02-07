@@ -63,9 +63,17 @@ fn test_implicit_mult () {
 #[test]
 fn test_formatted_number () {
     test_result("a='123,456.789'", 123456.789, "");
+    test_result("a='123.456,789'", 123456.789, "");
+    test_result("a='123456789'", 123456789.0, "");
     test_result("#define decimal_dot \n a='123,456.789'", 123456.789, "");
     test_result("#define decimal_comma \n a='123.456,789'", 123456.789, "");
+    test_result("#define decimal_dot\n a='.123'", 0.123, "");
     test_result("a='12,34,56.789'", 123456.789, "");
+    test_result("a='12.34.56,789'", 123456.789, "");
+    test_error("a='12.34,56.789'", ErrorId::InvNumberStr);
+    test_error("a='12,34.56,789'", ErrorId::InvNumberStr);
+    test_error("a='12,3456789'", ErrorId::InvNumberStr);
+    test_error("a='12.3456789'", ErrorId::InvNumberStr);
 }
 
 #[test]

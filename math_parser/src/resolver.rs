@@ -15,7 +15,7 @@ use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr
 use crate::globals::Globals;
 use crate::number::{Number, parse_formatted_number};
 use crate::resolver::operator::{operator_id_from, OperatorType};
-use crate::resolver::scope::Scope;
+use crate::resolver::scope::{DecimalChar, Scope};
 use crate::resolver::unit::{Unit, UnitProperty, UnitsView, UnitTag};
 use crate::resolver::value::{NumberFormat, Value, Variant};
 use crate::resolver::value::Variant::Numeric;
@@ -152,12 +152,13 @@ impl<'g, 'a> Resolver<'g, 'a> {
                 },
                 T::Strict => self.scope.borrow_mut().strict = true,
                 T::DecimalDot => {
-                    self.scope.borrow_mut().decimal_char = '.';
-                    self.scope.borrow_mut().thou_char = ',';
+                    self.scope.borrow_mut().decimal_char = DecimalChar::Dot;
                 },
                 T::DecimalComma => {
-                    self.scope.borrow_mut().decimal_char = ',';
-                    self.scope.borrow_mut().thou_char = '.';
+                    self.scope.borrow_mut().decimal_char = DecimalChar::Comma;
+                },
+                T::DecimalAuto => {
+                    self.scope.borrow_mut().decimal_char = DecimalChar::Auto;
                 },
                 T::Trig => self.scope.borrow_mut().function_view.add_type(FunctionType::Trig, self.globals),
                 T::Arithm => self.scope.borrow_mut().function_view.add_type(FunctionType::Arithm, self.globals),
@@ -498,7 +499,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
                     trimmed_range.start += 1;
                     trimmed_range.end -= 1;
                 }
-                let num_error = match parse_formatted_number(self.globals.get_text(&trimmed_range), &trimmed_range, &self.scope.borrow()) {
+                let num_error = match parse_formatted_number(self.globals.get_text(&trimmed_range), &trimmed_range, self.scope.borrow().decimal_char) {
                     Ok(number) => {
                        return Value::from_number(number, trimmed_range);
                     }

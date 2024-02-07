@@ -230,6 +230,9 @@ These can be changed with ```#define``` and ```#undef```
         decimal_comma //same as above, other locale: european_value = '123.456,78';
         dec_comma
         comma
+        decimal_auto //automatically determine the decimal char. Only works if both a `.` and `,` are present.
+        dec_auto
+        //no `auto` as this is a bit too general of a word.
 ```
 
 ### Scope

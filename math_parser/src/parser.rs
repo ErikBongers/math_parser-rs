@@ -144,8 +144,9 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             "all" => DefineType::Default,
             "electric" => DefineType::Electric,
             "strict" => DefineType::Strict,
-            "decimal_dot" => DefineType::DecimalDot,
-            "decimal_comma" => DefineType::DecimalComma,
+            "decimal_dot" | "dec_dot" | "dot" => DefineType::DecimalDot,
+            "decimal_comma" | "dec_comma" | "comma" => DefineType::DecimalComma,
+            "decimal_auto" | "dec_auto"  => DefineType::DecimalAuto,
             _ => {
                 self.errors.push(errors::define_not_def(&txt, token.range.clone()));
                 return None;

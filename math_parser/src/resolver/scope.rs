@@ -8,6 +8,9 @@ use crate::globals::Globals;
 use crate::resolver::unit::{UnitsView};
 use crate::resolver::value::Value;
 
+#[derive(Clone, Copy)]
+pub enum DecimalChar { Dot, Comma, Auto }
+
 pub struct Scope {
     pub parent_scope: Option<Rc<RefCell<Scope>>>,
     pub var_defs: HashSet<String>,
@@ -18,8 +21,7 @@ pub struct Scope {
     pub date_format: DateFormat,
     pub precision: f64,
     pub strict: bool,
-    pub decimal_char: char,
-    pub thou_char: char,
+    pub decimal_char: DecimalChar,
 }
 
 impl Scope {
@@ -34,8 +36,7 @@ impl Scope {
             date_format: DateFormat::YMD,
             precision: 10.0_f64.powf(5.0),
             strict: false,
-            decimal_char: '.',
-            thou_char: ',',
+            decimal_char: DecimalChar::Auto,
         }
     }
 
@@ -50,7 +51,6 @@ impl Scope {
             precision: scope.precision,
             strict: scope.strict,
             decimal_char: scope.decimal_char,
-            thou_char: scope.thou_char,
 
             //don't copy:
             local_function_defs: HashMap::new(),

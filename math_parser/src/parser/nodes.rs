@@ -300,6 +300,7 @@ pub enum DefineType {
     Strict,
     DecimalDot,
     DecimalComma,
+    DecimalAuto,
 }
 
 pub struct Define {
