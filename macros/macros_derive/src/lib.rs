@@ -61,7 +61,13 @@ pub fn define_errors(input: TokenStream) -> TokenStream {
     let mut it = input.into_iter().peekable();
 
     let mut values_stream = TokenStream::new();
-    while add_one_error(&mut it, &mut values_stream, &mut functions_stream) {}
+    loop {
+        match add_one_error(&mut it, &mut values_stream, &mut functions_stream) {
+            Ok(not_finished) => { if !not_finished { break; } },
+            Err(error_stream) => { return error_stream; }
+        }
+
+    }
 
     enum_stream.extend([
         TokenTree::from(pm::Group::new(Delimiter::Brace, values_stream)),
@@ -70,14 +76,14 @@ pub fn define_errors(input: TokenStream) -> TokenStream {
     enum_stream
 }
 
-fn add_one_error(input: &mut Peekable<IntoIter>, enum_stream: &mut TokenStream, function_stream: &mut TokenStream) -> bool {
+fn add_one_error(input: &mut Peekable<IntoIter>, enum_stream: &mut TokenStream, function_stream: &mut TokenStream) -> Result<bool, TokenStream> {
     use proc_macro as pm;
     //TODO: also check types of tokens.
-    let Some(error_id_token) = input.next() else { return false; };
-    let Ident(error_id) = &error_id_token else { return false; };
-    let Some(_colon) = input.next() else { return false; };
-    let Some(message_token) = input.next() else { return false; };
-    let Literal(message) = &message_token else { return false; };
+    let Some(error_id_token) = input.next() else { return Ok(false); };
+    let Ident(error_id) = &error_id_token else { return Ok(false); };
+    let Some(_colon) = input.next() else { return Ok(false); };
+    let Some(message_token) = input.next() else { return Ok(false); };
+    let Literal(message) = &message_token else { return Ok(false); };
 
     if let Some(_comma) = input.peek() {
         input.next();
@@ -116,7 +122,7 @@ fn add_one_error(input: &mut Peekable<IntoIter>, enum_stream: &mut TokenStream, 
     // ...param1: &str,...
     for param_id in &message_params {
         if !is_ident(param_id) {
-            panic!("` param {0}` for error {1} is not a valid identifier", param_id, error_id.to_string());
+            panic!("ErrorId::{0}: param `{1}` is not a valid identifier", error_id.to_string(), param_id);
         }
         arg_tokens.extend([
             TokenTree::from(pm::Ident::new(&param_id, message_token.span())),
@@ -162,7 +168,7 @@ fn add_one_error(input: &mut Peekable<IntoIter>, enum_stream: &mut TokenStream, 
     func_stream.extend([funct_body_group]);
 
     function_stream.extend(func_stream.into_iter());
-    true
+    Ok(true)
 }
 
 
