@@ -17,7 +17,7 @@ export function onSignedIn(googleUserToken) {
     }).then(res => res.json())
         .then(jsonUserSession => {
             console.debug("Request complete! response:", jsonUserSession);
-            document.getElementById("userName").innerHTML = jsonUserSession.user.name;
+            document.getElementById("userName").innerHTML = "@" + jsonUserSession.user.name;
             userSession = jsonUserSession;
             setCookie("mathparserSession", JSON.stringify(userSession), 1);
             let scriptId = menu.menuState.getScriptId();

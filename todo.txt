@@ -1,13 +1,3 @@
-* ErrorId: implement with macro?
-  > Can't split a string literal.
-  > Macro should create an Error object containing
-    - the formatted error message, given n arguments
-    - error id
-    - range
-    ...
-  > Perhaps a macro that takes the ID and generates a constant &str with the ID_STR name?
-    > another macro that 'takes' the ID_STR based on the ID to format!() the message?
-
 * number strings.
   > allow underscores? Currency signs? Minus? Exponential?
   > merge with the normal parse_decimal function?
@@ -38,10 +28,6 @@
 * Scope borrows.
   > see if Scope, which changes during resolving, can be moved into a ResolverState object,
   > See formatted_date_parser.
-
-* to examine TokenStream for macros:
-  > https://github.com/dtolnay/proc-macro-workshop
-  > https://dev.to/dandyvica/rust-procedural-macros-step-by-step-tutorial-36n8
 
 * Range: replace { start, end } with &str? It's essentially the same and it's safer.
   > byte indexes can probably still be calculated -> see cursor?

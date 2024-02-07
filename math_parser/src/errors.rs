@@ -15,7 +15,7 @@ define_errors!(
     FuncNotDef: "function `{function}` is not defined.",
     FuncNotAccessible: "function `{function}` is not accessible.",
     UnitNotDef: "unit `{unit}` is not defined.",
-    DefineNotDef: "#define: option `{define_option}`not recognized.",
+    DefineNotDef: "#define: option `{define_option}` not recognized.",
     UndefNotOk: "#undef: option `{define_option}` not recognized.",
     ExpHasUnit: "Exponent has a unit ({unit}).",
 
