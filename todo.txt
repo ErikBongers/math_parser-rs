@@ -19,9 +19,6 @@
 * google login: fails more than not.
   > order of scripts?
 
-* document all unwraps.
-  > just a comment to explain why unwrap() is safe.
-
 * Allow a block in the middle of an expression?
   > At least an assign expression?
 
