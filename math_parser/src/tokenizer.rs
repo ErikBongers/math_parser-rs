@@ -15,11 +15,13 @@ pub struct Token {
     pub text: String,
 }
 impl Token {
-    fn new(kind: TokenType, source_index :SourceIndex, start: usize, end :usize, _text: String) -> Token {
-        Token { kind, range: Range { source_index, start, end },
-            #[cfg(debug_assertions)]
-            text: _text
-        }
+    #[cfg(debug_assertions)]
+    fn new(kind: TokenType, source_index :SourceIndex, start: usize, end :usize, text: String) -> Token {
+        Token { kind, range: Range { source_index, start, end }, text }
+    }
+    #[cfg(not(debug_assertions))]
+    fn new(kind: TokenType, source_index :SourceIndex, start: usize, end :usize) -> Token {
+        Token { kind, range: Range { source_index, start, end } }
     }
 }
 
@@ -32,7 +34,12 @@ impl Cursor<'_> {
         let mut start_pos = self.get_pos();
         self.is_beginning_of_text = false; // clear this once per next_token instead of once per next(), for performance.
         let first_char = match self.next() {
-            None => return Token::new(Eot, self.source.index, 0, 0, "".to_string()),
+            None => {
+                #[cfg(not(debug_assertions))]
+                { return Token::new(crate::tokenizer::token_type::TokenType::Eot, self.source.index, 0, 0); }
+                #[cfg(debug_assertions)]
+                { return Token::new(Eot, self.source.index, 0, 0, "".to_string()); }
+            },
             Some(c) => c
         };
         let token_type = match first_char {
@@ -153,7 +160,10 @@ impl Cursor<'_> {
                 let end_pos = self.get_pos(); //end pos without quote.
                 self.next(); //eat end quote, if any. (eot?)
 
-                return Token::new(QuotedStr, self.source.index, start_pos, end_pos, self.source.get_text()[start_pos..end_pos].to_string())
+                #[cfg(debug_assertions)]
+                { return Token::new(QuotedStr, self.source.index, start_pos, end_pos, self.source.get_text()[start_pos..end_pos].to_string()); }
+                #[cfg(not(debug_assertions))]
+                { return Token::new(QuotedStr, self.source.index, start_pos, end_pos); }
             },
             c @ ('0'..='9') => {
                 self.number = self.parse_number(c);
@@ -170,8 +180,10 @@ impl Cursor<'_> {
 
             _ => Unknown
         };
-
-        Token::new(token_type, self.source.index, start_pos, self.get_pos(), self.source.get_text()[start_pos..self.get_pos()].to_string())
+        #[cfg(not(debug_assertions))]
+        { Token::new(token_type, self.source.index, start_pos, self.get_pos()) }
+        #[cfg(debug_assertions)]
+        { Token::new(token_type, self.source.index, start_pos, self.get_pos(), self.source.get_text()[start_pos..self.get_pos()].to_string()) }
     }
 
     fn match_word(&mut self, word: &str) -> bool{
