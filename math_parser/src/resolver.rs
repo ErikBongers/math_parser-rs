@@ -356,7 +356,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
                         if let Some(constant) = self.globals.constants.get(id.as_str()) {
                             constant.unit.clone()
                         } else {
-                            Unit { id: id.clone() }
+                            Unit::from_id(&id, Some(pfix_expr.postfix_id.range.clone()))
                         }
                     };
                     number.convert_to_unit(&unit, &self.scope.borrow().units_view, &pfix_expr.postfix_id.range, self.errors, self.globals);
@@ -420,7 +420,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
             "to_days" => duration.to_days(),
             _ => return Value::error(range.clone())
         };
-        Value::from_number(Number { significand: value as f64, exponent: 0, unit: Unit::from_id(id), fmt: NumberFormat::Dec }, range.clone())
+        Value::from_number(Number { significand: value as f64, exponent: 0, unit: Unit::from_id(id, Some(range.clone())), fmt: NumberFormat::Dec }, range.clone())
    }
 
     //in case of (x.km)m, both postfixId (km) and unit (m) are filled.

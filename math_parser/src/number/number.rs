@@ -21,7 +21,7 @@ impl Number {
         Number {
             significand,
             exponent,
-            unit : Unit { id: "".to_string() },
+            unit : Unit::none(),
             fmt: NumberFormat::Dec
         }
     }
@@ -78,7 +78,7 @@ impl Number {
         if globals.unit_defs.contains_key(&*self.unit.id) {
             num.significand = globals.unit_defs[&*self.unit.id].convert_to_si(self.to_double());
             num.exponent = 0;
-            num.unit = Unit::from_id(globals.unit_defs[&*self.unit.id].si_id);
+            num.unit = Unit::from_id(globals.unit_defs[&*self.unit.id].si_id, None);
         } else {
             //ignore
         }
@@ -90,7 +90,7 @@ impl Number {
         if self.unit.is_empty() {
             self.unit = to.clone();
             if let None = units_view.get_def(&to.id, globals) {
-                errors.push(errors::unit_not_def(&to.id, range.clone()));
+                errors.push(errors::unit_not_def(&to.id, to.range.as_ref().unwrap_or(range).clone()));
             }
             return;
         }
@@ -98,7 +98,7 @@ impl Number {
             return; //should already have been detected.
         }
         if let None = units_view.get_def(&to.id, globals) {
-            errors.push(errors::unit_not_def(&to.id, range.clone()));
+            errors.push(errors::unit_not_def(&to.id, to.range.as_ref().unwrap_or(range).clone()));
             return;
         }
         if units_view.get_def(&self.unit.id, globals).unwrap().property != units_view.get_def(&to.id, globals).unwrap().property { //unit ids already checked.

@@ -498,13 +498,13 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             }
             let id = self.tok.next();
             if expr.unit.is_empty() {
-                expr.unit.id = id_str;
+                expr.unit = Unit::from_id(&id_str, Some(id.range.clone()));
             } else { //there's a 2nd unit glued to the expr as in: `(1m)mm`, so wrap the original expr in a UnitExpr.
                 let mut unit_node = Node::new(NodeType::Unit(UnitExpr {
                     node: expr,
                     range: id.range.clone(),
                 }));
-                unit_node.unit = Unit { id: id_str, };
+                unit_node.unit = Unit::from_id(&id_str, Some(id.range.clone()));
                 return Box::new(unit_node);
             }
         }

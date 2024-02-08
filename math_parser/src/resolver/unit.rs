@@ -1,10 +1,12 @@
 use std::collections::{HashMap, HashSet};
 use std::f64::consts::PI;
 use crate::globals::Globals;
+use crate::tokenizer::cursor::Range;
 
 #[derive(Clone)]
 pub struct Unit {
     pub id: String,
+    pub range: Option<Range>
 }
 impl Unit {
     pub fn is_empty(&self) -> bool {
@@ -13,13 +15,15 @@ impl Unit {
 
     pub fn none() -> Unit {
         Unit {
-            id: "".to_string()
+            id: "".to_string(),
+            range: None
         }
     }
 
-    pub fn from_id(id: &str) -> Unit {
+    pub fn from_id(id: &str, range: Option<Range>) -> Unit {
         Unit {
             id: id.to_string(),
+            range
         }
     }
 }

@@ -80,19 +80,19 @@ pub fn op_num_div_num(_globals: &Globals, args: &Vec<Value>, range: &Range, _err
 pub fn op_num_rem_num(_globals: &Globals, args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>) -> Value {
     let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!(); };
     let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!(); };
-    Value::from_number(Number { significand: n1.to_double() % n2.to_double(), exponent: 0, unit : Unit { id: "".to_string() }, fmt: NumberFormat::Dec }, range.clone())
+    Value::from_number(Number { significand: n1.to_double() % n2.to_double(), exponent: 0, unit : Unit::none(), fmt: NumberFormat::Dec }, range.clone())
 }
 
 pub fn op_num_mod_num(_globals: &Globals, args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>) -> Value {
     let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!(); };
     let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!(); };
-    Value::from_number(Number { significand: ((n1.to_double() % n2.to_double()) + n2.to_double()) % n2.to_double(), exponent: 0, unit : Unit { id: "".to_string() }, fmt: NumberFormat::Dec }, range.clone())
+    Value::from_number(Number { significand: ((n1.to_double() % n2.to_double()) + n2.to_double()) % n2.to_double(), exponent: 0, unit : Unit::none(), fmt: NumberFormat::Dec }, range.clone())
 }
 
 pub fn op_num_pow_num(_globals: &Globals, args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>) -> Value {
     let Variant::Numeric {number: ref n1, ..} = &args[0].variant else { unreachable!(); };
     let Variant::Numeric {number: ref n2, ..} = &args[1].variant else { unreachable!(); };
-    Value::from_number(Number { significand: n1.to_double().powf(n2.to_double()), exponent: 0, unit : Unit { id: "".to_string() }, fmt: NumberFormat::Dec }, range.clone())
+    Value::from_number(Number { significand: n1.to_double().powf(n2.to_double()), exponent: 0, unit : Unit::none(), fmt: NumberFormat::Dec }, range.clone())
 }
 
 pub fn load_operators(globals: &mut Globals) {
@@ -115,11 +115,11 @@ fn do_term(v1: &Number, adding: bool, v2: &Number, range: &Range, globals: &Glob
     //if both values have units: convert them to SI before operation.
     if !v1.unit.is_empty() && !v2.unit.is_empty() {
         let Some(u1) = &globals.unit_defs.get(&v1.unit.id) else {
-            errors.push(errors::unit_not_def(&v1.unit.id, range.clone()));
+            errors.push(errors::unit_not_def(&v1.unit.id, v1.unit.range.as_ref().unwrap_or(range).clone()));
             return Number::from(0.0);
         };
         let Some(u2) = &globals.unit_defs.get(&v2.unit.id) else {
-            errors.push(errors::unit_not_def(&v2.unit.id, range.clone()));
+            errors.push(errors::unit_not_def(&v2.unit.id, v2.unit.range.as_ref().unwrap_or(range).clone()));
             return Number::from(0.0);
         };
         if u1.property != u2.property {
