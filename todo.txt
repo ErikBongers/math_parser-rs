@@ -1,6 +1,7 @@
 * Bug:
-x=(3*2)zzzzsdfsdf; //should give error!!
-x=(3^2)zzzzsdfsdf; // should give error!!
+    : x=(3*2)zzzzsdfsdf; //should give error!!
+    : x=(3^2)zzzzsdfsdf; // should give error!!
+    > is fixed but unit needs a range!
 
 * non closes quoted value: last char is not parsed.
  : '123  --> value 12 !!!

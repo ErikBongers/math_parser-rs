@@ -89,8 +89,8 @@ impl<'g, 'a> Resolver<'g, 'a> {
         match &node.expr {
             NodeType::Block(expr) => { self.resolve_codeblock_expr(expr) },
             NodeType::Const(expr) => { self.resolve_const_expr(expr, &node.unit) },
-            NodeType::Binary(expr) => { self.resolve_bin_expr(expr) },
-            NodeType::Id(expr) => { self.resolve_id_expr(expr) },
+            NodeType::Binary(expr) => { self.resolve_bin_expr(expr, &node.unit) },
+            NodeType::Id(expr) => { self.resolve_id_expr(expr, &node.unit) },
             NodeType::Assign(expr) => { self.resolve_assign_expr(expr) },
             NodeType::Unary(expr) => { self.resolve_unary_expr(expr) },
             NodeType::Postfix(expr) => { self.resolve_postfix_expr(expr, &node.unit) },
@@ -462,10 +462,10 @@ impl<'g, 'a> Resolver<'g, 'a> {
         value
     }
 
-    fn resolve_id_expr(&mut self, id_expr: &IdExpr) -> Value {
+    fn resolve_id_expr(&mut self, id_expr: &IdExpr, unit: &Unit) -> Value {
         let id = self.globals.get_text(&id_expr.id.range).to_string();
         let var_exists = self.scope.borrow().variables.contains_key(&id);
-        if var_exists  {
+        let mut result = if var_exists  {
             self.scope.borrow().variables[&id].clone()
         } else {
             if self.globals.constants.contains_key(id.as_str()) {
@@ -473,7 +473,9 @@ impl<'g, 'a> Resolver<'g, 'a> {
             } else {
                 self.add_error_value(errors::var_not_def(&id, id_expr.id.range.clone()))
             }
-        }
+        };
+        Resolver::apply_unit(&mut result, unit, &self.scope.borrow().units_view, &id_expr.get_range(), self.errors, self.globals);
+        result
     }
 
     fn resolve_unary_expr(&mut self, unary_expr: &UnaryExpr) -> Value {
@@ -518,7 +520,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
         }
     }
 
-    fn resolve_bin_expr(&mut self, bin_expr: &BinExpr) -> Value {
+    fn resolve_bin_expr(&mut self, bin_expr: &BinExpr, unit: &Unit) -> Value {
 
         let error_cnt_before = self.errors.len();
         let expr1 = self.resolve_node(&bin_expr.expr1);
@@ -541,7 +543,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
         let args = vec![expr1, expr2];
         let range = Range { source_index: bin_expr.get_range().source_index, start: 0, end: 0};
 
-        let result = (self.globals.get_operator(op_id).unwrap())(&self.globals, &args, &range, &mut self.errors); //unwrap: op_id already checked.
+        let mut result = (self.globals.get_operator(op_id).unwrap())(&self.globals, &args, &range, &mut self.errors); //unwrap: op_id already checked.
         if bin_expr.implicit_mult {
             if let NodeType::Id(id_expr) = &bin_expr.expr2.expr {
                 let id_str = self.globals.get_text(&id_expr.id.range);
@@ -550,6 +552,8 @@ impl<'g, 'a> Resolver<'g, 'a> {
                 }
             }
         }
+        Resolver::apply_unit(&mut result, unit, &self.scope.borrow().units_view, &bin_expr.get_range(), self.errors, self.globals);
+
         result
     }
 }
