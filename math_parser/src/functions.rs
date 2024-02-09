@@ -536,8 +536,23 @@ fn with_num_vec(function_def: &dyn FunctionDef, args: &Vec<Value>, range: &Range
 }
 
 fn to_num_iter<'a>(function_name: &'a str, args: &'a Vec<Value>, _range: &'a Range, errors: &'a mut Vec<Error>, globals: &'a Globals) -> Result<impl Iterator<Item=f64> + 'a, Value> {
-    if let Some(wrong_value) = recursive_iter(args).find(|v| v.as_number().is_none()) {
-        return Err(add_error_value(errors, errors::func_arg_wrong_type(function_name, "They must be numeric.", wrong_value.stmt_range.clone())));
+    let mut iter = recursive_iter(args);
+
+    //get property of first arg.
+    let arg = iter.next().unwrap();// unwrap: must be at least one arg.
+    let Some(number) = arg.as_number() else {
+        return Err(add_error_value(errors, errors::func_arg_wrong_type(function_name, "They must be numeric.", arg.stmt_range.clone())));
+    };
+    let property = &globals.unit_defs[&number.unit.id].property;
+
+    //check rest of args
+    for arg in iter {
+        let Some(number) = arg.as_number() else {
+            return Err(add_error_value(errors, errors::func_arg_wrong_type(function_name, "They must be numeric.", arg.stmt_range.clone())));
+        };
+        if property != &globals.unit_defs[&number.unit.id].property {
+            return Err(add_error_value(errors, errors::unit_prop_diff(arg.stmt_range.clone())));
+        }
     }
     Ok(recursive_iter(args)
         .map(|value| {
