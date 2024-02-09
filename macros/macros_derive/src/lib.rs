@@ -82,6 +82,13 @@ fn add_one_error(input: &mut Peekable<IntoIter>, enum_stream: &mut TokenStream, 
     let Some(error_id_token) = input.next() else { return Ok(false); };
     let Ident(error_id) = &error_id_token else { return Ok(false); };
     let Some(_colon) = input.next() else { return Ok(false); };
+    let Some(error_type_token) = input.next() else { return Ok(false); };
+    let Ident(error_type) = &error_type_token else { return Ok(false); };
+    match error_type.to_string().as_ref() {
+        "E" | "W" => (),
+        _ => panic!("ErrorId::{0}: param `{1}` is not a valid ErrorType.", error_id.to_string(), error_type.to_string())
+    }
+    let Some(_colon) = input.next() else { return Ok(false); };
     let Some(message_token) = input.next() else { return Ok(false); };
     let Literal(message) = &message_token else { return Ok(false); };
 
@@ -109,6 +116,7 @@ fn add_one_error(input: &mut Peekable<IntoIter>, enum_stream: &mut TokenStream, 
             message: format!("Unknown expression `{param1}`.", param1=param1),
             range,
             stack_trace: None,
+            error_type: ErrorType::E,
         }
     }
     */
@@ -158,7 +166,11 @@ fn add_one_error(input: &mut Peekable<IntoIter>, enum_stream: &mut TokenStream, 
     let tmp_stream = TokenStream::from_str(", message: format!").unwrap(); //unwrap: static text
     error_fields_stream.extend(tmp_stream.into_iter());
     error_fields_stream.extend([format_arg_group]);
-    error_fields_stream.extend(TokenStream::from_str(", range, stack_trace: None, error_type: ErrorType::E,")); //TODO: test for type Warning.
+    error_fields_stream.extend(TokenStream::from_str(", range, stack_trace: None, error_type: ErrorType::"));
+    error_fields_stream.extend([
+        TokenTree::from(pm::Ident::new(error_type.to_string().as_ref(), error_type.span())),
+        TokenTree::from(pm::Punct::new(',', Spacing::Alone)),
+    ]);
 
     let error_group = TokenTree::from(pm::Group::new(Delimiter::Brace, error_fields_stream));
     let funct_body_group = TokenTree::from(pm::Group::new(Delimiter::Brace, TokenStream::from_iter([

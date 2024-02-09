@@ -1,11 +1,3 @@
-* Bug:
-    : x=(3*2)zzzzsdfsdf; //should give error!!
-    : x=(3^2)zzzzsdfsdf; // should give error!!
-    > is fixed but unit needs a range!
-
-* non closes quoted value: last char is not parsed.
- : '123  --> value 12 !!!
-
 * number strings.
   > allow underscores? Currency signs? Minus? Exponential?
   > merge with the normal parse_decimal function?
@@ -30,10 +22,6 @@
 * Allow a block in the middle of an expression?
   > At least an assign expression?
 
-* Scope borrows.
-  > see if Scope, which changes during resolving, can be moved into a ResolverState object,
-  > See formatted_date_parser.
-
 * Range: replace { start, end } with &str? It's essentially the same and it's safer.
   > byte indexes can probably still be calculated -> see cursor?
   > or implement the same way as SourceIndex?
@@ -51,8 +39,6 @@
   : !// the result of !`a+b` = $, and if you subtract `.4`, you get `$0 - $1`.
   > `a+b` ==> executed and the result is output.
   > !`a+b` ==> executed and the code is output.
-
- source_index is a 'pointer': replace with a life-timed value?
 
 * AST
   - trait AstNode to cast: https://github.com/rust-lang/rust-analyzer/blob/337e2abb670d403ae05609c5f1aafcffbd3369a6/crates/syntax/src/ast.rs#L43
