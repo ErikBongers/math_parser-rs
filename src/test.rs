@@ -9,7 +9,7 @@ fn test_numbers (){
     test_result("-1", -1.0, "");
 }
 #[test]
-fn test_constaants (){
+fn test_constants (){
     test_result("trunc(PI)", 3.0, "");
 }
 
@@ -55,11 +55,24 @@ fn test_simple_expr (){
 }
 
 #[test]
+fn test_precedence () {
+    test_result("1+2*3^4;", 163.0, "");
+    test_result("4-3-2+1;", 0.0, "");
+    test_result("12/3*2;", 8.0, "");
+}
+
+#[test]
 fn test_implicit_mult () {
     test_result("a=2;2a", 4.0, "");
     test_result("a=2;(2)a", 4.0, "");
     test_result("a=2;20/2a", 5.0, "");
+    test_result("a=2; 3 a;", 6.0, "");
+    test_result("a=2; 3(4a);", 24.0, "");
+    test_result("a=2; a(3(4a));", 48.0, "");
+    test_result("m=2; 2m;", 4.0, "");
+    test_error("m=2; 2m;", ErrorId::WUnitIsVar);
 }
+
 #[test]
 fn test_formatted_number () {
     test_result("a='123", 123.0, ""); //string is not closed before EOS: no error!
@@ -120,6 +133,24 @@ fn test_global_funcs () {
 fn test_name_conflicts () {
     test_error("  km=123                    ", ErrorId::WVarIsUnit);
     test_error("  sin=123                   ", ErrorId::WVarIsFunction);
+}
+
+#[test]
+fn test_unary () {
+    test_result("a=-1;", -1.0, ""); //not really a unary, but for completeness sake
+    test_result("a=-(1);", -1.0, "");
+    test_result("a=-sin(30deg);", -0.5, "");
+    test_result("a=1; a=-a;", -1.0, "");
+}
+
+#[test]
+fn test_calls () {
+    test_result("sin(30deg)", 0.5, "");
+    test_result("sin(30deg)+1", 1.5, "");
+    test_result("abs(-sin(30deg))", 0.5, "");
+    test_result("|-sin(30deg)|", 0.5, "");
+    test_result("a=-123;|a|", 123.0, "");
+    test_result("max(-sin(30deg), 3, 9999)", 9999.0, "");
 }
 
 #[test]
@@ -191,7 +222,16 @@ fn test_number_formats () {
     test_result("0X7B", 123.0, "");
     test_result("0b1111011", 123.0, "");
     test_result("0B1111011", 123.0, "");
-}
+    test_result("123.456", 123.456, "");
+    test_result("'1,234.56'", 1234.56, "");
+    test_result("#define decimal_comma \n '1.234,56'", 1234.56, "");
+    test_result("123_456", 123456.0, "");
+    test_result("-123_456", -123456.0, "");
+    test_result("0b111_1011", 123.0, "");
+    test_result("0x1E240", 123456.0, "");
+    test_result("0b111_1011C.dec", 123.0, "C");
+    test_result("(0b111_1011.)", 123.0, "");
+    test_result("(0b111_1011C.).dec", 123.0, "");}
 
 #[test]
 fn test_units () {
