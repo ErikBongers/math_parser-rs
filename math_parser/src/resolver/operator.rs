@@ -134,12 +134,16 @@ fn do_term(v1: &Number, adding: bool, v2: &Number, range: &Range, globals: &Glob
         result.significand = globals.unit_defs[&v1.unit.id].convert_from_si(result.significand); //ok for now, but would not work for custom units as this requires Scope.
         result.unit = v1.unit.clone();
         result
-        //if a unit is missing, just do operation.
     } else {
+        //if a unit is missing, just do operation.
         let result = match adding {
             true => v1 + v2,
             false => v1 - v2,
         };
+        //if one unit is set, use it but give a warning
+        if !v1.unit.is_empty() || ! v2.unit.is_empty() {
+            errors.push(errors::w_assuming_unit(v2.unit.range.as_ref().unwrap_or(range).clone()));
+        }
         result
     }
 }

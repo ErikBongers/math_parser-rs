@@ -87,6 +87,15 @@ fn test_assign_expr () {
     test_result("a=6;a/=3;", 2.0, "");
     test_result("a=1;a+=3;", 4.0, "");
     test_result("a=5;a-=3;", 2.0, "");
+    test_result("  a=3;a.=km               ", 3.0, "km");
+    test_result("  a=3km; a.=;             ", 3.0, "");
+    test_result("  a=3;a*=2                ", 6.0, "");
+    test_result("  a=3;a*=2km              ", 6.0, "km");
+    test_result("  a=3km; a*=2;            ", 6.0, "km");
+    test_result("  a=3;a+=2                ", 5.0, "");
+    test_error("  a=3km; a+=2;            ", ErrorId::WAssumingUnit);
+    test_error("  a=3; a+=2km;            ", ErrorId::WAssumingUnit);
+    test_result("  dec=123;                ", 123.0, ""); // dec should not conflict with the dec() function.
 }
 
 #[test]
@@ -106,6 +115,11 @@ fn test_global_funcs () {
     test_result("first(sort(3,1, 2))", 1.0, "");
     test_result("a=30deg; sin(a)", 0.5, "");
     test_compiles("now()");
+}
+#[test]
+fn test_name_conflicts () {
+    test_error("  km=123                    ", ErrorId::WVarIsUnit);
+    test_error("  sin=123                   ", ErrorId::WVarIsFunction);
 }
 
 #[test]
@@ -218,6 +232,14 @@ fn test_units () {
     test_result("  a=2; a.=m;              ", 2.0, "m");
     test_error("   a=1; a b;               ", ErrorId::UnitNotDef);
     test_result("  a=2000mm; meter = 1m; a.=meter; ", 2.0, "m");}
+
+#[test]
+fn test_id_names () {
+    test_result("  a=3;                    ", 3.0, "");
+    test_result("  a_b=3;                  ", 3.0, "");
+    test_result("  _a_b=3;                 ", 3.0, "");
+    test_result("  Δa=3;                 ", 3.0, "");
+}
 
 #[test]
 fn test_nonsense () {
