@@ -1,5 +1,8 @@
+* add shortcut list to menu.
+
 * add % unit?
   > conflict with remainder and modulo?
+
 * number strings.
   > allow underscores? Currency signs? Minus? Exponential?
   > merge with the normal parse_decimal function?

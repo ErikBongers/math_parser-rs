@@ -231,7 +231,8 @@ fn test_number_formats () {
     test_result("0x1E240", 123456.0, "");
     test_result("0b111_1011C.dec", 123.0, "C");
     test_result("(0b111_1011.)", 123.0, "");
-    test_result("(0b111_1011C.).dec", 123.0, "");}
+    test_result("(0b111_1011C.).dec", 123.0, "");
+}
 
 #[test]
 fn test_units () {
@@ -332,3 +333,123 @@ fn test_exponents () {
     test_exponent("1E3m + 1km", 2.0, "m", 3);
     test_exponent("1E5cm + 1km", 2.0, "cm", 5);
 }
+
+/* TODO
+TEST_METHOD(TestDurations)
+            {
+            assertDuration("duur=2 days, 3 months", 2, 3);
+            assertDuration("'Jan 12, 2022'-'Jan 11, 2022';", 1);
+            assertDate("'01 jan 2022'+2days", 3, 1, 2022);
+            assertError("'01 jan 2022'+2", "E_EXPLICIT_UNITS_EXPECTED");
+            assertDate(R"CODE(
+dat='Jan 12, 2022';
+duur=2 days, 3 months;
+dat+duur;
+                    )CODE", 14, 4, 2022);
+        assertDate(R"CODE(
+dat='Jan 12, 2022';
+duur=360 days, 0 months; //calculated year of 30*12 days
+dat+duur;
+                    )CODE", 12, 1, 2023);
+            assertDuration("duur=2 days, 3 months", 2, 3);
+            assertError("duur=2 days, 3 months; duur.xxx", "UNKNOWN_EXPR");
+            assertError("dat = now() + 5;", "E_EXPLICIT_UNITS_EXPECTED");
+            assertResult("duur=2 days, 3 months; duur.days;", 2, "days");
+            assertResult("duur=2 days, 3 months; duur.months;", 3, "months");
+            assertResult("duur=2 days, 3 months, 5years; duur.years;", 5, "years");
+            }
+
+        TEST_METHOD(TestDates)
+            {
+            testDateString("11/11/11", 11, 11, 11);
+            testDateString("2022/12/13", 13, 12, 2022);
+            assertDate("'2022/12/13'", 13, 12, 2022);
+
+            testDateString("2022,12,13", 13, 12, 2022);
+            testDateString("2022-12-13", 13, 12, 2022);
+            testDateString("Jan 12, 2022", 12, 1, 2022);
+            testDateString("12 28 2022", 28, 12, 2022);
+            testDateString("28 12 2022", 28, 12, 2022);
+            testDateString("2022 12 28", 28, 12, 2022);
+            testDateString("2022 28 12", 28, 12, 2022);
+            testDateString("28 2022 12", 28, 12, 2022);
+            testDateString("12 2022 28", 28, 12, 2022);
+            testDateString("2022 last 1", 99, 1, 2022);
+            testDateString("last 1", 99, 1, Date::EmptyYear);
+            testDateString("26 1", 26, 1, Date::EmptyYear);
+            testDateString("feb 1", 1, 2, Date::EmptyYear);
+
+            assertError("'2022 2 1'", "INV_DATE_STR");
+            assertDate("#define ymd\n '2022 2 1'", 1, 2, 2022);
+            assertDate("#define ymd; '2022 2 1'", 1, 2, 2022); //#define ends with either a NL or a ;
+
+            // date via lists:
+            assertDate("d = date(2022, 12, 13)", 13, 12, 2022);
+            }
+       TEST_METHOD(TestBlocks)
+            {
+            assertResult(R"CODE(
+#define decimal_dot
+theDot = '1,234.56';
+{
+#define decimal_comma
+theDot = '1.234,56';
+}
+theDot = '1,234.56';
+                         )CODE"
+                         , 1234.56);
+
+            assertError(R"CODE(
+a = 1;
+{
+b = a;
+c=3;
+}
+d=c;
+                         )CODE"
+                        , "VAR_NOT_DEF");
+
+            }
+
+        TEST_METHOD(TestNumberFormats)
+            {
+            assertResult(".123", 0.123);
+//            assertResult("123.456", 123.456);
+//            assertResult("'1,234.56'", 1234.56);
+//            assertResult("#define decimal_comma \n '1.234,56'", 1234.56);
+//            assertResult("123_456", 123456);
+//            assertResult("-123_456", -123456);
+//            assertResult("0b111_1011", 123, "", "", "BIN");
+//            assertResult("0x1E240", 123456, "", "", "HEX");
+//            assertResult("0b111_1011C.dec", 123, "C", "", "DEC");
+//            assertResult("(0b111_1011.)", 123, "", "", "BIN");
+//            assertResult("(0b111_1011C.).dec", 123, "", "", "DEC");
+//            assertResult(R"CODE(
+//hx1=0x0001;
+//hx2=0x7a;
+//hx3=hx1+hx2;
+//                        )CODE"
+//                        , 123, "", "", "HEX");
+            }
+
+        TEST_METHOD(TestNameConflicts)
+            {
+            assertResult("  km=123                    ", 123, "", "W_VAR_IS_UNIT");
+            assertResult("  sin=123                   ", 123, "", "W_VAR_IS_FUNCTION");
+            }
+
+        TEST_METHOD(TestErrorsAndWarnings)
+            {
+            assertResult("a=3; 12/2a", 2, "", "W_DIV_IMPL_MULT");
+            assertResult("a=3; max(12/2a, 0)", 2, "", "W_DIV_IMPL_MULT");
+            }
+
+
+        TEST_METHOD(TestIncompleteProgram)
+            {
+            assertError("   a=12/             ", "EOS");
+            assertError("   a=             ", "EOS");
+            assertError("   {             ", "EXPECTED");
+            }
+
+*/
