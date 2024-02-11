@@ -1,7 +1,7 @@
 use std::str::FromStr;
-use proc_macro::{Delimiter, Spacing, Span, TokenStream, TokenTree};
+use proc_macro::{Delimiter, Group, Ident, Literal, Punct, Spacing, Span, TokenStream};
 use proc_macro::token_stream::IntoIter;
-use proc_macro::TokenTree::{Ident, Literal};
+use proc_macro::TokenTree as TT;
 use std::iter::Peekable;
 use quote::quote;
 use syn;
@@ -51,10 +51,58 @@ pub fn print_tokens(input: TokenStream) -> TokenStream {
     TokenStream::new()
 }
 
-
 #[proc_macro]
 pub fn define_errors(input: TokenStream) -> TokenStream {
-    use proc_macro as pm;
+    define_errors_impl(input).unwrap_or_else(|compiler_error| [
+        TT::Punct({
+            let mut punct = Punct::new(':', Spacing::Joint);
+            punct.set_span(compiler_error.span);
+            punct
+        }),
+        TT::Punct({
+            let mut punct = Punct::new(':', Spacing::Alone);
+            punct.set_span(compiler_error.span);
+            punct
+        }),
+        TT::Ident(Ident::new("core", compiler_error.span)),
+        TT::Punct({
+            let mut punct = Punct::new(':', Spacing::Joint);
+            punct.set_span(compiler_error.span);
+            punct
+        }),
+        TT::Punct({
+            let mut punct = Punct::new(':', Spacing::Alone);
+            punct.set_span(compiler_error.span);
+            punct
+        }),
+        TT::Ident(Ident::new("compile_error", compiler_error.span)),
+        TT::Punct({
+            let mut punct = Punct::new('!', Spacing::Alone);
+            punct.set_span(compiler_error.span);
+            punct
+        }),
+        TT::Group({
+            let mut group = Group::new(Delimiter::Brace, {
+                TokenStream::from_iter(vec![TT::Literal({
+                    let mut string = Literal::string(&compiler_error.message);
+                    string.set_span(compiler_error.span);
+                    string
+                })])
+            });
+            group.set_span(compiler_error.span);
+            group
+        }),
+    ]
+    .into_iter()
+    .collect())
+}
+
+struct CompilerError {
+    span: Span,
+    message: String,
+}
+
+fn define_errors_impl(input: TokenStream) -> Result<TokenStream, CompilerError> {
     let mut enum_stream = TokenStream::from_str("#[derive(Clone, Serialize, PartialEq)] pub enum ErrorId").unwrap(); //unwrap: static text
     let mut functions_stream = TokenStream::new();
 
@@ -64,33 +112,36 @@ pub fn define_errors(input: TokenStream) -> TokenStream {
     loop {
         match add_one_error(&mut it, &mut values_stream, &mut functions_stream) {
             Ok(not_finished) => { if !not_finished { break; } },
-            Err(error_stream) => { return error_stream; }
+            Err(compiler_error) => { return Err(compiler_error); }
         }
-
     }
 
     enum_stream.extend([
-        TokenTree::from(pm::Group::new(Delimiter::Brace, values_stream)),
+        TT::from(Group::new(Delimiter::Brace, values_stream)),
     ]);
     enum_stream.extend(functions_stream.into_iter());
-    enum_stream
+    Ok(enum_stream)
 }
 
-fn add_one_error(input: &mut Peekable<IntoIter>, enum_stream: &mut TokenStream, function_stream: &mut TokenStream) -> Result<bool, TokenStream> {
-    use proc_macro as pm;
+fn add_one_error(input: &mut Peekable<IntoIter>, enum_stream: &mut TokenStream, function_stream: &mut TokenStream) -> Result<bool, CompilerError> {
     //TODO: also check types of tokens.
     let Some(error_id_token) = input.next() else { return Ok(false); };
-    let Ident(error_id) = &error_id_token else { return Ok(false); };
+    //TODO: we only have a partian error definition. Report error.
+    let TT::Ident(error_id) = &error_id_token else { return Ok(false); };
     let Some(_colon) = input.next() else { return Ok(false); };
     let Some(error_type_token) = input.next() else { return Ok(false); };
-    let Ident(error_type) = &error_type_token else { return Ok(false); };
+    let TT::Ident(error_type) = &error_type_token else { return Ok(false); };
     match error_type.to_string().as_ref() {
         "E" | "W" => (),
-        _ => panic!("ErrorId::{0}: param `{1}` is not a valid ErrorType.", error_id.to_string(), error_type.to_string())
+        _ => {
+            println!("Error found, going to report it...");
+            let message = format!("ErrorId::{0}: param `{1}` is not a valid ErrorType.", error_id.to_string(), error_type.to_string());
+            return Err(CompilerError{ span: error_type_token.span().clone(), message });
+        }
     }
     let Some(_colon) = input.next() else { return Ok(false); };
     let Some(message_token) = input.next() else { return Ok(false); };
-    let Literal(message) = &message_token else { return Ok(false); };
+    let TT::Literal(message) = &message_token else { return Ok(false); };
 
     if let Some(_comma) = input.peek() {
         input.next();
@@ -98,7 +149,7 @@ fn add_one_error(input: &mut Peekable<IntoIter>, enum_stream: &mut TokenStream, 
 
     enum_stream.extend([
         error_id_token.clone(),
-        TokenTree::from(pm::Punct::new(',', Spacing::Alone)),
+        TT::from(Punct::new(',', Spacing::Alone)),
     ]);
 
     let camel_id = to_camel_case(error_id.to_string().as_str());
@@ -123,7 +174,7 @@ fn add_one_error(input: &mut Peekable<IntoIter>, enum_stream: &mut TokenStream, 
     let mut func_stream = TokenStream::from_str("#[inline] pub fn").unwrap(); //unwrap: static text
     // ...some_error_id...
     func_stream.extend([
-        TokenTree::from( pm::Ident::new(&camel_id, Span::call_site())),
+        TT::from( Ident::new(&camel_id, Span::call_site())),
     ]);
 
     let mut arg_tokens = TokenStream::new();
@@ -133,16 +184,16 @@ fn add_one_error(input: &mut Peekable<IntoIter>, enum_stream: &mut TokenStream, 
             panic!("ErrorId::{0}: param `{1}` is not a valid identifier", error_id.to_string(), param_id);
         }
         arg_tokens.extend([
-            TokenTree::from(pm::Ident::new(&param_id, message_token.span())),
-            TokenTree::from(pm::Punct::new(':', Spacing::Alone)),
-            TokenTree::from(pm::Punct::new('&', Spacing::Alone)),
-            TokenTree::from(pm::Ident::new("str", message_token.span())),
-            TokenTree::from(pm::Punct::new(',', Spacing::Alone)),
+            TT::from(Ident::new(&param_id, message_token.span())),
+            TT::from(Punct::new(':', Spacing::Alone)),
+            TT::from(Punct::new('&', Spacing::Alone)),
+            TT::from(Ident::new("str", message_token.span())),
+            TT::from(Punct::new(',', Spacing::Alone)),
         ]);
     }
     let tmp_stream = TokenStream::from_str("range: Range").unwrap(); //unwrap: static text
     arg_tokens.extend(tmp_stream.into_iter());
-    let arg_group = TokenTree::from(pm::Group::new(Delimiter::Parenthesis, arg_tokens));
+    let arg_group = TT::from(Group::new(Delimiter::Parenthesis, arg_tokens));
     func_stream.extend([arg_group]);
     let tmp_stream = TokenStream::from_str("-> Error").unwrap(); //unwrap: static text
     func_stream.extend(tmp_stream.into_iter());
@@ -153,13 +204,13 @@ fn add_one_error(input: &mut Peekable<IntoIter>, enum_stream: &mut TokenStream, 
     // ..., param1=param1...
     for param_id in &message_params {
         format_args.extend([
-            TokenTree::from(pm::Punct::new(',', Spacing::Alone)),
-            TokenTree::from(pm::Ident::new(param_id, Span::call_site())),
-            TokenTree::from(pm::Punct::new('=', Spacing::Alone)),
-            TokenTree::from(pm::Ident::new(param_id, Span::call_site())),
+            TT::from(Punct::new(',', Spacing::Alone)),
+            TT::from(Ident::new(param_id, message_token.span())),
+            TT::from(Punct::new('=', Spacing::Alone)),
+            TT::from(Ident::new(param_id, message_token.span())),
         ]);
     }
-    let format_arg_group = TokenTree::from(pm::Group::new(Delimiter::Parenthesis, format_args));
+    let format_arg_group = TT::from(Group::new(Delimiter::Parenthesis, format_args));
 
     let mut error_fields_stream = TokenStream::from_str("id: ErrorId::").unwrap(); //static text
     error_fields_stream.extend([error_id_token.clone()]);
@@ -168,13 +219,13 @@ fn add_one_error(input: &mut Peekable<IntoIter>, enum_stream: &mut TokenStream, 
     error_fields_stream.extend([format_arg_group]);
     error_fields_stream.extend(TokenStream::from_str(", range, stack_trace: None, error_type: ErrorType::"));
     error_fields_stream.extend([
-        TokenTree::from(pm::Ident::new(error_type.to_string().as_ref(), error_type.span())),
-        TokenTree::from(pm::Punct::new(',', Spacing::Alone)),
+        TT::from(Ident::new(error_type.to_string().as_ref(), error_type.span())),
+        TT::from(Punct::new(',', Spacing::Alone)),
     ]);
 
-    let error_group = TokenTree::from(pm::Group::new(Delimiter::Brace, error_fields_stream));
-    let funct_body_group = TokenTree::from(pm::Group::new(Delimiter::Brace, TokenStream::from_iter([
-        TokenTree::from(pm::Ident::new("Error", Span::call_site())),
+    let error_group = TT::from(Group::new(Delimiter::Brace, error_fields_stream));
+    let funct_body_group = TT::from(Group::new(Delimiter::Brace, TokenStream::from_iter([
+        TT::from(Ident::new("Error", Span::call_site())),
         error_group
     ])));
     func_stream.extend([funct_body_group]);
