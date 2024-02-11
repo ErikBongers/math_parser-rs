@@ -307,9 +307,8 @@ impl<'g, 'a> Resolver<'g, 'a> {
             if !fd.is_correct_arg_count(args_ref.len()) {
                 return Err(errors::func_arg_wrong(&call_expr.function_name, call_expr.function_name_range.clone()));
             };
-            let mut result = fd.call(&self.scope.clone(), args_ref,  &call_expr.function_name_range, &mut self.errors, self.globals);
-            Resolver::apply_unit(&mut result, unit, &self.scope.borrow().units_view, &call_expr.get_range(), self.errors, self.globals);
-            Ok(result)
+            let result = fd.call(&self.scope.clone(), args_ref,  &call_expr.function_name_range, &mut self.errors, self.globals);
+            Ok(Resolver::apply_unit(result, unit, &self.scope.borrow().units_view, &call_expr.get_range(), self.errors, self.globals))
         }) else {
             return self.add_error_value(errors::func_not_def(&call_expr.function_name, call_expr.function_name_range.clone()));
         };
@@ -323,7 +322,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
     fn resolve_unit_expr(&mut self, unit_expr: &UnitExpr, unit: &Unit) -> Value {
         let mut result = self.resolve_node(&unit_expr.node);
         if let Numeric { .. } = &mut result.variant {
-            Resolver::apply_unit(&mut result, unit, &self.scope.borrow().units_view, &unit_expr.get_range(), self.errors, self.globals);
+            result = Resolver::apply_unit(result, unit, &self.scope.borrow().units_view, &unit_expr.get_range(), self.errors, self.globals)
         }
         result
     }
@@ -333,15 +332,14 @@ impl<'g, 'a> Resolver<'g, 'a> {
     fn resolve_postfix_expr(&mut self, postfix_expr: &PostfixExpr, unit: &Unit) -> Value {
         let result = self.resolve_node(&postfix_expr.node);
         let id = self.globals.get_text(&postfix_expr.postfix_id.range).to_string();
-        let mut result = match id.as_str() {
+        let result = match id.as_str() {
             "to_days" | "days" | "months" | "years" => self.resolve_duration_fragment(result, &id, &postfix_expr.postfix_id.range),
             "day" | "month" | "year" => self.resolve_date_fragment(&postfix_expr, result, &id),
             "bin" | "hex" | "dec" | "oct" | "exp" =>  self.resolve_num_format(postfix_expr, result, &id),
             _ => self.resolve_unit_postfix(result, &postfix_expr, &id)
         };
 
-        Resolver::apply_unit(&mut result, unit, &self.scope.borrow().units_view, &postfix_expr.get_range(), self.errors, self.globals);
-        result
+        Resolver::apply_unit(result, unit, &self.scope.borrow().units_view, &postfix_expr.get_range(), self.errors, self.globals)
     }
 
     fn resolve_unit_postfix(&mut self, mut result: Value, pfix_expr: &PostfixExpr, id: &String) -> Value {
@@ -424,13 +422,14 @@ impl<'g, 'a> Resolver<'g, 'a> {
    }
 
     //in case of (x.km)m, both postfixId (km) and unit (m) are filled.
-    fn apply_unit(value: &mut Value, unit: &Unit, units_view: &UnitsView, range: &Range, errors: &mut Vec<Error>, globals: &Globals) { //TODO: take and return value?
-        if let Some(number) = value.as_number_mut() {
+    fn apply_unit(mut value: Value, unit: &Unit, units_view: &UnitsView, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value {
+        if let Some(ref mut number) = &mut value.as_number_mut() {
             if !unit.is_empty() {
                 number.convert_to_unit(unit, units_view, range, errors, globals);
             }
         }
         //else: ignore.
+        value
     }
 
     fn resolve_assign_expr(&mut self, assign_expr: &AssignExpr) -> Value {
@@ -465,7 +464,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
     fn resolve_id_expr(&mut self, id_expr: &IdExpr, unit: &Unit) -> Value {
         let id = self.globals.get_text(&id_expr.id.range).to_string();
         let var_exists = self.scope.borrow().variables.contains_key(&id);
-        let mut result = if var_exists  {
+        let result = if var_exists  {
             self.scope.borrow().variables[&id].clone()
         } else {
             if self.globals.constants.contains_key(id.as_str()) {
@@ -474,8 +473,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
                 self.add_error_value(errors::var_not_def(&id, id_expr.id.range.clone()))
             }
         };
-        Resolver::apply_unit(&mut result, unit, &self.scope.borrow().units_view, &id_expr.get_range(), self.errors, self.globals);
-        result
+        Resolver::apply_unit(result, unit, &self.scope.borrow().units_view, &id_expr.get_range(), self.errors, self.globals)
     }
 
     fn resolve_unary_expr(&mut self, unary_expr: &UnaryExpr) -> Value {
@@ -493,9 +491,8 @@ impl<'g, 'a> Resolver<'g, 'a> {
             ConstType::Numeric { number } => {
                 let mut n = number.clone();
                 n.unit = unit.clone();
-                let mut res = Value::from_number(n, const_expr.get_range());
-                Self::apply_unit(&mut res, unit, &self.scope.borrow().units_view, unit.range.as_ref().unwrap_or(&const_expr.get_range()), self.errors, self.globals);
-                res
+                let res = Value::from_number(n, const_expr.get_range());
+                Self::apply_unit(res, unit, &self.scope.borrow().units_view, unit.range.as_ref().unwrap_or(&const_expr.get_range()), self.errors, self.globals)
            },
             ConstType::FormattedString => {
                 let num_error = match parse_formatted_number(self.globals.get_text(&const_expr.range), &const_expr.range, self.scope.borrow().decimal_char) {
@@ -545,7 +542,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
         let args = vec![expr1, expr2];
         let range = Range { source_index: bin_expr.get_range().source_index, start: 0, end: 0};
 
-        let mut result = (self.globals.get_operator(op_id).unwrap())(&self.globals, &args, &range, &mut self.errors); //unwrap: op_id already checked.
+        let result = (self.globals.get_operator(op_id).unwrap())(&self.globals, &args, &range, &mut self.errors); //unwrap: op_id already checked.
         if bin_expr.implicit_mult {
             if let NodeType::Id(id_expr) = &bin_expr.expr2.expr {
                 let id_str = self.globals.get_text(&id_expr.id.range);
@@ -554,9 +551,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
                 }
             }
         }
-        Resolver::apply_unit(&mut result, unit, &self.scope.borrow().units_view, &bin_expr.get_range(), self.errors, self.globals);
-
-        result
+        Resolver::apply_unit(result, unit, &self.scope.borrow().units_view, &bin_expr.get_range(), self.errors, self.globals)
     }
 }
 
