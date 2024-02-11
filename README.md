@@ -258,6 +258,13 @@ theDot = '1.234,56';
 //a dot is still the decimal char in the outer scope:
 theDot = '1,234.56';
 ```
+### Special characters
+
+Currently there's only one special character for which there's a shortcut::
+
+```
+Δ = 123; // Δ has shortcut Ctrl-Shift-e 
+```
 
 ## Technical
 

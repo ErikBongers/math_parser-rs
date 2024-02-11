@@ -25557,6 +25557,14 @@ var cm = (function (exports) {
       {tag: tags.processingInstruction, color: "#bbb"}
     ]);
 
+    const deltaKeymap = [
+        { key: "Ctrl-Shift-e", run: insertDelta, preventDefault: true },
+    ];
+
+    function insertDelta (view) {
+        view.dispatch(view.state.replaceSelection("Δ"));
+    }
+
     const basicSetup = [
       highlightActiveLineGutter(),
       highlightSpecialChars(),
@@ -25573,7 +25581,8 @@ var cm = (function (exports) {
           ...historyKeymap,
           ...foldKeymap,
           ...completionKeymap,
-          ...lintKeymap
+          ...lintKeymap,
+          ...deltaKeymap,
       ])
     ];
 

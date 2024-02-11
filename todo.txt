@@ -1,6 +1,5 @@
 * add % unit?
   > conflict with remainder and modulo?
-
 * number strings.
   > allow underscores? Currency signs? Minus? Exponential?
   > merge with the normal parse_decimal function?
@@ -16,8 +15,6 @@
 * implement a ~= operator to approximately compare floats.
   > PI ~= 3.14
   > we don't have if statements, so...not usefull?
-
-* implement delta symbol shortcut...ctrl D?
 
 * google login: fails more than not.
   > order of scripts?

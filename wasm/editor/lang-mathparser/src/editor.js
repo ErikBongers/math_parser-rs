@@ -43,6 +43,14 @@ let mathParserStyle = HighlightStyle.define([
   {tag: tags.processingInstruction, color: "#bbb"}
 ]);
 
+const deltaKeymap = [
+    { key: "Ctrl-Shift-e", run: insertDelta, preventDefault: true },
+];
+
+function insertDelta (view) {
+    view.dispatch(view.state.replaceSelection("Δ"))
+}
+
 const basicSetup = [
   highlightActiveLineGutter(),
   highlightSpecialChars(),
@@ -59,7 +67,8 @@ const basicSetup = [
       ...historyKeymap,
       ...foldKeymap,
       ...completionKeymap,
-      ...lintKeymap
+      ...lintKeymap,
+      ...deltaKeymap,
   ])
 ];
 
