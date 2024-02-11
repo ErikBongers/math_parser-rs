@@ -424,7 +424,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
    }
 
     //in case of (x.km)m, both postfixId (km) and unit (m) are filled.
-    fn apply_unit(value: &mut Value, unit: &Unit, units_view: &UnitsView, range: &Range, errors: &mut Vec<Error>, globals: &Globals) {
+    fn apply_unit(value: &mut Value, unit: &Unit, units_view: &UnitsView, range: &Range, errors: &mut Vec<Error>, globals: &Globals) { //TODO: take and return value?
         if let Some(number) = value.as_number_mut() {
             if !unit.is_empty() {
                 number.convert_to_unit(unit, units_view, range, errors, globals);
@@ -493,7 +493,9 @@ impl<'g, 'a> Resolver<'g, 'a> {
             ConstType::Numeric { number } => {
                 let mut n = number.clone();
                 n.unit = unit.clone();
-                Value::from_number(n, const_expr.get_range())
+                let mut res = Value::from_number(n, const_expr.get_range());
+                Self::apply_unit(&mut res, unit, &self.scope.borrow().units_view, unit.range.as_ref().unwrap_or(&const_expr.get_range()), self.errors, self.globals);
+                res
            },
             ConstType::FormattedString => {
                 let num_error = match parse_formatted_number(self.globals.get_text(&const_expr.range), &const_expr.range, self.scope.borrow().decimal_char) {

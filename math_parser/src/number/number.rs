@@ -95,7 +95,8 @@ impl Number {
             return;
         }
         if let None = units_view.get_def(&self.unit.id, globals) {
-            return; //should already have been detected.
+            errors.push(errors::unit_not_def(&to.id, to.range.as_ref().unwrap_or(range).clone()));
+            return;
         }
         if let None = units_view.get_def(&to.id, globals) {
             errors.push(errors::unit_not_def(&to.id, to.range.as_ref().unwrap_or(range).clone()));
