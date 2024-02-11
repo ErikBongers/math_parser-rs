@@ -266,12 +266,14 @@ fn test_units () {
     test_result("  a=10g;(a.)km            ", 10.0, "km");
     test_error("   max(1kg, 4C)            ", ErrorId::UnitPropDiff);
     test_result("  max(1kg, 4g)            ", 1.0, "kg");
-    test_result("  (PI)kg                  ", 1.0+2.1415927, "kg"); //rust compiler recognizes PI value, hence the 1+2.14...
+    test_result("  (PI)kg                  ", 1.0 + 2.1415927, "kg"); //rust compiler recognizes PI value, hence the 1+2.14...
     test_result("  1m*2                    ", 2.0, "m");
     test_result("  1*2m                    ", 2.0, "m");
     test_result("  a=2; a.=m;              ", 2.0, "m");
     test_error("   a=1; a b;               ", ErrorId::UnitNotDef);
-    test_result("  a=2000mm; meter = 1m; a.=meter; ", 2.0, "m");}
+    test_result("  a=2000mm; meter = 1m; a.=meter; ", 2.0, "m");
+    test_error("   2asdfsdfsdf               ", ErrorId::UnitNotDef);
+}
 
 #[test]
 fn test_id_names () {

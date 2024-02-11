@@ -103,7 +103,7 @@ struct CompilerError {
 }
 
 fn define_errors_impl(input: TokenStream) -> Result<TokenStream, CompilerError> {
-    let mut enum_stream = TokenStream::from_str("#[derive(Clone, Serialize, PartialEq)] pub enum ErrorId").unwrap(); //unwrap: static text
+    let mut enum_stream = TokenStream::from_str("#[derive(Debug, Clone, Serialize, PartialEq)] pub enum ErrorId").unwrap(); //unwrap: static text
     let mut functions_stream = TokenStream::new();
 
     let mut it = input.into_iter().peekable();

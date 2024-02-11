@@ -169,7 +169,7 @@ pub mod test_api {
 
     pub fn test_error(text: &str, error_id: ErrorId) {
         let (_results, errors) = get_results(text);
-        assert_ne!(errors.iter().filter(|&e| e.id == error_id).count(), 0);
+        assert_ne!(errors.iter().filter(|&e| e.id == error_id).count(), 0, "statement \"{}\" did not report error {:?}", text, error_id);
     }
 
     pub fn test_no_error(text: &str) {
