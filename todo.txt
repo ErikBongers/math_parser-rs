@@ -1,5 +1,3 @@
-* add shortcut list to menu.
-
 * show error message in result.
   > decoration the output: https://codemirror.net/examples/decoration/
   > see the function checkboxes() that has `if (node.name == "BooleanLiteral")...`

@@ -173,7 +173,7 @@ header .help {
 	top: 28px;
     position: absolute;
     box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-    padding: 12px 16px;
+    padding: 6px 8px;
     z-index: 1;
 	font-size: 0.8em;
 }
@@ -293,4 +293,13 @@ body.dark {
 header
 {
 	border-bottom: #00000055 1px solid;
+}
+
+.dropdown table {
+	font-size: .8em;
+	opacity: .5;
+}
+
+.dropdown td {
+	padding-inline: 10px;
 }
