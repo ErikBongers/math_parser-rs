@@ -15,10 +15,33 @@ fn test_constants (){
 
 #[test]
 fn test_dates (){
-    test_date("#define dmy \n date(1,2,2022)", 1, 2, 2022);
+    test_date("#define dmy \n date(1,2,2022)", 1, 2, Some(2022));
     test_error("#define ymd \n date(1,2,2022)", ErrorId::InvDate);
-    test_date("#define dmy \n '1-2-2022'", 1, 2, 2022);
+    test_date("#define dmy \n '1-2-2022'", 1, 2, Some(2022));
     test_error("#define ymd \n '1-2-2022'", ErrorId::InvDateStrForFormat);
+    test_date("'11/11/11'", 11, 11, Some(11));
+    test_date("'2022/12/13'", 13, 12, Some(2022));
+    test_date("'2022/12/13'", 13, 12, Some(2022));
+
+    test_date("'2022,12,13'", 13, 12, Some(2022));
+    test_date("'2022-12-13'", 13, 12, Some(2022));
+    test_date("'Jan 12, 2022", 12, 1, Some(2022));
+    test_date("'12 28 2022'", 28, 12, Some(2022));
+    test_date("'28 12 2022'", 28, 12, Some(2022));
+    test_date("'2022 12 28'", 28, 12, Some(2022));
+    test_date("'2022 28 12'", 28, 12, Some(2022));
+    test_date("'28 2022 12'", 28, 12, Some(2022));
+    test_date("'12 2022 28'", 28, 12, Some(2022));
+    test_date("'2022 last 1'", 31, 1, Some(2022));
+    test_date("'last 1'", 31, 1, None);
+    test_date("'26 1'", 26, 1, None);
+    test_date("'feb 1'", 1, 2, None);
+
+    test_date("'2022 2 1'", 1, 2, Some(2022));
+    test_date("#define ymd\n '2022 2 1'", 1, 2, Some(2022));
+
+    // date via lists:
+    test_date("d = (2022, 12, 13); date(d);", 13, 12, Some(2022));
 }
 
 #[test]
@@ -297,6 +320,8 @@ fn test_nonsense () {
 
 #[test]
 fn test_defines () {
+    test_date("#define ymd; '2022 2 1'", 1, 2, Some(2022)); //#define ends with either a NL or a ;
+
     test_error("#define short_date_units \n s=1;", ErrorId::WVarIsUnit);
     test_error("#undef trig\n  sin(1);", ErrorId::FuncNotAccessible);
     test_result("#undef trig\n#define trig\n  sin(30deg);", 0.5, "");
@@ -377,13 +402,13 @@ TEST_METHOD(TestDurations)
             {
             assertDuration("duur=2 days, 3 months", 2, 3);
             assertDuration("'Jan 12, 2022'-'Jan 11, 2022';", 1);
-            assertDate("'01 jan 2022'+2days", 3, 1, 2022);
+            assertDate("'01 jan 2022'+2days", 3, 1, Some(2022));
             assertError("'01 jan 2022'+2", "E_EXPLICIT_UNITS_EXPECTED");
             assertDate(R"CODE(
 dat='Jan 12, 2022';
 duur=2 days, 3 months;
 dat+duur;
-                    )CODE", 14, 4, 2022);
+                    )CODE", 14, 4, Some(2022));
         assertDate(R"CODE(
 dat='Jan 12, 2022';
 duur=360 days, 0 months; //calculated year of 30*12 days
@@ -395,34 +420,6 @@ dat+duur;
             assertResult("duur=2 days, 3 months; duur.days;", 2, "days");
             assertResult("duur=2 days, 3 months; duur.months;", 3, "months");
             assertResult("duur=2 days, 3 months, 5years; duur.years;", 5, "years");
-            }
-
-        TEST_METHOD(TestDates)
-            {
-            testDateString("11/11/11", 11, 11, 11);
-            testDateString("2022/12/13", 13, 12, 2022);
-            assertDate("'2022/12/13'", 13, 12, 2022);
-
-            testDateString("2022,12,13", 13, 12, 2022);
-            testDateString("2022-12-13", 13, 12, 2022);
-            testDateString("Jan 12, 2022", 12, 1, 2022);
-            testDateString("12 28 2022", 28, 12, 2022);
-            testDateString("28 12 2022", 28, 12, 2022);
-            testDateString("2022 12 28", 28, 12, 2022);
-            testDateString("2022 28 12", 28, 12, 2022);
-            testDateString("28 2022 12", 28, 12, 2022);
-            testDateString("12 2022 28", 28, 12, 2022);
-            testDateString("2022 last 1", 99, 1, 2022);
-            testDateString("last 1", 99, 1, Date::EmptyYear);
-            testDateString("26 1", 26, 1, Date::EmptyYear);
-            testDateString("feb 1", 1, 2, Date::EmptyYear);
-
-            assertError("'2022 2 1'", "INV_DATE_STR");
-            assertDate("#define ymd\n '2022 2 1'", 1, 2, 2022);
-            assertDate("#define ymd; '2022 2 1'", 1, 2, 2022); //#define ends with either a NL or a ;
-
-            // date via lists:
-            assertDate("d = date(2022, 12, 13)", 13, 12, 2022);
             }
 
         TEST_METHOD(TestNumberFormats)

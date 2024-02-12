@@ -156,7 +156,7 @@ pub mod test_api {
         value
     }
 
-    pub fn test_date(text: &str, day: i8, month: i32, year: i32) {
+    pub fn test_date(text: &str, day: i8, month: i32, year: Option<i32>) {
         let (results, _errors) = get_results(text);
         let value = results.last().expect("No result found.");
         let Variant::Date { date, .. } = &value.variant else {
@@ -164,7 +164,7 @@ pub mod test_api {
         };
         assert_eq!(date.get_normalized_day(), day);
         assert_eq!(date.month as i32, month);
-        assert_eq!(date.year.unwrap(), year);
+        assert_eq!(date.year, year);
     }
 
     pub fn test_error(text: &str, error_id: ErrorId) {

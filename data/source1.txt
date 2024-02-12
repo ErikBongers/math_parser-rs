@@ -1,3 +1,1 @@
-2asdfsdfsdf;
-max(1,2)sdfsdfs;
-(1)sdfadf;
+now()

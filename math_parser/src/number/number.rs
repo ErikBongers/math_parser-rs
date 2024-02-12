@@ -203,6 +203,9 @@ fn find_decimal_char(stream: &str, range: &Range) -> Result<DecimalChar, Error> 
     if dots.len() + commas.len() < 2 {
         return Err(errors::inv_number_str("ambiguous decimal point or thousands separator", range.clone()));
     }
+    if dots.len() == 0 || commas.len() == 0 {
+        return Err(errors::inv_number_str("ambiguous decimal point or thousands separator", range.clone()));
+    }
     if dots.last().unwrap() > commas.first().unwrap() && commas.last().unwrap() > dots.first().unwrap() {
         return Err(errors::inv_number_str("mixed dots and commas", range.clone()));
     }
