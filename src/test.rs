@@ -334,7 +334,45 @@ fn test_exponents () {
     test_exponent("1E5cm + 1km", 2.0, "cm", 5);
 }
 
+#[test]
+fn test_blocks () {
+    test_result(r"
+#define decimal_dot
+theDot = '1,234.56';
+{
+#define decimal_comma
+theDot = '1.234,56';
+}
+theDot = '1,234.56';"
+                 , 1234.56, "");
+
+    test_error(r"
+a = 1;
+{
+b = a;
+c=3;
+}
+d=c;"
+                , ErrorId::VarNotDef);
+
+}
+#[test]
+fn test_warnings () {
+    test_error("  km=123                    ", ErrorId::WVarIsUnit);
+    test_error("  sin=123                   ", ErrorId::WVarIsFunction);
+    test_error("a=3; 12/2a", ErrorId::WDivImplMult);
+    test_error("a=3; max(12/2a, 0)", ErrorId::WDivImplMult);
+}
+
+#[test]
+fn test_incomplete_program () {
+    // test_error("   a=12/             ", ErrorId::Eos);
+    test_error("   a=             ", ErrorId::Eos);
+    test_error("   {             ", ErrorId::Expected);
+
+}
 /* TODO
+
 TEST_METHOD(TestDurations)
             {
             assertDuration("duur=2 days, 3 months", 2, 3);
@@ -386,30 +424,6 @@ dat+duur;
             // date via lists:
             assertDate("d = date(2022, 12, 13)", 13, 12, 2022);
             }
-       TEST_METHOD(TestBlocks)
-            {
-            assertResult(R"CODE(
-#define decimal_dot
-theDot = '1,234.56';
-{
-#define decimal_comma
-theDot = '1.234,56';
-}
-theDot = '1,234.56';
-                         )CODE"
-                         , 1234.56);
-
-            assertError(R"CODE(
-a = 1;
-{
-b = a;
-c=3;
-}
-d=c;
-                         )CODE"
-                        , "VAR_NOT_DEF");
-
-            }
 
         TEST_METHOD(TestNumberFormats)
             {
@@ -432,24 +446,5 @@ d=c;
 //                        , 123, "", "", "HEX");
             }
 
-        TEST_METHOD(TestNameConflicts)
-            {
-            assertResult("  km=123                    ", 123, "", "W_VAR_IS_UNIT");
-            assertResult("  sin=123                   ", 123, "", "W_VAR_IS_FUNCTION");
-            }
-
-        TEST_METHOD(TestErrorsAndWarnings)
-            {
-            assertResult("a=3; 12/2a", 2, "", "W_DIV_IMPL_MULT");
-            assertResult("a=3; max(12/2a, 0)", 2, "", "W_DIV_IMPL_MULT");
-            }
-
-
-        TEST_METHOD(TestIncompleteProgram)
-            {
-            assertError("   a=12/             ", "EOS");
-            assertError("   a=             ", "EOS");
-            assertError("   {             ", "EXPECTED");
-            }
 
 */

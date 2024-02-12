@@ -1,5 +1,16 @@
 * add shortcut list to menu.
 
+* show error message in result.
+  > decoration the output: https://codemirror.net/examples/decoration/
+  > see the function checkboxes() that has `if (node.name == "BooleanLiteral")...`
+  > result syntax:
+     > 'ordinary' output remains un-decorated.
+     > errors and comments:
+     : [error:The actual error]
+       [comment:the actual comment]
+       [comment: escape a \] in a comment]
+     > this is actually quite readable without decorators...
+
 * add % unit?
   > conflict with remainder and modulo?
 

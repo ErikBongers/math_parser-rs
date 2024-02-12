@@ -5,6 +5,15 @@ export function clearErrorList() {
 	errorsForLint = [];
 }
 
+function getFirstErrorForLine(lineNo, errors) {
+	for (let e of errors) {
+		if (e.range.startLine === lineNo) {
+			return e.msg;
+		}
+	}
+	return "";
+}
+
 function convertErrorToCodeMirror(e, doc) {
 	let start, end = 0;
 	let sourcePrefix = "";
@@ -86,16 +95,16 @@ function prefixErrorMessage(e) {
 	return sourcePrefix + e.msg;
 }
 
-export function linetoResultString (line) {
+export function linetoResultString (line, errors) {
 	if (line.type === "Comment") {
-		return line.comment;
+		return "[comment:"+line.comment+"]";
 	}
-	let strComment = "";
-	if (line.comment)
-		strComment = line.comment;
+	let strError = getFirstErrorForLine(line.line, errors);
+	if (strError !== "")
+		strError = "[error:" + strError + "]";
 	let strLine = "";
 	if (window.innerWidth > 880) {
-		strLine += strComment;
+		strLine += strError;
 		strLine += (line.id ? line.id + "=" : "") + formatResult(line);
 	}
 	else
@@ -123,7 +132,7 @@ export function outputResult(result, sourceIndex) {
 				lineCnt++;
 				lineAlreadyFilled = false;
 			}
-			let strValue = linetoResultString(line);
+			let strValue = linetoResultString(line, result.errors);
 			if (lineAlreadyFilled)
 				strResult += " | ";
 			strResult += strValue;
