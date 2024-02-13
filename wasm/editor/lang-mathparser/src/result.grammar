@@ -1,7 +1,7 @@
 @top Results { resultLine+ }
 
 resultLine {
-  resultSection newline
+  resultSection* newline
 }
 
 resultSection {
@@ -20,7 +20,7 @@ ErrorMarkerText { markerText }
 WarningMarkerText { markerText }
 
 resultList {
-  "" | result ("|" result)*
+  result ("|" result)*
 }
 
 result {
@@ -29,7 +29,7 @@ result {
 }
 
 AssignmentExpression {
-  Word "=" ResultValue
+  Identifier "=" ResultValue
 }
 
 ResultValue {
@@ -43,7 +43,6 @@ Boolean {
   False
 }
 
-Word { identifier }
 
 @skip { spaces }
 
@@ -61,9 +60,9 @@ Word { identifier }
 
   identifierChar { std.asciiLetter | $[_$\u{a1}-\u{10ffff}] }
 
-  identifier { identifierChar (identifierChar | std.digit)* }
+  Identifier { identifierChar (identifierChar | std.digit)* }
 
-  @precedence { True, False, markerText, spaces, newline, identifier }
+  @precedence { True, False, markerText, spaces, newline, Identifier }
 
   True { "true" }
   False { "false" }

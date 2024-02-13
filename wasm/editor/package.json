@@ -7,8 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "NOTE": "*****************  run rollup BEFORE ./initAndMakeWasm! Otherwise an older version of NodeJs is being used. ****************",
     "rollup": "rollup -c",
-    "buildmathparser": "./node_modules/.bin/lezer-generator.cmd src/lang-mathparser/src/mathparser.grammar -o src/lang-mathparser/src/parser.js",
-    "buildresultparser": ".\\node_modules\\.bin\\lezer-generator.cmd lang-mathparser\\src\\result.grammar -o lang-mathparser\\src\\resultparser.js"
+    "buildmathparser": ".\\node_modules\\.bin\\lezer-generator.cmd lang-mathparser\\src\\mathparser.grammar -o lang-mathparser\\src\\lezer_generated\\parser.lzr.js",
+    "buildresultparser": ".\\node_modules\\.bin\\lezer-generator.cmd lang-mathparser\\src\\result.grammar -o lang-mathparser\\src\\lezer_generated\\resultparser.lzr.js"
   },
   "author": "",
   "license": "ISC",

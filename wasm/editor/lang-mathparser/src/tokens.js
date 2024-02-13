@@ -2,7 +2,7 @@
    expressed by lezer's built-in tokenizer. */
 
 import {ExternalTokenizer, ContextTracker} from "@lezer/lr"
-import {incdec, incdecPrefix, spaces, newline, BlockComment, LineComment} from "./parser.terms.js"
+import {incdec, incdecPrefix, spaces, newline, BlockComment, LineComment} from "./lezer_generated/parser.lzr.terms.js"
 
 const space = [9, 10, 11, 12, 13, 32, 133, 160, 5760, 8192, 8193, 8194, 8195, 8196, 8197, 8198, 8199, 8200,
                8201, 8202, 8232, 8233, 8239, 8287, 12288]

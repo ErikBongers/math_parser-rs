@@ -1,5 +1,5 @@
-import {parser} from "./resultparser.js"
-import {LRLanguage, LanguageSupport, foldNodeProp, foldInside} from "@codemirror/language"
+import {parser} from "./lezer_generated/resultparser.lzr.js"
+import {LRLanguage, LanguageSupport} from "@codemirror/language"
 import {styleTags, tags as t} from "@lezer/highlight"
 
 export const resultParserLanguage = LRLanguage.define({
@@ -22,12 +22,6 @@ export const resultParserLanguage = LRLanguage.define({
       })
     ]
   }),
-  languageData: {
-    closeBrackets: {brackets: ["(", "[", "{", "'", '"', "`"]},
-    commentTokens: {line: "//", block: {open: "/*", close: "*/"}},
-    indentOnInput: /^\s*(?:case |default:|\{|\}|<\/)$/,
-    wordChars: "$"
-  }
 })
 
 export function resultparser() {

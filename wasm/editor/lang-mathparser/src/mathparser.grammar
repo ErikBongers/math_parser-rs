@@ -95,9 +95,9 @@ VariableName { identifier ~arrow }
 
 @skip { spaces | newline | LineComment | BlockComment | Define }
 
-@context trackNewline from "./tokens.js"
+@context trackNewline from "./../tokens.js"
 
-@external tokens incdecToken from "./tokens" {
+@external tokens incdecToken from "./../tokens" {
  incdec[@name=ArithOp],
  incdecPrefix[@name=ArithOp]
 }

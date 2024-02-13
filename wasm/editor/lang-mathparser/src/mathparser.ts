@@ -1,4 +1,4 @@
-import {parser} from "./parser.js" 
+import {parser} from "./lezer_generated/parser.lzr.js"
 import {LRLanguage, LanguageSupport, foldNodeProp, foldInside} from "@codemirror/language"
 import {styleTags, tags as t} from "@lezer/highlight"
 
