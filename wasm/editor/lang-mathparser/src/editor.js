@@ -14,6 +14,7 @@ import { lintKeymap, linter, lintGutter } from '@codemirror/lint';
 
 import {mathparser} from "./mathparser.ts"
 import {mathparserLint} from "./mathparserlint.ts"
+import {resultparser} from "./result_parser.ts"
 
 import { oneDark } from "./darkTheme.js"
 import {oneLight} from "./lightTheme.js";
@@ -153,7 +154,7 @@ export let cmOutput = new EditorView({
 export let cmResult = new EditorView({
     state: EditorState.create({
         extensions: [basicSetup,
-            mathparser(),
+            resultparser(),
             EditorState.readOnly.of(true),
             resultTheme.of([])
         ]

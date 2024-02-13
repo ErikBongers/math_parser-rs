@@ -7,7 +7,16 @@ export function clearErrorList() {
 
 function getFirstErrorForLine(lineNo, errors) {
 	for (let e of errors) {
-		if (e.range.startLine === lineNo) {
+		if (e.range.startLine === lineNo && e.type === "E") {
+			return e.msg;
+		}
+	}
+	return "";
+}
+
+function getFirstWarningForLine(lineNo, errors) {
+	for (let e of errors) {
+		if (e.range.startLine === lineNo && e.type === "W") {
 			return e.msg;
 		}
 	}
@@ -31,7 +40,7 @@ function convertErrorToCodeMirror(e, doc) {
 			from: start,
 			to: end
 		}
-		if (e.type == "W")
+		if (e.type === "W")
 			hint.severity = "warning";
 		return hint;
 	}
@@ -102,6 +111,11 @@ export function linetoResultString (line, errors) {
 	let strError = getFirstErrorForLine(line.line, errors);
 	if (strError !== "")
 		strError = "[error:" + strError + "]";
+	else {
+		let strWarning = getFirstWarningForLine(line.line, errors);
+		if (strWarning !== "")
+		strError = "[warning:" + strWarning + "]";
+	}
 	let strLine = "";
 	if (window.innerWidth > 880) {
 		strLine += strError;
@@ -123,19 +137,27 @@ export function outputResult(result, sourceIndex) {
 		result = JSON.parse(result); //may throw...
 		let lineCnt = 0;
 		let lineAlreadyFilled = false;
+		let strLine = "";
 		for (let line of result.result) {
 			if (line.src !== sourceIndex)
 				continue;
 			//goto the next line in output
 			while (lineCnt < line.line) {
-				strResult += "\n";
+				strResult += strLine + "\n";
+				strLine = "";
 				lineCnt++;
 				lineAlreadyFilled = false;
 			}
 			let strValue = linetoResultString(line, result.errors);
-			if (lineAlreadyFilled)
-				strResult += " | ";
-			strResult += strValue;
+			if (lineAlreadyFilled) {
+				if (line.type === "Comment") {
+					strLine = strValue + " " + strLine; //comment to the left and no separator.
+				} else {
+					strLine += " | " + strValue;
+				}
+			} else {
+				strLine += strValue;
+			}
 			lineAlreadyFilled = true;
 		}
         addErrorsToLint(result.errors);

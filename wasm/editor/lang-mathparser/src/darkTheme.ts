@@ -9,7 +9,7 @@ import {svg, underline} from "./themeHelpers";
 const chalky = "#aba18f",
   coral = "#a6676c",
   cyan = "#56b6c2",
-  invalid = "#ffffff",
+  invalid = "#ff0000",
   ivory = "#abb2bf",
   stone = "#727883", // Brightened compared to original to increase contrast
   malibu = "#6292b7",
@@ -18,10 +18,12 @@ const chalky = "#aba18f",
   violet = "#c678dd",
   darkBackground = "#202025",
   highlightBackground = "#2c313a",
+  barely = "#2c313a",
   background = "#25252b",
   tooltipBackground = "#353a42",
   selection = "#3E4451",
-  cursor = "#528bff"
+  cursor = "#528bff",
+  yellow = "#aaaa00"
 
 /// The colors used in the theme, as CSS color strings.
 export const color = {
@@ -128,8 +130,10 @@ export const oneDarkHighlightStyle = HighlightStyle.define([
   {tag: [t.color, t.constant(t.name), t.standard(t.name)], color: whiskey},
   {tag: [t.definition(t.name), t.separator], color: ivory},
   {tag: [t.typeName, t.className, t.number, t.changed, t.annotation, t.modifier, t.self, t.namespace], color: chalky},
+  {tag: [t.annotation], color: yellow},
   {tag: [t.operator, t.operatorKeyword, t.url, t.escape, t.regexp, t.link, t.special(t.string)], color: cyan},
-  {tag: [t.meta, t.comment], color: stone},
+  {tag: [t.comment], color: stone},
+  {tag: [t.meta], color: barely},
   {tag: t.strong, fontWeight: "bold"},
   {tag: t.emphasis, fontStyle: "italic"},
   {tag: t.strikethrough, textDecoration: "line-through"},

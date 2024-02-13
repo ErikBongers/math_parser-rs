@@ -1,0 +1,93 @@
+@top Results { resultLine+ }
+
+resultLine {
+  resultSection newline
+}
+
+resultSection {
+  ErrorMarkerExpression |
+  WarningMarkerExpression |
+  CommentMarkerExpression |
+  resultList
+}
+
+CommentMarkerExpression { CommentMarkerStart CommentMarkerText MarkerEnd }
+ErrorMarkerExpression { ErrorMarkerStart ErrorMarkerText MarkerEnd }
+WarningMarkerExpression { WarningMarkerStart WarningMarkerText MarkerEnd }
+
+CommentMarkerText { markerText }
+ErrorMarkerText { markerText }
+WarningMarkerText { markerText }
+
+resultList {
+  "" | result ("|" result)*
+}
+
+result {
+  AssignmentExpression |
+  ResultValue
+}
+
+AssignmentExpression {
+  Word "=" ResultValue
+}
+
+ResultValue {
+  Number |
+  String |
+  Boolean
+}
+
+Boolean {
+  True |
+  False
+}
+
+Word { identifier }
+
+@skip { spaces }
+
+@tokens {
+  spaces[@export] { $[\u0009 \u000b\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000\ufeff]+ }
+  newline[@export] { $[\r\n\u2028\u2029] }
+
+  CommentMarkerStart { "[comment:" }
+  ErrorMarkerStart { "[error:" }
+  WarningMarkerStart { "[warning:" }
+
+  markerText { ![\]]+ }
+
+  MarkerEnd { "]" }
+
+  identifierChar { std.asciiLetter | $[_$\u{a1}-\u{10ffff}] }
+
+  identifier { identifierChar (identifierChar | std.digit)* }
+
+  @precedence { True, False, markerText, spaces, newline, identifier }
+
+  True { "true" }
+  False { "false" }
+
+  Number {
+    (std.digit ("_" | std.digit)* ("." ("_" | std.digit)*)? | "." std.digit ("_" | std.digit)*)
+      (("e" | "E") ("+" | "-")? ("_" | std.digit)+)? |
+    std.digit ("_" | std.digit)* "n" |
+    "0x" (std.digit | $[a-fA-F] | "_")+ "n"? |
+    "0b" $[01_]+ "n"? |
+    "0o" $[0-7_]+ "n"?
+  }
+
+String {
+    '"' (![\\\n"] | "\\" _)* '"'? |
+    "'" (![\\\n'] | "\\" _)* "'"?
+  }
+
+  "="[@name=Equals]
+
+  "(" ")" "[" "{" "}"
+
+  "?." "." "," ";" ":"
+
+}
+
+@detectDelim
