@@ -1,3 +1,5 @@
+import {menuState} from "./menu.js";
+
 export let errorsForLint = [];
 export let activeDocumentIndex = -1;
 export let sources = [];
@@ -118,7 +120,7 @@ export function linetoResultString (line, errors) {
 	}
 	let strLine = "";
 	if (window.innerWidth > 880) {
-		strLine += strError;
+		strLine += menuState.getShowErrorsInResult() ? strError : "";
 		strLine += (line.id ? line.id + "=" : "") + formatResult(line);
 	}
 	else

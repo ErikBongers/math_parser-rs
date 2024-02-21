@@ -5,7 +5,8 @@ class MenuState {
     #state = {
         theme: "",
         scriptId: "",
-        showErrors: true,
+        showErrorsColumn: true,
+        showErrorsInResult: true,
         showLineNumbers: true,
     };
     constructor() {
@@ -13,7 +14,7 @@ class MenuState {
             this.#state = JSON.parse(localStorage.menuState);
         } else {
             this.#state.scriptId = "script1";
-            this.#state.showErrors = true;
+            this.#state.showErrorsColumn = true;
             this.#state.showLineNumbers = true;
             this.#state.theme = "light";
         }
@@ -24,7 +25,8 @@ class MenuState {
 
     getTheme() { return this.#state.theme; }
     getScriptId() { return this.#state.scriptId; }
-    getShowErrors() { return this.#state.showErrors; }
+    getShowErrors() { return this.#state.showErrorsColumn; }
+    getShowErrorsInResult() { return this.#state.showErrorsInResult; }
     getShowLineNumbers() { return this.#state.showLineNumbers; }
 
     setTheme(theme) {
@@ -46,11 +48,18 @@ class MenuState {
         updateMenu();
     }
 
-    setShowErrors(show) {
-        this.#state.showErrors = show;
+    setShowErrorsColumn(show) {
+        this.#state.showErrorsColumn = show;
         this.saveInLocalStorage();
         //listeners
         updateGutter();
+        updateMenu();
+    }
+
+    setShowErrorsInResult(show) {
+        this.#state.showErrorsInResult = show;
+        this.saveInLocalStorage();
+        //listeners
         updateMenu();
     }
 
@@ -67,7 +76,11 @@ class MenuState {
     }
 
     toggleErrors() {
-        this.setShowErrors(!this.#state.showErrors);
+        this.setShowErrorsColumn(!this.#state.showErrorsColumn);
+    }
+
+    toggleErrorsInResult() {
+        this.setShowErrorsInResult(!this.#state.showErrorsInResult);
     }
 }
 
@@ -78,8 +91,8 @@ const ID_MENU_START_SCRIPT = "viewStartupScript";
 const ID_MENU_LIGHT_MODE = "setLightMode";
 const ID_MENU_DARK_MODE = "setDarkMode";
 const ID_MENU_SHOW_LINE_NUMBERWS = "hideShowLineNumbers";
-const ID_MENU_SHOWW_ERRORS = "hideShowErrorColumn";
-
+const ID_MENU_SHOW_ERRORS = "hideShowErrorColumn";
+const ID_MENU_SHOW_ERRORS_IN_RESULT = "hideShowErrorInResult";
 const CLASS_BULLET = "bullet";
 const CLASS_CHECKED = "checked";
 
@@ -108,8 +121,12 @@ document.getElementById(ID_MENU_SHOW_LINE_NUMBERWS).addEventListener("click", fu
     menuState.toggleLineNumbers();
 });
 
-document.getElementById(ID_MENU_SHOWW_ERRORS).addEventListener("click", function (e) {
+document.getElementById(ID_MENU_SHOW_ERRORS).addEventListener("click", function (e) {
     menuState.toggleErrors();
+});
+
+document.getElementById(ID_MENU_SHOW_ERRORS_IN_RESULT).addEventListener("click", function (e) {
+    menuState.toggleErrorsInResult();
 });
 
 // Listeners, kind of...
@@ -134,7 +151,8 @@ export function updateMenu() {
     menu_setScript(menuState.getScriptId());
     menu_setTheme(menuState.getTheme());
     document.getElementById(ID_MENU_SHOW_LINE_NUMBERWS).classList.toggle(CLASS_CHECKED, menuState.getShowLineNumbers());
-    document.getElementById(ID_MENU_SHOWW_ERRORS).classList.toggle(CLASS_CHECKED, menuState.getShowErrors());
+    document.getElementById(ID_MENU_SHOW_ERRORS).classList.toggle(CLASS_CHECKED, menuState.getShowErrors());
+    document.getElementById(ID_MENU_SHOW_ERRORS_IN_RESULT).classList.toggle(CLASS_CHECKED, menuState.getShowErrorsInResult());
 }
 
 // Helpers

@@ -1,15 +1,15 @@
 * show error message in result.
   > decoration the output: https://codemirror.net/examples/decoration/
   > see the function checkboxes() that has `if (node.name == "BooleanLiteral")...`
-  > result syntax:
-     > 'ordinary' output remains un-decorated.
-     > errors and comments:
-     : [error:The actual error]
-       [comment:the actual comment]
-       [comment: escape a \] in a comment]
-     > this is actually quite readable without decorators...
+  > or...just insert decorated text without wrapper text:
+     > https://stackoverflow.com/questions/72599672/how-to-search-for-and-highlight-a-substring-in-codemirror-6
+  >  Decoration.replace() :
+     > https://discuss.codemirror.net/t/hiding-pieces-of-code-and-making-them-non-interactive/5433
+     > https://codemirror.net/docs/ref/#view.Decoration%5Ereplace
+     > https://codemirror.net/examples/decoration/
 
 * add % unit?
+
   > conflict with remainder and modulo?
 
 * number strings.
@@ -73,3 +73,15 @@
 * Functions
   > round(), ... on lists?
     > eg make a list all integers.
+
+* assign to complex lhr:
+  > When assigning to something more complex that an atomic variable name, how do you parse that?
+  : table[index + 1].name.first = 'Steven'
+  > https://medium.com/@gvanrossum_83706/peg-parsers-7ed72462f97c
+  > look-aheads won't work
+  > Python's old pgen parser checked lhr in a 2nd pass. MathParser could do the same in the resolver.
+    > accept an arbitrary expression at the left side of an assignment.
+  > Python switched to a PEG parser for this.
+    > https://medium.com/@gvanrossum_83706/building-a-peg-parser-d4869b5958fb
+    > the tokenizer uses an internal vec to store all the parsed tokens so it can quickly be reset to a previous position and go over the already parsed tokens again without having to parse them again. This is memoization.
+      > note that this doesn't do 'packrat'-ing yet. The parsed, but rejected, tokens are just in a vec as ordinary tokens, while they could already be stored in a bit of AST.
