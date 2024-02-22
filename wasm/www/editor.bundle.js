@@ -25581,6 +25581,40 @@ var cm = (function (exports) {
     }, { dark: false });
     var oneLight = [lightTheme, syntaxHighlighting(lightStyle)];
 
+    function hideWrapperDecoSet(view) {
+        var replacements = [];
+        for (var _i = 0, _a = view.visibleRanges; _i < _a.length; _i++) {
+            var _b = _a[_i], from = _b.from, to = _b.to;
+            syntaxTree(view.state).iterate({
+                from: from,
+                to: to,
+                enter: function (node) {
+                    if (node.name == "CommentMarkerStart"
+                        || node.name == "MarkerEnd"
+                        || node.name == "ErrorMarkerStart"
+                        || node.name == "WarningMarkerStart") {
+                        var deco = Decoration.replace({});
+                        replacements.push(deco.range(node.from, node.to));
+                    }
+                }
+            });
+        }
+        return Decoration.set(replacements);
+    }
+    var hideWrapperPlugin = ViewPlugin.fromClass(/** @class */ (function () {
+        function class_1(view) {
+            this.decorations = hideWrapperDecoSet(view);
+        }
+        class_1.prototype.update = function (update) {
+            if (update.docChanged || update.viewportChanged ||
+                syntaxTree(update.startState) != syntaxTree(update.state))
+                this.decorations = hideWrapperDecoSet(update.view);
+        };
+        return class_1;
+    }()), {
+        decorations: function (v) { return v.decorations; }
+    });
+
     HighlightStyle.define([
       { tag: tags.strong, fontWeight: "bold" },
       { tag: tags.keyword, color: "#708" },
@@ -25715,7 +25749,8 @@ var cm = (function (exports) {
             extensions: [basicSetup,
                 resultparser(),
                 EditorState.readOnly.of(true),
-                resultTheme.of([])
+                resultTheme.of([]),
+                hideWrapperPlugin,
             ]
         }),
         parent: document.getElementById("txtResult")

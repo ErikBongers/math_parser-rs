@@ -18,6 +18,7 @@ import {resultparser} from "./result_parser.ts"
 
 import { oneDark } from "./darkTheme.js"
 import {oneLight} from "./lightTheme.js";
+import {hideWrapperPlugin} from "./decorator";
 
 export {setLintSource} from "./mathparserlint";
 
@@ -156,7 +157,8 @@ export let cmResult = new EditorView({
         extensions: [basicSetup,
             resultparser(),
             EditorState.readOnly.of(true),
-            resultTheme.of([])
+            resultTheme.of([]),
+            hideWrapperPlugin,
         ]
     }),
     parent: document.getElementById("txtResult")
