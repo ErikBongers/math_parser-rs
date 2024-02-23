@@ -1,1 +1,2 @@
-now()
+#define mdy
+dat='1/2/3';

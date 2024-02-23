@@ -1,10 +1,13 @@
+import {ErrorResult, NumberResult, ResultLine, Results} from "./result";
+declare var cm: any;
 export let errorsForLint = [];
 export let activeDocumentIndex = -1;
 export let sources = [];
 export function clearErrorList() {
     errorsForLint = [];
 }
-function getFirstErrorForLine(lineNo, errors) {
+
+function getFirstErrorForLine(lineNo: number, errors: ErrorResult[]) {
     for (let e of errors) {
         if (e.range.startLine === lineNo && e.type === "E") {
             return e.msg;
@@ -12,7 +15,8 @@ function getFirstErrorForLine(lineNo, errors) {
     }
     return "";
 }
-function getFirstWarningForLine(lineNo, errors) {
+
+function getFirstWarningForLine(lineNo: number, errors: ErrorResult[]) {
     for (let e of errors) {
         if (e.range.startLine === lineNo && e.type === "W") {
             return e.msg;
@@ -20,15 +24,15 @@ function getFirstWarningForLine(lineNo, errors) {
     }
     return "";
 }
-function convertErrorToCodeMirror(e, doc) {
+
+function convertErrorToCodeMirror(e: ErrorResult, doc) {
     let start = 0;
     let end = 0;
     try {
         if (e.range.sourceIndex == activeDocumentIndex) {
             start = doc.line(e.range.startLine + 1).from + e.range.startPos;
             end = doc.line(e.range.endLine + 1).from + e.range.endPos;
-        }
-        else {
+        } else {
             start = doc.line(1).from;
             end = doc.line(1).from;
         }
@@ -37,7 +41,7 @@ function convertErrorToCodeMirror(e, doc) {
             severity: "error",
             from: start,
             to: end
-        };
+        }
         if (e.type === "W")
             hint.severity = "warning";
         return hint;
@@ -47,19 +51,22 @@ function convertErrorToCodeMirror(e, doc) {
         throw err;
     }
 }
-function addErrorsToLint(errors) {
+
+function addErrorsToLint (errors: ErrorResult[]) {
     for (let e of errors) {
         errorsForLint.push(convertErrorToCodeMirror(e, cm.editor.state.doc));
         if (e.stackTrace)
             addErrorsToLint(e.stackTrace);
     }
 }
-function formatNumber(numb) {
+
+function formatNumber (numb: NumberResult) {
     let strFormatted = numb.fmtd;
     strFormatted += numb.u;
     return strFormatted;
 }
-function formatList(values) {
+
+function formatList (values: ResultLine[]) {
     let strFormatted = "";
     let strComma = "";
     values.forEach(value => {
@@ -68,7 +75,8 @@ function formatList(values) {
     });
     return strFormatted;
 }
-function formatResult(line) {
+
+function formatResult (line: ResultLine) {
     let strFormatted = "";
     if (line.type === "Number" || line.type === "N") {
         strFormatted = formatNumber(line.number);
@@ -89,16 +97,18 @@ function formatResult(line) {
     }
     return strFormatted;
 }
-function prefixErrorMessage(e) {
+
+function prefixErrorMessage(e: ErrorResult) {
     let sourcePrefix = "";
     if (e.range.sourceIndex !== activeDocumentIndex) {
         sourcePrefix = "[" + sources[e.range.sourceIndex] + "]: ";
     }
     return sourcePrefix + e.msg;
 }
-function linetoResultString(line, errors, showErrors) {
+
+function linetoResultString (line: ResultLine, errors: ErrorResult[], showErrors: boolean) {
     if (line.type === "Comment") {
-        return "[comment:" + line.comment + "]";
+        return "[comment:"+line.comment+"]";
     }
     let strError = getFirstErrorForLine(line.line, errors);
     if (strError !== "")
@@ -115,16 +125,18 @@ function linetoResultString(line, errors, showErrors) {
     }
     else
         strLine += formatResult(line);
+
     return strLine;
 }
-export function outputResult(resultString, sourceIndex, showErrors) {
+
+export function outputResult(resultString: string, sourceIndex: number, showErrors: boolean) {
     activeDocumentIndex = sourceIndex;
     console.debug(resultString);
     clearErrorList();
     var strOutput = "";
     var strResult = "";
     try {
-        let result = JSON.parse(resultString); //may throw...
+        let result: Results = JSON.parse(resultString); //may throw...
         let lineCnt = 0;
         let lineAlreadyFilled = false;
         let strLine = "";
@@ -142,25 +154,24 @@ export function outputResult(resultString, sourceIndex, showErrors) {
             if (lineAlreadyFilled) {
                 if (line.type === "Comment") {
                     strLine = strValue + " " + strLine; //comment to the left and no separator.
-                }
-                else {
+                } else {
                     strLine += " | " + strValue;
                 }
-            }
-            else {
+            } else {
                 strLine += strValue;
             }
             lineAlreadyFilled = true;
         }
         strResult += strLine; //ad the last line.
         addErrorsToLint(result.errors);
-    }
-    catch (e) {
+
+    } catch (e) {
         strOutput = e.message + "\n";
         strOutput += e.name + "\n";
-        strOutput += e.stack + "\n";
+        strOutput += e.stack+ "\n";
         strResult = e.message + "\n";
     }
+
     let transaction = cm.cmOutput.state.update({ changes: { from: 0, to: cm.cmOutput.state.doc.length, insert: strOutput } });
     cm.cmOutput.update([transaction]);
     transaction = cm.cmResult.state.update({ changes: { from: 0, to: cm.cmResult.state.doc.length, insert: strResult } });

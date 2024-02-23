@@ -1,11 +1,10 @@
-a=
-68F.C;
+Δa= 68F.C;
 cos(30deg);
 // #undef trig
 "30thou.mm;
 atan(.4).deg;
-a=3;
-9/2a;
+Δa=3;
+9/2Δa; !//this is comment
 9/2(3);
 9/(2*3);
 10thou.mm;
@@ -15,18 +14,18 @@ atan(.576).deg;
 tan(30deg);
 atan(.464).deg;
 tan(25deg);
-#define dot
+#define decimal_dot
 x='123,456.78';
 a=2;
 a!!;
-{
-x=a;
-}
-A=1;
+x = 5 + {
+x=123;
+};
+A=1; 2;!//brol en zever.
 a;
 #define electro
 resistor = 1R;
-!Six = 3!;
+Six = 3!;
 0.002mm.thou;
 !//M10: p = 1.5mm
 QuadTeeth=18; //10, 15, 18, 30
@@ -36,6 +35,7 @@ Zes=Z/6;
 Acht=Z/8;
 ToothAnge=360/Z;
 p=1.5mm;
+p.m;
 m=p/PI;
 3m; //should give warning: ambiguous: m is both a variable and a unit.
 c=p*Z;

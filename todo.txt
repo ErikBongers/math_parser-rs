@@ -1,16 +1,26 @@
-* show error message in result.
-  > decoration the output: https://codemirror.net/examples/decoration/
-  > see the function checkboxes() that has `if (node.name == "BooleanLiteral")...`
-  > or...just insert decorated text without wrapper text:
-     > https://stackoverflow.com/questions/72599672/how-to-search-for-and-highlight-a-substring-in-codemirror-6
-  >  Decoration.replace() :
-     > https://discuss.codemirror.net/t/hiding-pieces-of-code-and-making-them-non-interactive/5433
-     > https://codemirror.net/docs/ref/#view.Decoration%5Ereplace
-     > https://codemirror.net/examples/decoration/
+* add all build steps to some file or script.
+  > currently there are a lot of build steps in RustRover.
+  > make project buildable without RustRover?
+
+* now()-1day --> does this work?
 
 * add % unit?
-
   > conflict with remainder and modulo?
+
+* units: an si_unit is not necessary!
+  > the factor for si is always 1.0
+  > there's no reason to know the name of the si_unit.
+
+* add #unit to define custom units
+  : #unit euro money 1
+  : #unit dollar money 1.5
+  > si_unit is always factor 1. So, a si_unit doesn't need to have a name as it is implied.
+
+* define date OUTPUT format.
+  > a format string?
+  > use the microsoft date formats, as they are more user friendly : https://learn.microsoft.com/en-us/dotnet/standard/base-types/custom-date-and-time-format-strings
+  > and convert them to the rust: https://docs.rs/chrono/latest/chrono/format/strftime/index.html
+  > or...allow both? Conflicts? NO, because of the % sign.
 
 * number strings.
   > allow underscores? Currency signs? Minus? Exponential?
@@ -21,6 +31,8 @@
     : cargo install --git https://github.com/ErikBongers/inc_version
     > this installs inc_version.exe in C:\Users\erikb\.cargo\bin
   > check out https://crates.io/crates/cargo-post
+  > there is a way to include build tools in a cargo package.
+    > look at skia-rust. It automatically loads tools via build.rs, I think.
 
 * Copy TODOs from C++ project.
 
@@ -55,9 +67,6 @@
 * AST
   - trait AstNode to cast: https://github.com/rust-lang/rust-analyzer/blob/337e2abb670d403ae05609c5f1aafcffbd3369a6/crates/syntax/src/ast.rs#L43
   - downcasting a trait object to a specific (exact and original) object : https://stackoverflow.com/questions/33687447/how-to-get-a-reference-to-a-concrete-type-from-a-trait-object?rq=3
-
-
-
 
 
 * Span to LinePos:
