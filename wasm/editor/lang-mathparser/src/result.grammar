@@ -35,7 +35,12 @@ AssignmentExpression {
 ResultValue {
   Number |
   String |
-  Boolean
+  Boolean |
+  List
+}
+
+List {
+  "(" ResultValue ("," ResultValue)* ")"
 }
 
 Boolean {

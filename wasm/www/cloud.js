@@ -154,7 +154,7 @@ function parseAfterChange(scriptId) {
     } else {
         result = parserInstance.parse("", scriptId);
     }
-    mp.outputResult(result, sourceIndex, menu.menuState.getShowErrors());
+    mp.outputResult(result, sourceIndex, menu.menuState.getShowErrorsInResult());
 }
 
 function setCookie(name, value, days) {

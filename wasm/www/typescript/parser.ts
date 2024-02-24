@@ -110,23 +110,27 @@ function linetoResultString (line: ResultLine, errors: ErrorResult[], showErrors
     if (line.type === "Comment") {
         return "[comment:"+line.comment+"]";
     }
-    let strError = getFirstErrorForLine(line.line, errors);
-    if (strError !== "")
-        strError = "[error:" + strError + "]";
-    else {
-        let strWarning = getFirstWarningForLine(line.line, errors);
-        if (strWarning !== "")
-            strError = "[warning:" + strWarning + "]";
-    }
     let strLine = "";
     if (window.innerWidth > 880) {
-        strLine += showErrors ? strError : "";
         strLine += (line.id ? line.id + "=" : "") + formatResult(line);
     }
     else
         strLine += formatResult(line);
 
     return strLine;
+}
+
+function getErrorsAndWarningsForLine (lineNo: number, errors: ErrorResult[]) {
+    let strError = getFirstErrorForLine(lineNo, errors);
+    if (strError !== "")
+        strError = "[error:" + strError + "]";
+    else {
+        let strWarning = getFirstWarningForLine(lineNo, errors);
+        if (strWarning !== "")
+            strError = "[warning:" + strWarning + "]";
+    }
+
+    return strError;
 }
 
 export function outputResult(resultString: string, sourceIndex: number, showErrors: boolean) {
@@ -145,7 +149,11 @@ export function outputResult(resultString: string, sourceIndex: number, showErro
                 continue;
             //goto the next line in output
             while (lineCnt < line.line) {
-                strResult += strLine + "\n";
+                let strError = "";
+                if (window.innerWidth > 880 && showErrors === true) {
+                    strError = getErrorsAndWarningsForLine(lineCnt, result.errors);
+                }
+                strResult += strError + strLine + "\n";
                 strLine = "";
                 lineCnt++;
                 lineAlreadyFilled = false;
@@ -155,7 +163,9 @@ export function outputResult(resultString: string, sourceIndex: number, showErro
                 if (line.type === "Comment") {
                     strLine = strValue + " " + strLine; //comment to the left and no separator.
                 } else {
-                    strLine += " | " + strValue;
+                    if(strValue !== "") {
+                        strLine += (strLine !== "" ? " | " : "") + strValue;
+                    }
                 }
             } else {
                 strLine += strValue;
