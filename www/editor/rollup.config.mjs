@@ -4,7 +4,7 @@ import typescript from '@rollup/plugin-typescript';
 export default {
   input:  "./lang-mathparser/src/editor.js",
   output: {
-    file: "./../www/editor.bundle.js",
+    file: "./../dist/editor.bundle.js",
     format: "iife",
     name: "cm"
   },

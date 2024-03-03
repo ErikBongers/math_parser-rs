@@ -1,6 +1,6 @@
 import * as mp from "./parser.js"
 import * as menu from "./menu.js"
-import { MathParser } from './pack/wasm.js';
+import { MathParser } from './wasm.js';
 
 let userSession = {};
 

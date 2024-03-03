@@ -1,6 +1,68 @@
+* Restructure project
+  OLD STRUCTURE
+  - Current structure
+    - math_parser_rs: BIN project that runs math_parser lib.
+      - macros
+      - math_parser : LIB
+      - wasm: WASMPACK
+        - api rust code
+        - editor : JS and TS
+          - lang-mathparser: different codemirror stuff in one folder
+            > codemirror mathparser
+            > codemirror resultparser
+            > dark theme
+            > light theme
+            > editor script
+              > result decorator
+        - www: TS, bundled code, html stuff.
+          > images: uploadable
+          > pack: uploadable
+          > typescript: needs to be generated.
+  NEW STRUCTURE
+  > www: make a DIST folder where all the files to upload are stored.
+    > that means that after generating the PACK folder (wasmpack) the needed files need to be copied/moved to DIST.
+    > typescript needs to be output to DIST. (no problem)
+  > RUST:
+    > use workspace?
+      - math_parser : LIB (depencency for main and wasm)
+      - macros
+      - main: stand-alone project
+        - main
+        - test
+      (- repl?)
+      - wasm: extract wasm from web project?
+        > where does it generated it's output? Locally? How does WWW get it into the DIST folder? Just copy?
+
 * add all build steps to some file or script.
   > currently there are a lot of build steps in RustRover.
   > make project buildable without RustRover?
+  > for npm run -like behaviour:
+    > https://github.com/JoshMcguigan/cargo-run-script
+
+    > https://www.reddit.com/r/rust/comments/dw8aqr/build_systems_that_integrate_with_cargo/
+      > rust-analyzer uses a custom rust build crate that executes commands.
+        > example project and tutorial: https://github.com/matklad/cargo-xtask/
+      > nix and carnix
+
+  >> Cargo builds:
+  Clean : NOK: uses cargo-clean-recursive
+  Run : NOK: cargo run --package math_parser-rs --bin math_parser-rs --features print_nodes
+  Run -- release : NOK : cargo run --package math_parser-rs --release --bin math_parser-rs
+  Test Parser Lib : NOK : /mathparser/ -> cargo test --workspace
+  Test Parser : NOK : / -> cargo test --workspace
+  Wasm : NOK : /wasm/ -> wasmpack build --release --target web --out-dir www\pack
+
+  >> CodeMirror parser builds:
+  buildmathparser : ok : in /wasm/editor/package.json
+  buildresultparser: ok : in /wasm/editor/package.json
+
+  >> Typescript and bundling:
+  build Typescript: NOK : /wasm/www/typescript -> tsc parser.ts -t es2018 --outDir ../ ; rm ../result.js
+  build Editor : NOK : .../editor : rollup -c
+
+  >> web:
+  index.html : NOK : http://localhost:63342/math_parser-rs/wasm/www/index.html
+  uploadToGoogle: ok : /wasm/ -> script
 
 * now()-1day --> does this work?
 
