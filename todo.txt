@@ -19,11 +19,10 @@
           > pack: uploadable
           > typescript: needs to be generated.
   NEW STRUCTURE
-  > www: make a DIST folder where all the files to upload are stored.
-    > that means that after generating the PACK folder (wasmpack) the needed files need to be copied/moved to DIST.
-    > typescript needs to be output to DIST. (no problem)
+  > www: split from wasm: done.
   > RUST:
     > use workspace?
+    >>> SPLIT PROJECTS
       - math_parser : LIB (depencency for main and wasm)
       - macros
       - main: stand-alone project
