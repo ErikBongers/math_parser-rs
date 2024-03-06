@@ -1,36 +1,14 @@
-* Restructure project
-  OLD STRUCTURE
-  - Current structure
-    - math_parser_rs: BIN project that runs math_parser lib.
-      - macros
-      - math_parser : LIB
-      - wasm: WASMPACK
-        - api rust code
-        - editor : JS and TS
-          - lang-mathparser: different codemirror stuff in one folder
-            > codemirror mathparser
-            > codemirror resultparser
-            > dark theme
-            > light theme
-            > editor script
-              > result decorator
-        - www: TS, bundled code, html stuff.
-          > images: uploadable
-          > pack: uploadable
-          > typescript: needs to be generated.
-  NEW STRUCTURE
-  > www: split from wasm: done.
-  > RUST:
-    > use workspace?
-    >>> SPLIT PROJECTS
-      - math_parser : LIB (depencency for main and wasm)
-      - macros
-      - main: stand-alone project
-        - main
-        - test
-      (- repl?)
-      - wasm: extract wasm from web project?
-        > where does it generated it's output? Locally? How does WWW get it into the DIST folder? Just copy?
+* Comment is just appended to the previous line.
+  Note the missing semi-colon:
+  rest=q*159
+  !//***Tent***
+
+  OUTPUT:
+  rest=1184.55Tent1
+
+* add update of version no to makefile.
+
+* makefile: add deps to wasm build.
 
 * add all build steps to some file or script.
   > currently there are a lot of build steps in RustRover.
@@ -136,7 +114,17 @@
   - >>> lookup_file_pos() https://doc.rust-lang.org/beta/nightly-rustc/src/rustc_span/lib.rs.html#1804
   - count lines and multi byte chars: https://doc.rust-lang.org/beta/nightly-rustc/src/rustc_span/analyze_source_file.rs.html#195
 
+* Patterns :
+    Regex between single quotes.
+    ‘g/$1[a-z]+*/’
+    “Captures” all variables with matching names in a list.
+    How to check.? Names are listed in output?
+    ‘B*’  => allow simple patterns?
+    Or perhaps even without quotes?
+    g/$1[a-z]+*/  => see javascript
 
+* Login
+  > If login is cancelled: there’s no button to login anyway. Refresh doesn’t help!
 
 * functions don't check param types: Exception thrown!
 
