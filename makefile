@@ -1,4 +1,8 @@
 .PHONY: all
+.PHONY: run
+.PHONY: release
+.PHONY: clean
+.PHONY: test
 
 parser_deps := $(wildcard www/typescript/*.ts)
 editor_deps := $(wildcard www/editor/lang-mathparser/src/*.ts www/editor/lang-mathparser/src/*.js)
@@ -15,3 +19,15 @@ www\dist\editor.bundle.js: $(editor_deps)
 
 www\dist\wasm_bg.wasm: $(wasm_deps)
 	 powershell cd wasm ; ./build.ps1
+
+run:
+	powershell cd main ; cargo run --package math_parser_main --bin math_parser_main --features print_nodes
+
+release:
+	powershell cd main ; cargo run --package math_parser_main --release --bin math_parser_main
+
+clean:
+	powershell cargo clean-recursive
+
+test:
+	powershell cargo test --workspace

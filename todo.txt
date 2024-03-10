@@ -7,35 +7,15 @@
   rest=1184.55Tent1
 
 * add update of version no to makefile.
-
+  > add inc_version as a build depencency and run it from the target dir.
+  
 * makefile: add deps to wasm build.
 
-* add all build steps to some file or script.
-  > currently there are a lot of build steps in RustRover.
-  > make project buildable without RustRover?
-  > for npm run -like behaviour:
-    > https://github.com/JoshMcguigan/cargo-run-script
-
-    > https://www.reddit.com/r/rust/comments/dw8aqr/build_systems_that_integrate_with_cargo/
-      > rust-analyzer uses a custom rust build crate that executes commands.
-        > example project and tutorial: https://github.com/matklad/cargo-xtask/
-      > nix and carnix
-
-  >> Cargo builds:
-  Clean : NOK: uses cargo-clean-recursive
-  Run : NOK: cargo run --package math_parser-rs --bin math_parser-rs --features print_nodes
-  Run -- release : NOK : cargo run --package math_parser-rs --release --bin math_parser-rs
-  Test Parser Lib : NOK : /mathparser/ -> cargo test --workspace
-  Test Parser : NOK : / -> cargo test --workspace
-  Wasm : NOK : /wasm/ -> wasmpack build --release --target web --out-dir www\pack
+* add all rust build variations to makefile
 
   >> CodeMirror parser builds:
   buildmathparser : ok : in /wasm/editor/package.json
   buildresultparser: ok : in /wasm/editor/package.json
-
-  >> Typescript and bundling:
-  build Typescript: NOK : /wasm/www/typescript -> tsc parser.ts -t es2018 --outDir ../ ; rm ../result.js
-  build Editor : NOK : .../editor : rollup -c
 
   >> web:
   index.html : NOK : http://localhost:63342/math_parser-rs/wasm/www/index.html
