@@ -9,17 +9,20 @@ pub struct PeekingTokenizer<'a> {
     cur: Cursor<'a>,
     prev_cur: Cursor<'a>,
     peeked_token: Token,
+    current_number: Number,
 }
 
 impl<'a> PeekingTokenizer<'a> {
     pub fn new(source: &'a Source) -> Self {
         let mut cur =  Cursor::new(source);
         let prev_cur = cur.clone();
+        let current_number = cur.number.clone(); //before peeking!
         let peeked_token = cur.next_token();
         PeekingTokenizer {
             cur,
             prev_cur,
             peeked_token,
+            current_number,
         }
     }
 
@@ -34,6 +37,7 @@ impl<'a> PeekingTokenizer<'a> {
         //store state.
         let old_cur = self.cur.clone();
         let old_token = self.peeked_token.clone();
+        let old_number = self.current_number.clone();
 
         self.next();
         let t = self.peeked_token.clone();
@@ -41,12 +45,15 @@ impl<'a> PeekingTokenizer<'a> {
         //restore state
         self.cur = old_cur;
         self.peeked_token = old_token;
+        self.current_number = old_number;
 
         t
     }
+
     pub fn next(&mut self)  -> Token {
         self.prev_cur = self.cur.clone();
         let t = self.peeked_token.clone();
+        self.current_number = self.cur.number.clone(); //before peeking!
         self.peeked_token = self.cur.next_token();
         return t;
     }
@@ -61,7 +68,7 @@ impl<'a> PeekingTokenizer<'a> {
 
     /// Gets the last numeric value that has been found **_past_** the last next() or _**at**_ the current peek()
     pub fn get_number(&self) -> Number {
-        self.cur.number.clone()
+        self.current_number.clone()
     }
 }
 
@@ -89,6 +96,9 @@ mod tests {
         assert_eq!(t2.kind, tok.next().kind);
         //peek 333
         let t3 = tok.peek();
+        let n3 = tok.get_number();
+        assert_eq!(n3.significand, 111.0);
+        let t3 = tok.next();
         let n3 = tok.get_number();
         assert_eq!(n3.significand, 222.0);
         assert_ne!(t1.kind, t2.kind);
