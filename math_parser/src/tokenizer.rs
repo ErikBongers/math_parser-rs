@@ -116,21 +116,21 @@ impl Cursor<'_> {
                     Mult
                 }
             },
-            '#' => {
+            '#' => 'hash_token:{
                 if self.match_word("define") {
-                    Define
-                } else {
-                    if self.match_word("undef") {
-                        Undef
-                    } else {
-                        if self.peek() == '/' {
-                            self.next();
-                            MuteEnd
-                        } else {
-                            MuteLine
-                        }
-                    }
+                    break 'hash_token Define;
                 }
+                if self.match_word("undef") {
+                    break 'hash_token Undef;
+                }
+                if self.match_word("pragma") {
+                    break 'hash_token Pragma;
+                }
+                if self.peek() == '/' {
+                    self.next();
+                    break 'hash_token MuteEnd;
+                }
+                MuteLine
             },
             '/' => {
                 match self.peek() {

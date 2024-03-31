@@ -16,6 +16,7 @@ pub struct Cursor<'a> {
     pub number: Number,
     pub is_beginning_of_text: bool,
     pub (in crate::tokenizer) nl_is_token: bool,
+    pub is_dot_and_comma_decimal: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -73,6 +74,7 @@ impl<'a> Cursor<'a> {
             number: Number::new(0.0, 0),
             is_beginning_of_text: true,
             nl_is_token: false,
+            is_dot_and_comma_decimal: false,
         }
     }
 
@@ -200,7 +202,7 @@ impl<'a> Cursor<'a> {
             d = (c as i32 - '0' as i32) as f64;
         };
 
-        loop {
+        'the_loop: loop  {
             match self.peek() {
                 c @ '0'..='9' => {
                     self.next(); //consume
@@ -213,6 +215,9 @@ impl<'a> Cursor<'a> {
                     }
                 },
                 '.' => {
+                    if decimal_divider > 1.0 { //second time we encounter the decimal divider!
+                        break 'the_loop;
+                    }
                     match self.peek_second() {
                         '0'..='9' => {
                             self.next(); //consume DOT
@@ -221,6 +226,24 @@ impl<'a> Cursor<'a> {
                         _ => {
                             break;
                         }
+                    }
+                },
+                ',' => {
+                    if decimal_divider > 1.0 { //second time we encounter the decimal divider!
+                        break 'the_loop;
+                    }
+                    if self.is_dot_and_comma_decimal {
+                        match self.peek_second() {
+                            '0'..='9' => {
+                                self.next(); //consume DOT
+                                decimal_divider = 10.0;
+                            },
+                            _ => {
+                                break;
+                            }
+                        }
+                    } else {
+                        break;
                     }
                 },
                 '_' => {

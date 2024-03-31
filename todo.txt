@@ -1,3 +1,42 @@
+* set_dot_and_comma_decimal() -> should backup and restore current_number?
+
+* Error too late:
+  B100=0;
+  B50=1;
+  B20=4;
+  B10=; // Error should be here
+  B5=2;
+  Btot=B100*100+B50*50+B20*20+B10*10+B5*5; // But reported here
+
+* paste number? replace comma with dot!
+
+* bug: units: binop doesn't check if it's the same property.
+
+* bug in implicit mult: with 2 numbers, the 2nd number gets multiplied by itself.
+  > because the 2nd argument is not expected to be a number but a variable.
+  > a number followed by a number should not be a valid expression.
+
+
+* pre-process #pragma and other #-command during parsing.
+  > create some pre-parser step.
+    > could be just moving resolve_defines to the parser.
+    > defines changes the scope state.
+        > chronological within resolve step.
+    > some defines should be chronological within the parse step.
+    > should user be aware of that?
+      > maybe not. the split between parse and resolve is internal. The user only sees the program as lines of code. They are not aware that the program is cycled multiple times.
+  > CONCLUSION
+    > defines are part of scope.
+    > defines need to be set both during parse and during resolve, to keep the chronology.
+    > the scope of a code_block is set during parse.
+
+* decimal dot AND comma
+  > requires changing tokenizer during parsing!
+  > when tokenizer parses a number, it checks for the decimal point.
+    > just set a flag?
+      > this requires resolving DURING tokenizing.
+  > in general
+
 * Comment is just appended to the previous line.
   Note the missing semi-colon:
   rest=q*159

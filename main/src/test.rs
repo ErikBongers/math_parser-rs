@@ -334,6 +334,8 @@ fn test_defines () {
     test_error("#define precision=1.2", ErrorId::Expected);
     test_no_error("#define precision=2");
     test_no_error("#undef date\n#define date\n  now();");
+
+    test_result("#pragma decimal_dot_and_comma \n  a=1,23mm", 1.23, "mm");
 }
 #[test]
 fn test_strict () {

@@ -66,6 +66,14 @@ impl<'a> PeekingTokenizer<'a> {
         self.peeked_token = self.cur.next_token();
     }
 
+    pub fn set_dot_and_comma_decimal(&mut self, is_decimal: bool) {
+        if self.cur.is_dot_and_comma_decimal == is_decimal { return; }
+
+        self.cur = self.prev_cur.clone();
+        self.cur.is_dot_and_comma_decimal = is_decimal;
+        self.peeked_token = self.cur.next_token();
+    }
+
     /// Gets the last numeric value that has been found **_past_** the last next() or _**at**_ the current peek()
     pub fn get_number(&self) -> Number {
         self.current_number.clone()

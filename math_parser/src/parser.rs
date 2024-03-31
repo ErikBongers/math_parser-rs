@@ -1,6 +1,6 @@
 use crate::errors;
-use crate::errors::Error;
-use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, Define, DefineExpr, DefineType, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NodeType, NoneExpr, PostfixExpr, Statement, UnaryExpr, UnitExpr};
+use crate::errors::{Error, unknown_expr};
+use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, Define, DefineExpr, DefineType, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NodeType, NoneExpr, PostfixExpr, Pragma, PragmaExpr, PragmaType, Statement, UnaryExpr, UnitExpr};
 use crate::parser::nodes::DefineType::Precision;
 use crate::globals::Globals;
 use crate::tokenizer::cursor::Range;
@@ -67,6 +67,8 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 }
             }
         }
+        //TODO: all return statements first update the mute state of the stmt.
+        // wrap it with another function (or block?) to get rid of all these set_mute() calls.
         if self.tok.peek().kind == TokenType::CurlOpen {
             let curl_open = self.tok.next();
             let block = self.parse_block(curl_open.range.clone());
@@ -76,6 +78,9 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             return Statement { node: Node::boxed(NodeType::Block(block)), mute: mute_line | self.mute_block };
         }
         if let Some(stmt) = self.parse_echo_comment() {
+            return stmt.set_mute(mute_line | self.mute_block);
+        }
+        if let Some(stmt) = self.parse_pragmas_and_set() {
             return stmt.set_mute(mute_line | self.mute_block);
         }
         if let Some(stmt) = self.parse_defines() {
@@ -157,6 +162,51 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             range = &range + &extra_range;
         }
         Some(Define{ define_type, range})
+    }
+
+    fn parse_pragmas_and_set(&mut self) -> Option<Statement> {
+        if self.tok.peek().kind == TokenType::Pragma {
+            let t = self.tok.next();
+            self.tok.set_nl_is_token(true);
+            let mut pragmas: Vec<Pragma> = Vec::new();
+            while self.tok.peek().kind != TokenType::Eot {
+                if self.tok.peek().kind == TokenType::Newline || self.tok.peek().kind == TokenType::SemiColon {
+                    self.tok.next();
+                    break;
+                }
+                if let Some(pragma) = self.parse_and_set_pragma() { //parse_pragma always eats at least one token, so no risk of deadloop.
+                    pragmas.push(pragma);
+                }
+            }
+            self.tok.set_nl_is_token(false);
+            return Some(Statement { mute: false, node: Node::boxed(NodeType::Pragma(PragmaExpr {
+                pragma_token: t,
+                pragmas,
+            }))
+            });
+        }
+        None
+    }
+
+    fn parse_and_set_pragma(&mut self) -> Option<Pragma>{
+        let token = self.tok.next();
+        let txt = self.globals.get_text(&token.range); //assuming TokenType::Id, not checking as the next match will cover it.
+        let pragma_type = match txt {
+            "decimal_dot_and_comma" | "dot_and_comma" => {
+                self.tok.set_dot_and_comma_decimal(true);
+                PragmaType::DecimalCommaAllowed
+            },
+            "decimal_dot" | "dot" => {
+                self.tok.set_dot_and_comma_decimal(false);
+                PragmaType::DecimalCommaAllowed
+            },
+            _ => {
+                self.errors.push(errors::define_not_def(&txt, token.range.clone()));
+                return None;
+            }
+        };
+        let range = token.range.clone();
+        Some(Pragma{ pragma_type, range})
     }
 
     fn parse_echo_comment(&mut self) -> Option<Statement> {
@@ -392,6 +442,9 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     fn parse_implicit_mult(&mut self) -> Box<Node> {
         let mut n1 = self.parse_unary_expr();
         loop {
+            // let NodeType::Const(const1) = &n1.expr else { panic!()};
+            // let ConstType::Numeric {number: number1} = &const1.const_type else { panic!()};
+            // println!("Number111: {}", number1.significand);
             let t = self.tok.peek();
             if t.kind != TokenType::Id && t.kind != TokenType::Number && t.kind != TokenType::ParOpen {
                 break;
@@ -406,8 +459,23 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             let n2 = if t.kind == TokenType::ParOpen {
                 Parser::reduce_list(Node::boxed(NodeType::List(self.parse_list_expr())))
             } else {
-                self.parse_postfix_expr()
+                let pfix = self.parse_postfix_expr();
+                // if n1 and n2 are numbers -> error
+                if let NodeType::Const(expr) = &n1.expr {
+                    if let ConstType::Numeric {..}  = expr.const_type {
+                        if let NodeType::Const(pfix_expr) = &pfix.expr {
+                            if let ConstType::Numeric {..}  = pfix_expr.const_type {
+                                let range = &n1.get_range() + &pfix_expr.get_range();
+                                self.errors.push(unknown_expr(self.globals.get_text(&range), range));
+                            }
+                        }
+                    }
+                }
+                pfix
             };
+            // let NodeType::Const(const2) = &n2.expr else { panic!()};
+            // let ConstType::Numeric {number: number2} = &const2.const_type else { panic!()};
+            // println!("Number2: {}", number2.significand);
             let expr = BinExpr {
                 expr1: n1,
                 op,

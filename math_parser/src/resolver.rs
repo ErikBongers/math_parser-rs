@@ -100,6 +100,7 @@ impl<'g, 'a> Resolver<'g, 'a> {
             NodeType::Comment(expr) => { self.resolve_comment_expr(expr) },
             NodeType::FunctionDef(expr) => { self.resolve_func_def_expr(expr) },
             NodeType::Define(expr) => { self.resolve_define_expr(expr) },
+            NodeType::Pragma(expr) => { Value::none(expr.get_range()) }, //TODO: check if pragma's need to be resolved.
             NodeType::None(expr) => { Value::none(expr.get_range()) },
         }
     }

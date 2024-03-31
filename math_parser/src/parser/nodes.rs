@@ -53,6 +53,7 @@ pub enum NodeType {
     Call(CallExpr),
     Block(CodeBlock),
     Define(DefineExpr),
+    Pragma(PragmaExpr),
 }
 
 impl NodeType {
@@ -85,6 +86,7 @@ impl HasRange for NodeType {
             N::Call(expr) => expr.get_range(),
             N::Block(expr) => expr.get_range(),
             N::Define(expr) => expr.get_range(),
+            N::Pragma(expr) => expr.get_range(),
         }
     }
 }
@@ -318,6 +320,28 @@ impl HasRange for DefineExpr {
         &self.def_undef.range + &self.defines.iter()
             .map(|define| &define.range)
             .fold(self.def_undef.range.clone(), |sum, range| &sum + range)
+    }
+}
+
+pub enum PragmaType {
+    DecimalCommaAllowed,
+}
+
+pub struct Pragma {
+    pub pragma_type: PragmaType,
+    pub range:Range,
+}
+
+pub struct PragmaExpr {
+    pub pragma_token: Token,
+    pub pragmas: Vec<Pragma>,
+}
+
+impl HasRange for PragmaExpr {
+    fn get_range(&self) -> Range {
+        &self.pragma_token.range + &self.pragmas.iter()
+            .map(|pragma| &pragma.range)
+            .fold(self.pragma_token.range.clone(), |sum, range| &sum + range)
     }
 }
 

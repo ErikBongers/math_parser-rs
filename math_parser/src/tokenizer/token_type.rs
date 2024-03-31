@@ -43,6 +43,7 @@ pub enum TokenType {
 
     Define,
     Undef,
+    Pragma,
 
     Unknown,
     Eot,
