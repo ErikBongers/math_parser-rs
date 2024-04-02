@@ -1,4 +1,21 @@
-* set_dot_and_comma_decimal() -> should backup and restore current_number?
+* Check dot_and_comma for:
+  What are the consequences of allowing a comma as decimal?
+  -	No combination of dots and comma in one value.
+  -	No spaces between digits.
+  -	Error if ambiguous. (e.g. in a list)
+    o	1,2,3,4 -> error!
+    o	1,2, 3,4 -> also error. Even though the spaces allow this to be parsed.
+    o	1, 2, 3, 4 -> valid with warning.
+
+* localstorage per user, when logged in.
+  > Otherwise, files for different users will share the same LocalStorage value.
+
+* BUG: Date calculation
+  : ikke= age('30/07/1968');
+    dad = age('12/04/1933');
+    dad-ikke; -> 146 years???
+
+* No implicit mult across a NL?
 
 * Error too late:
   B100=0;

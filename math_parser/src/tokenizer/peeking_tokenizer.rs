@@ -16,7 +16,7 @@ impl<'a> PeekingTokenizer<'a> {
     pub fn new(source: &'a Source) -> Self {
         let mut cur =  Cursor::new(source);
         let prev_cur = cur.clone();
-        let current_number = cur.number.clone(); //before peeking!
+        let current_number = cur.number.clone(); //before setting peeked_token!
         let peeked_token = cur.next_token();
         PeekingTokenizer {
             cur,
@@ -53,7 +53,7 @@ impl<'a> PeekingTokenizer<'a> {
     pub fn next(&mut self)  -> Token {
         self.prev_cur = self.cur.clone();
         let t = self.peeked_token.clone();
-        self.current_number = self.cur.number.clone(); //before peeking!
+        self.current_number = self.cur.number.clone(); //before setting peeked_token!
         self.peeked_token = self.cur.next_token();
         return t;
     }
