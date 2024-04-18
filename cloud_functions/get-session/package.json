@@ -1,0 +1,14 @@
+{
+  "name": "get-session",
+  "version": "1.0.0",
+  "main": "getSession.js",
+  "scripts": {
+    "deploy": "gcloud functions deploy get-session --entry-point=getSession --trigger-http --runtime=nodejs16 --allow-unauthenticated"
+  },
+  "dependencies": {
+    "@google-cloud/functions-framework": "^3.1.1",
+    "@google-cloud/storage": "^5.19.4",
+    "google-auth-library": "^8.0.2",
+    "uuid": "^8.3.2"
+  }
+}
