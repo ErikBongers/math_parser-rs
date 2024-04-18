@@ -1,5 +1,5 @@
 * Check dot_and_comma for:
-  What are the consequences of allowing a comma as decimal?
+  > What are the consequences of allowing a comma as decimal?
   -	No combination of dots and comma in one value.
   -	No spaces between digits.
   -	Error if ambiguous. (e.g. in a list)
