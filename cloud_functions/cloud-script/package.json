@@ -8,6 +8,6 @@
         "google-auth-library": "^8.0.2"
     },
     "scripts": {
-        "deploy": "gcloud functions deploy cloud-script --entry-point=cloudScript --allow-unauthenticated --trigger-http --runtime=nodejs16 --service-account=signed-url-token-creator@ebo-tain.iam.gserviceaccount.com"
+        "deploy": "gcloud functions deploy cloud-script --entry-point=cloudScript --allow-unauthenticated --trigger-http --runtime=nodejs20 --service-account=signed-url-token-creator@ebo-tain.iam.gserviceaccount.com"
     }
 }
