@@ -6,9 +6,9 @@
     "deploy": "gcloud functions deploy get-session --entry-point=getSession --trigger-http --runtime=nodejs20 --allow-unauthenticated"
   },
   "dependencies": {
-    "@google-cloud/functions-framework": "^3.1.1",
-    "@google-cloud/storage": "^5.19.4",
-    "google-auth-library": "^8.0.2",
-    "uuid": "^8.3.2"
+    "@google-cloud/functions-framework": "3.4.2",
+    "@google-cloud/storage": "7.13.0",
+    "google-auth-library": "9.14.1",
+    "uuid": "10"
   }
 }

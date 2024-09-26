@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "main": "cloudScript.js",
     "dependencies": {
-        "@google-cloud/functions-framework": "^3.1.1",
-        "@google-cloud/storage": "^5.19.4",
-        "google-auth-library": "^8.0.2"
+        "@google-cloud/functions-framework": "3.4.2",
+        "@google-cloud/storage": "7.13.0",
+        "google-auth-library": "9.14.1"
     },
     "scripts": {
         "deploy": "gcloud functions deploy cloud-script --entry-point=cloudScript --allow-unauthenticated --trigger-http --runtime=nodejs20 --service-account=signed-url-token-creator@ebo-tain.iam.gserviceaccount.com"
