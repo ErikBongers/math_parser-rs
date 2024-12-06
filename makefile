@@ -26,8 +26,15 @@ run:
 release:
 	powershell cd main ; cargo run --package math_parser_main --release --bin math_parser_main
 
-clean:
+deepclean: clean
 	powershell cargo clean-recursive
+
+clean:
+	powershell try { remove-item www/dist/editor.bundle.js -erroraction stop } catch [System.Management.Automation.ItemNotFoundException] { $$null }
+	powershell try { remove-item www/dist/parser.js -erroraction stop } catch [System.Management.Automation.ItemNotFoundException] { $$null }
+	powershell try { remove-item www/dist/wasm.js -erroraction stop } catch [System.Management.Automation.ItemNotFoundException] { $$null }
+	powershell try { remove-item www/dist/wasm_bg.wasm -erroraction stop } catch [System.Management.Automation.ItemNotFoundException] { $$null }
+	powershell try { remove-item wasm/pack/* -erroraction stop } catch [System.Management.Automation.ItemNotFoundException] { $$null }
 
 test:
 	powershell cargo test --workspace

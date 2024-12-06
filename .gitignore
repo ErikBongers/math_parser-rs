@@ -1,2 +1,7 @@
 /target
 node_modules/
+.idea/
+/www/dist/wasm.js
+/www/dist/wasm_bg.wasm
+/www/dist/parser.js
+/www/dist/editor.bundle.js
