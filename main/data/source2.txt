@@ -1,1 +1,6 @@
-b=a;
+#define dmy
+nu = now();
+walater = '2024-DEC-12';
+paardage = walater-nu;
+dad = age('12/04/1933');
+(dad + paardage); //???

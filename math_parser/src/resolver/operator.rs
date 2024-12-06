@@ -106,7 +106,7 @@ pub fn load_operators(globals: &mut Globals) {
     globals.operators.insert(operator_id_from(OT::Number, OperatorType::Power, OT::Number), op_num_pow_num);
     globals.operators.insert(operator_id_from(OT::Date, OperatorType::Min, OT::Date), op_date_min_date);
     globals.operators.insert(operator_id_from(OT::Duration, OperatorType::Min, OT::Duration), op_dur_min_dur);
-    globals.operators.insert(operator_id_from(OT::Duration, OperatorType::Min, OT::Duration), op_dur_plus_dur);
+    globals.operators.insert(operator_id_from(OT::Duration, OperatorType::Plus, OT::Duration), op_dur_plus_dur);
     globals.operators.insert(operator_id_from(OT::Duration, OperatorType::Mult, OT::Number), op_dur_mult_num);
     globals.operators.insert(operator_id_from(OT::Duration, OperatorType::Div, OT::Number), op_dur_div_num);
 }
