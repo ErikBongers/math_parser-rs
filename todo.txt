@@ -10,11 +10,6 @@
 * localstorage per user, when logged in.
   > Otherwise, files for different users will share the same LocalStorage value.
 
-* BUG: Date calculation
-  : ikke= age('30/07/1968');
-    dad = age('12/04/1933');
-    dad-ikke; -> 146 years???
-
 * No implicit mult across a NL?
 
 * Error too late:

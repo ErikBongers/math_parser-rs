@@ -36,5 +36,8 @@ clean:
 	powershell try { remove-item www/dist/wasm_bg.wasm -erroraction stop } catch [System.Management.Automation.ItemNotFoundException] { $$null }
 	powershell try { remove-item wasm/pack/* -erroraction stop } catch [System.Management.Automation.ItemNotFoundException] { $$null }
 
+incversion:
+	powershell inc_version math_parser/version.no
+
 test:
 	powershell cargo test --workspace
