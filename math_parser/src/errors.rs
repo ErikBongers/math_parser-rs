@@ -12,6 +12,7 @@ define_errors!(
     Eos: E : "Unexpected end of file.",
 
     VarNotDef: E : "variable `{variable}` is not defined.",
+    VarNoValue: E : "variable `{variable}` has no value assigned.",
     FuncNotDef: E : "function `{function}` is not defined.",
     FuncNotAccessible: E : "function `{function}` is not accessible.",
     UnitNotDef: E : "unit `{unit}` is not defined.",

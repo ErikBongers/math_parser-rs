@@ -1,3 +1,5 @@
+* Add update version no to make file.
+
 * Check dot_and_comma for:
   > What are the consequences of allowing a comma as decimal?
   -	No combination of dots and comma in one value.
@@ -22,14 +24,6 @@
   > Otherwise, files for different users will share the same LocalStorage value.
 
 * No implicit mult across a NL?
-
-* Error too late:
-  B100=0;
-  B50=1;
-  B20=4;
-  B10=; // Error should be here
-  B5=2;
-  Btot=B100*100+B50*50+B20*20+B10*10+B5*5; // But reported here
 
 * paste number? replace comma with dot!
 

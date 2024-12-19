@@ -457,8 +457,11 @@ impl<'g, 'a> Resolver<'g, 'a> {
                 self.errors.push(errors::w_const_redef(id_str.as_str(), assign_expr.id.range.clone()));
             }
         }
-        self.scope.borrow_mut().variables.insert(id_str, value.clone());
+        self.scope.borrow_mut().variables.insert(id_str.clone(), value.clone());
         value.id = Some(assign_expr.id.range.clone()); //add id here to avoid adding id to the self.scope.variables.
+        if let Variant::None = value.variant {
+            self.errors.push(errors::var_no_value(id_str.as_str(), assign_expr.id.range.clone()));
+        }
         value
     }
 
