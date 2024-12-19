@@ -2,8 +2,8 @@ use std::fs;
 use math_parser::{parse_1_file, parse_2_files};
 
 fn main() {
-    // parse_one_file();
-    parse_two_files();
+    parse_one_file();
+    // parse_two_files();
 }
 
 #[allow(unused)]

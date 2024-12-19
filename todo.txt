@@ -7,6 +7,17 @@
     o	1,2, 3,4 -> also error. Even though the spaces allow this to be parsed.
     o	1, 2, 3, 4 -> valid with warning.
 
+* Arithmetic with temperatures is not as straight forward:
+  https://reference.wolfram.com/language/tutorial/TemperatureUnits.html#:~:text=When%20adding%20two%20temperature%20quantities,Copy%20to%20clipboard.
+  > Note that temp + temp is always converted to kelvin.
+    : 3C + 3C = 500K !!!
+  > delta temp + delta temp is converted to the first unit.
+    : 3dC + 3dC = 6dC
+    : 3dC + 3dF = 3dC + (3df)dC = 8.4C
+      > or: (((3C.K.-0C.K.)+(3F.K.-0F.K.))+0F.K.)K.F;
+      > the 2 delta values are first 'shifted' to 0K, then added, and then 'shifted' back to, in this case, the F scale.
+      > consider these deltas as vectors (arrows) in the temperature space, while actual temperatures are 'positions' in the temperature space.
+
 * localstorage per user, when logged in.
   > Otherwise, files for different users will share the same LocalStorage value.
 
