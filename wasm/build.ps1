@@ -1,4 +1,4 @@
-wasm-pack build --release --target web --out-dir pack -- --color=always
+wasm-pack --log-level warn build --release --target web --out-dir pack -- --color=always
 if ($?)
 {
     Copy-Item ".\pack\wasm.js" -Destination "..\www\dist\wasm.js"

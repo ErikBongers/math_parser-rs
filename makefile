@@ -3,6 +3,7 @@
 .PHONY: release
 .PHONY: clean
 .PHONY: test
+.PHONY: wasm
 
 parser_deps := $(wildcard www/typescript/*.ts)
 editor_deps := $(wildcard www/editor/lang-mathparser/src/*.ts www/editor/lang-mathparser/src/*.js www/editor/lang-mathparser/src/lezer_generated/*.js)
@@ -31,7 +32,7 @@ www\dist\parser.js: $(parser_deps)
 www\dist\editor.bundle.js: $(editor_deps)
 	powershell cd www\editor ; rollup -c
 
-www\dist\wasm_bg.wasm: $(wasm_deps)
+www\dist\wasm_bg.wasm wasm: $(wasm_deps)
 	 powershell cd wasm ; ./build.ps1
 
 run:
