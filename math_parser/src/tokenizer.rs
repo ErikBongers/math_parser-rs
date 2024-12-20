@@ -12,6 +12,7 @@ pub struct Token {
     pub kind: TokenType,
     pub range :Range,
     #[cfg(debug_assertions)]
+    #[allow(dead_code)]
     pub text: String,
 }
 impl Token {
