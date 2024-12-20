@@ -103,7 +103,6 @@ impl HasRange for NoneExpr {
 
 pub struct UnitExpr {
     pub node: Box<Node>,
-    pub range: Range,
 }
 
 impl HasRange for UnitExpr {
@@ -328,6 +327,7 @@ pub enum PragmaType {
 }
 
 pub struct Pragma {
+    #[allow(dead_code)]
     pub pragma_type: PragmaType,
     pub range:Range,
 }

@@ -570,7 +570,6 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             } else { //there's a 2nd unit glued to the expr as in: `(1m)mm`, so wrap the original expr in a UnitExpr.
                 let mut unit_node = Node::new(NodeType::Unit(UnitExpr {
                     node: expr,
-                    range: id.range.clone(),
                 }));
                 unit_node.unit = Unit::from_id(&id_str, Some(id.range.clone()));
                 return Box::new(unit_node);

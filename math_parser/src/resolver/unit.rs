@@ -77,7 +77,7 @@ impl UnitsView {
         }
     }
 
-    pub fn get_def<'a>(&'a self, id: &str, globals: &'a Globals) -> Option<&UnitDef> {
+    pub fn get_def<'a>(&self, id: &str, globals: &'a Globals) -> Option<&'a UnitDef> {
         if self.units.contains(id) {
             return Some(&globals.unit_defs[id])
         }
