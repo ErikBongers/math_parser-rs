@@ -145,34 +145,34 @@ export function outputResult(resultString: string, sourceIndex: number, showErro
         let lineCnt = 0;
         let lineAlreadyFilled = false;
         let strLine = "";
-        for (let line of result.result) {
-            if (line.src !== sourceIndex)
-                continue;
-            //goto the next line in output
-            while (lineCnt < line.line) {
-                strError = "";
-                if (window.innerWidth > 880 && showErrors === true) {
-                    strError = getErrorsAndWarningsForLine(lineCnt, result.errors);
-                }
-                strResult += strError + strLine + "\n";
-                strLine = "";
-                lineCnt++;
-                lineAlreadyFilled = false;
-            }
-            let strValue = linetoResultString(line, result.errors, showErrors);
-            if (lineAlreadyFilled) {
-                if (line.type === "Comment") {
-                    strLine = strValue + " " + strLine; //comment to the left and no separator.
-                } else {
-                    if(strValue !== "") {
-                        strLine += (strLine !== "" ? " | " : "") + strValue;
+        result.result
+            .filter(line => line.src === sourceIndex)
+            .forEach(line => {
+                //goto the next line in output
+                while (lineCnt < line.line) {
+                    strError = "";
+                    if (window.innerWidth > 880 && showErrors === true) {
+                        strError = getErrorsAndWarningsForLine(lineCnt, result.errors);
                     }
+                    strResult += strError + strLine + "\n";
+                    strLine = "";
+                    lineCnt++;
+                    lineAlreadyFilled = false;
                 }
-            } else {
-                strLine += strValue;
-            }
-            lineAlreadyFilled = true;
-        }
+                let strValue = linetoResultString(line, result.errors, showErrors);
+                if (lineAlreadyFilled) {
+                    if (line.type === "Comment") {
+                        strLine = strValue + " " + strLine; //comment to the left and no separator.
+                    } else {
+                        if(strValue !== "") {
+                            strLine += (strLine !== "" ? " | " : "") + strValue;
+                        }
+                    }
+                } else {
+                    strLine += strValue;
+                }
+                lineAlreadyFilled = true;
+            });
         //ad the last line.
         strError = "";
         if (window.innerWidth > 880 && showErrors === true) {
