@@ -137,8 +137,9 @@ export function outputResult(resultString: string, sourceIndex: number, showErro
     activeDocumentIndex = sourceIndex;
     console.debug(resultString);
     clearErrorList();
-    var strOutput = "";
-    var strResult = "";
+    let strOutput = "";
+    let strResult = "";
+    let strError = "";
     try {
         let result: Results = JSON.parse(resultString); //may throw...
         let lineCnt = 0;
@@ -149,7 +150,7 @@ export function outputResult(resultString: string, sourceIndex: number, showErro
                 continue;
             //goto the next line in output
             while (lineCnt < line.line) {
-                let strError = "";
+                strError = "";
                 if (window.innerWidth > 880 && showErrors === true) {
                     strError = getErrorsAndWarningsForLine(lineCnt, result.errors);
                 }
@@ -172,7 +173,12 @@ export function outputResult(resultString: string, sourceIndex: number, showErro
             }
             lineAlreadyFilled = true;
         }
-        strResult += strLine; //ad the last line.
+        //ad the last line.
+        strError = "";
+        if (window.innerWidth > 880 && showErrors === true) {
+            strError = getErrorsAndWarningsForLine(lineCnt, result.errors);
+        }
+        strResult += strError + strLine;
         addErrorsToLint(result.errors);
 
     } catch (e) {
