@@ -135,28 +135,29 @@ function getErrorsAndWarningsForLine (lineNo: number, errors: ErrorResult[]) {
 
 export function outputResult(resultString: string, sourceIndex: number, showErrors: boolean) {
     activeDocumentIndex = sourceIndex;
-    console.debug(resultString);
     clearErrorList();
+    let strLog = "";
     let strOutput = "";
-    let strResult = "";
     let strError = "";
+    let lineCnt = 0;
+    let lineAlreadyFilled = false;
+    let strLine = "";
     try {
         let result: Results = JSON.parse(resultString); //may throw...
-        let lineCnt = 0;
-        let lineAlreadyFilled = false;
-        let strLine = "";
         result.result
             .filter(line => line.src === sourceIndex)
             .forEach(line => {
-                //goto the next line in output
+                //Not every line may have a result.
+                //Add newlines to the output to stay on track with the input lines.
+                //While doing that, also collect and report the errors for those lines.
                 while (lineCnt < line.line) {
                     strError = "";
                     if (window.innerWidth > 880 && showErrors === true) {
                         strError = getErrorsAndWarningsForLine(lineCnt, result.errors);
                     }
-                    strResult += strError + strLine + "\n";
+                    strOutput += strError + strLine + "\n";
+                    lineCnt++;//do this for every newline.
                     strLine = "";
-                    lineCnt++;
                     lineAlreadyFilled = false;
                 }
                 let strValue = linetoResultString(line, result.errors, showErrors);
@@ -173,23 +174,23 @@ export function outputResult(resultString: string, sourceIndex: number, showErro
                 }
                 lineAlreadyFilled = true;
             });
-        //ad the last line.
+        //add the last line.
         strError = "";
         if (window.innerWidth > 880 && showErrors === true) {
             strError = getErrorsAndWarningsForLine(lineCnt, result.errors);
         }
-        strResult += strError + strLine;
+        strOutput += strError + strLine;
         addErrorsToLint(result.errors);
 
     } catch (e) {
+        strLog = e.message + "\n";
+        strLog += e.name + "\n";
+        strLog += e.stack+ "\n";
         strOutput = e.message + "\n";
-        strOutput += e.name + "\n";
-        strOutput += e.stack+ "\n";
-        strResult = e.message + "\n";
     }
 
-    let transaction = cm.cmOutput.state.update({ changes: { from: 0, to: cm.cmOutput.state.doc.length, insert: strOutput } });
+    let transaction = cm.cmOutput.state.update({ changes: { from: 0, to: cm.cmOutput.state.doc.length, insert: strLog } });
     cm.cmOutput.update([transaction]);
-    transaction = cm.cmResult.state.update({ changes: { from: 0, to: cm.cmResult.state.doc.length, insert: strResult } });
+    transaction = cm.cmResult.state.update({ changes: { from: 0, to: cm.cmResult.state.doc.length, insert: strOutput } });
     cm.cmResult.update([transaction]);
 }
