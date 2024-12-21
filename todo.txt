@@ -1,13 +1,20 @@
-* Add update version no to make file.
+* An error/warning on the last line is not shown in result.
+
+* PeekingTokenizer copies cursors.
+  > But there's only one active cursor (that needs the errors list).
+  > Is there a way to move the errors list from active to active cursor without cloning?
+
+* Warning on double comma: test in inner block.
 
 * Check dot_and_comma for:
   > What are the consequences of allowing a comma as decimal?
   -	No combination of dots and comma in one value.
-  -	No spaces between digits.
+  (-	No spaces between digits.) Why this rule?
   -	Error if ambiguous. (e.g. in a list)
-    o	1,2,3,4 -> error!
-    o	1,2, 3,4 -> also error. Even though the spaces allow this to be parsed.
-    o	1, 2, 3, 4 -> valid with warning.
+    > tokenizer reports error if:
+      o	1,2,3,4 -> error!
+      o	1,2, 3,4 -> Valid with warning.
+      o	1, 2, 3, 4 -> valid with warning.
 
 * Arithmetic with temperatures is not as straight forward:
   https://reference.wolfram.com/language/tutorial/TemperatureUnits.html#:~:text=When%20adding%20two%20temperature%20quantities,Copy%20to%20clipboard.

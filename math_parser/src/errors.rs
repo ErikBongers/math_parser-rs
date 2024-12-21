@@ -28,6 +28,7 @@ define_errors!(
 
     WDivImplMult: W : "Warning: ambiguous expression: division followed by implicit multiplication.",
     WPowImplMult: W : "Warning: ambiguous expression: exponential combined with implicit multiplication.",
+    WAmbiguousComma: W : "Ambiguous comma. Could be a list item separator or a decimal point.",
     WAssumingUnit: W : "Warning: not all values have a unit. Assuming same unit as the other values.",
     WVarIsUnit: W : "Warning; variable `{variable}` overrides unit with same name.",
     VarIsUnit: E : "Variable `{variable}` overrides unit with same name.",

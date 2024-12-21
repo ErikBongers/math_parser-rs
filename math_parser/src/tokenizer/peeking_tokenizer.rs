@@ -1,3 +1,4 @@
+use crate::errors::Error;
 use crate::globals::SourceIndex;
 use crate::globals::sources::Source;
 use crate::number::Number;
@@ -26,6 +27,7 @@ impl<'a> PeekingTokenizer<'a> {
         }
     }
 
+    pub fn get_errors(&self) -> &Vec<Error> {self.cur.errors.as_ref()}
     #[inline]
     pub fn source_index(&self) -> SourceIndex { self.cur.source_index() }
 

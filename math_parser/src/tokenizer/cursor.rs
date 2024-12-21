@@ -1,6 +1,7 @@
 use std::cmp::{max, min};
 use std::ops;
 use std::str::Chars;
+use crate::errors::{w_ambiguous_comma, Error};
 use crate::globals::SourceIndex;
 use crate::globals::sources::Source;
 use crate::number::Number;
@@ -17,6 +18,7 @@ pub struct Cursor<'a> {
     pub is_beginning_of_text: bool,
     pub (in crate::tokenizer) nl_is_token: bool,
     pub is_dot_and_comma_decimal: bool,
+    pub errors: Vec<Error>,
 }
 
 #[derive(Debug, Clone)]
@@ -75,6 +77,7 @@ impl<'a> Cursor<'a> {
             is_beginning_of_text: true,
             nl_is_token: false,
             is_dot_and_comma_decimal: false,
+            errors: vec![]
         }
     }
 
@@ -195,8 +198,10 @@ impl<'a> Cursor<'a> {
         let mut d: f64 = 0.0;
         let mut e: i32 = 0;
         let mut decimal_divider: f64 = 1.0;
+        let mut comma_pos =0usize;
+        let mut is_comma_found = false;
 
-        if c == '.' {
+        if c == '.' { // a number can never start with a comma, even it that's a valid decimal char.
             decimal_divider = 10.0;
         } else {
             d = (c as i32 - '0' as i32) as f64;
@@ -230,9 +235,21 @@ impl<'a> Cursor<'a> {
                 },
                 ',' => {
                     if decimal_divider > 1.0 { //second time we encounter the decimal divider!
+                        if self.is_dot_and_comma_decimal {
+                            let mut error_pos = comma_pos;
+                            if !is_comma_found {
+                                error_pos = self.get_pos();
+                            }
+                            if let '0'..='9' = self.peek_second() {
+                                self.errors.push(w_ambiguous_comma(Range { source_index: self.source.index, start: error_pos, end: error_pos + 1 }))
+                            }
+
+                        }
                         break 'the_loop;
                     }
+                    is_comma_found = true;
                     if self.is_dot_and_comma_decimal {
+                        comma_pos = self.get_pos();
                         match self.peek_second() {
                             '0'..='9' => {
                                 self.next(); //consume DOT
@@ -339,12 +356,14 @@ pub fn is_id_continue(c: char) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use crate::errors::Error;
     use crate::globals::Globals;
     use crate::tokenizer::cursor::Cursor;
 
     #[test]
     fn test_integer() {
         let mut globals = Globals::new();
+        let mut errors: Vec<Error> = vec![];
         let text = "12345";
         let src_name = "src1";
         globals.set_source(src_name.to_string(), text.to_string());
@@ -379,6 +398,7 @@ mod tests {
 
     fn test_number(text: &str, sig: f64, exp: i32) {
         let mut globals = Globals::new();
+        let mut errors: Vec<Error> = vec![];
         let src_name = "src1";
         globals.set_source(src_name.to_string(), text.to_string());
         let mut cur = Cursor::new(globals.get_source_by_name(src_name).unwrap());
@@ -392,6 +412,7 @@ mod tests {
     fn test_newline() {
         let text = "first word\nsecond word and\n  third line \n  \n  fifth?\n";
         let mut globals = Globals::new();
+        let mut errors: Vec<Error> = vec![];
         let src_name = "src1";
         globals.set_source(src_name.to_string(), text.to_string());
         let mut cur = Cursor::new(globals.get_source_by_name(src_name).unwrap());

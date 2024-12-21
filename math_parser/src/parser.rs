@@ -52,6 +52,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 }
             }
         }
+        self.errors.append(&mut self.tok.get_errors().clone());//TODO: is this clone needed?
     }
 
     fn parse_statement(&mut self) -> Statement {
