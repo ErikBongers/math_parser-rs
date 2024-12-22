@@ -1,5 +1,3 @@
-* An error/warning on the last line is not shown in result.
-
 * PeekingTokenizer copies cursors.
   > But there's only one active cursor (that needs the errors list).
   > Is there a way to move the errors list from active to active cursor without cloning?

@@ -111,6 +111,17 @@ fn test_formatted_number () {
     test_error("a='12,34.56,789'", ErrorId::InvNumberStr);
     test_error("a='12,3456789'", ErrorId::InvNumberStr);
     test_error("a='12.3456789'", ErrorId::InvNumberStr);
+
+    test_result("#pragma dot_and_comma \n a=123,456", 123.456, "");
+    test_result("#pragma dot_and_comma \n a=123.456", 123.456, "");
+    test_result("#pragma dot_and_comma \n a=123.456", 123.456, "");
+    test_result("#pragma dot_and_comma \n a=max(0, 123,456)", 123.456, "");
+    test_result("#pragma dot_and_comma \n a=max(0, 123, 456)", 456.0, "");
+    test_error("#pragma dot_and_comma \n a=123,456.7", ErrorId::UnknownExpr);
+    test_error("#pragma dot_and_comma \n a=123,456,7", ErrorId::WAmbiguousComma);
+    test_result("#pragma dot_and_comma \n a=max(123,456,7)", 123.456, "");
+    test_result("#pragma dot_and_comma \n a=min(123,456,7)", 7.0, "");
+    test_result("#pragma dot_and_comma \n a=max(123, 456.7)", 456.7, "");
 }
 
 #[test]
