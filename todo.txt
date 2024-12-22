@@ -1,3 +1,7 @@
+* Uncomment the remaining tests
+  > number formats
+  > Duration.
+
 * PeekingTokenizer copies cursors.
   > But there's only one active cursor (that needs the errors list).
   > Is there a way to move the errors list from active to active cursor without cloning?

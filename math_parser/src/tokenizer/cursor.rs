@@ -6,7 +6,7 @@ use crate::globals::SourceIndex;
 use crate::globals::sources::Source;
 use crate::number::Number;
 use crate::resolver::unit::Unit;
-use crate::resolver::value::NumberFormat;
+use crate::number_format::NumberFormat;
 
 #[derive(Clone)]
 pub struct Cursor<'a> {

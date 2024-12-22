@@ -1,6 +1,7 @@
-use math_parser::test_api::test_exponent;
+use math_parser::test_api::{test_exponent, test_result_with_number_format};
 use math_parser::test_api::{test_compiles, test_result, test_error, test_date, test_no_error};
 use math_parser::errors::ErrorId;
+use math_parser::number_format::NumberFormat;
 
 #[test]
 fn test_numbers (){
@@ -268,6 +269,26 @@ fn test_number_formats () {
     test_result("(0b111_1011C.).dec", 123.0, "");
 }
 
+#[test] //TODO: merge with above.
+fn test_number_formats_2() {
+    test_result(".123", 0.123, "");
+    test_result("123.456", 123.456, "");
+    test_result("'1,234.56'", 1234.56, "");
+    test_result("#define decimal_comma \n '1.234,56'", 1234.56, "");
+    test_result("123_456", 123456.0, "");
+    test_result("-123_456", -123456.0, "");
+    test_result_with_number_format("0b111_1011", 123.0, "", NumberFormat::Bin);
+    test_result_with_number_format("0x1E240", 123456.0, "", NumberFormat::Hex);
+    test_result_with_number_format("0b111_1011C.dec", 123.0, "C", NumberFormat::Dec);
+    test_result_with_number_format("(0b111_1011.)", 123.0, "", NumberFormat::Bin);
+    test_result_with_number_format("(0b111_1011C.).dec", 123.0, "", NumberFormat::Dec);
+    test_result_with_number_format(r"
+hx1=0x0001;
+hx2=0x7a;
+hx3=hx1+hx2;
+", 123.0, "", NumberFormat::Hex);
+}
+
 #[test]
 fn test_units () {
     test_result("(10.3+3).m-300cm", 10.3, "m");
@@ -409,52 +430,28 @@ fn test_incomplete_program () {
     test_error("   {             ", ErrorId::Expected);
 
 }
-/* TODO
 
-TEST_METHOD(TestDurations)
-            {
-            assertDuration("duur=2 days, 3 months", 2, 3);
-            assertDuration("'Jan 12, 2022'-'Jan 11, 2022';", 1);
-            assertDate("'01 jan 2022'+2days", 3, 1, Some(2022));
-            assertError("'01 jan 2022'+2", "E_EXPLICIT_UNITS_EXPECTED");
-            assertDate(R"CODE(
+#[test]
+fn test_durations(){
+    // test_duration("duur=2 days, 3 months", 2, 3);
+    // test_duration("'Jan 12, 2022'-'Jan 11, 2022';", 1);
+    test_date("'01 jan 2022'+2days", 3, 1, Some(2022));
+    test_error("'01 jan 2022'+2", ErrorId::EExplicitUnitsExpected);
+    test_date(r"
 dat='Jan 12, 2022';
 duur=2 days, 3 months;
-dat+duur;
-                    )CODE", 14, 4, Some(2022));
-        assertDate(R"CODE(
+dat+duur;", 14, 4, Some(2022));
+        test_date(r"
 dat='Jan 12, 2022';
 duur=360 days, 0 months; //calculated year of 30*12 days
 dat+duur;
-                    )CODE", 12, 1, 2023);
-            assertDuration("duur=2 days, 3 months", 2, 3);
-            assertError("duur=2 days, 3 months; duur.xxx", "UNKNOWN_EXPR");
-            assertError("dat = now() + 5;", "E_EXPLICIT_UNITS_EXPECTED");
-            assertResult("duur=2 days, 3 months; duur.days;", 2, "days");
-            assertResult("duur=2 days, 3 months; duur.months;", 3, "months");
-            assertResult("duur=2 days, 3 months, 5years; duur.years;", 5, "years");
-            }
-
-        TEST_METHOD(TestNumberFormats)
-            {
-            assertResult(".123", 0.123);
-//            assertResult("123.456", 123.456);
-//            assertResult("'1,234.56'", 1234.56);
-//            assertResult("#define decimal_comma \n '1.234,56'", 1234.56);
-//            assertResult("123_456", 123456);
-//            assertResult("-123_456", -123456);
-//            assertResult("0b111_1011", 123, "", "", "BIN");
-//            assertResult("0x1E240", 123456, "", "", "HEX");
-//            assertResult("0b111_1011C.dec", 123, "C", "", "DEC");
-//            assertResult("(0b111_1011.)", 123, "", "", "BIN");
-//            assertResult("(0b111_1011C.).dec", 123, "", "", "DEC");
-//            assertResult(R"CODE(
-//hx1=0x0001;
-//hx2=0x7a;
-//hx3=hx1+hx2;
-//                        )CODE"
-//                        , 123, "", "", "HEX");
-            }
+", 12, 1, Some(2023));
+    // test_duration("duur=2 days, 3 months", 2, 3);
+    test_error("duur=2 days, 3 months; duur.xxx", ErrorId::UnknownExpr);
+    test_error("dat = now() + 5;", ErrorId::EExplicitUnitsExpected);
+    test_result("duur=2 days, 3 months; duur.days;", 2.0, "days");
+    test_result("duur=2 days, 3 months; duur.months;", 3.0, "months");
+    test_result("duur=2 days, 3 months, 5years; duur.years;", 5.0, "years");
+}
 
 
-*/

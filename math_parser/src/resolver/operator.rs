@@ -3,10 +3,11 @@ use crate::errors;
 use crate::errors::Error;
 use crate::globals::Globals;
 use crate::resolver::unit::Unit;
-use crate::resolver::value::{NumberFormat, OperandType, Value, Variant};
+use crate::resolver::value::{OperandType, Value, Variant};
 use crate::tokenizer::cursor::Range;
 use crate::tokenizer::token_type::TokenType;
 use crate::number::Number;
+use crate::number_format::NumberFormat;
 
 #[repr(u8)]
 #[derive(Copy, Clone)]

@@ -18,7 +18,7 @@ mod functions;
 pub mod globals;
 mod date;
 mod number;
-
+pub mod number_format;
 
 pub struct Api {
     globals: Globals,
@@ -132,7 +132,9 @@ pub mod test_api {
         tokenizer::{ peeking_tokenizer::PeekingTokenizer}
     };
     use crate::globals::Globals;
+    use crate::number::Number;
     use crate::parser::nodes::CodeBlock;
+    use crate::number_format::NumberFormat;
     use crate::tokenizer::cursor::Range;
 
     pub fn test_exponent(text: &str, expected_result: f64, unit: &str, exponent: i32) {
@@ -141,7 +143,17 @@ pub mod test_api {
     }
 
 
+    pub fn test_result_with_number_format(text: &str, expected_result: f64, unit: &str, number_format: NumberFormat) {
+        let (_, number) = test_number(text, expected_result, unit);
+        assert_eq!(number.fmt, number_format);
+    }
+
     pub fn test_result(text: &str, expected_result: f64, unit: &str) -> Value {
+        let (value, _) = test_number(text, expected_result, unit);
+        value
+    }
+
+    fn test_number(text: &str, expected_result: f64, unit: &str)  -> (Value, Number) {
         let (mut results, _errors) = get_results(text);
         let value = results.pop().expect("No result found.");
         let Variant::Numeric { number, .. } = &value.variant else {
@@ -150,10 +162,10 @@ pub mod test_api {
         //round decimals:
         let val = number.to_double();
         let precision = 10000000.0;
-        let val = (val*precision).round()/precision;
+        let val = (val * precision).round() / precision;
         assert_eq!(val, expected_result);
         assert_eq!(number.unit.id, unit);
-        value
+        (value.clone(), number.clone())
     }
 
     pub fn test_date(text: &str, day: i8, month: i32, year: Option<i32>) {

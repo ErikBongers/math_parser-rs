@@ -5,7 +5,7 @@ use crate::errors::Error;
 use crate::globals::Globals;
 use crate::resolver::scope::DecimalChar;
 use crate::resolver::unit::{Unit, UnitsView};
-use crate::resolver::value::NumberFormat;
+use crate::number_format::NumberFormat;
 use crate::tokenizer::cursor::Range;
 
 #[derive(Clone)]

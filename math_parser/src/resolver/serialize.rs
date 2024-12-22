@@ -5,10 +5,11 @@ use serde::ser::SerializeStruct;
 use crate::{date, errors};
 use crate::globals::Globals;
 use crate::number::Number;
+use crate::number_format::NumberFormat;
 use crate::resolver::Resolver;
 use crate::resolver::scope::Scope;
 use crate::resolver::unit::Unit;
-use crate::resolver::value::{NumberFormat, Value, Variant::*};
+use crate::resolver::value::{Value, Variant::*};
 use crate::tokenizer::cursor::Range;
 
 struct ScopedValue<'a> {

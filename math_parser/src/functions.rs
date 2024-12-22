@@ -11,9 +11,10 @@ use crate::parser::nodes::{CodeBlock, FunctionDefExpr};
 use crate::resolver::{add_error_value, Resolver};
 use crate::globals::Globals;
 use crate::number::Number;
+use crate::number_format::NumberFormat;
 use crate::resolver::recursive_iterator::recursive_iter;
 use crate::resolver::unit::{Unit, UnitProperty};
-use crate::resolver::value::{NumberFormat, Value};
+use crate::resolver::value::Value;
 use crate::resolver::value::Variant;
 use crate::tokenizer::cursor::Range;
 

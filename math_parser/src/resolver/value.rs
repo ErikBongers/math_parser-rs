@@ -1,12 +1,6 @@
-use serde::Serialize;
-use crate::date::{Timepoint, Duration};
+use crate::date::{Duration, Timepoint};
 use crate::number::Number;
 use crate::tokenizer::cursor::Range;
-
-#[derive(Clone, Serialize)]
-pub enum NumberFormat {
-    Dec, Hex, Oct, Bin, Exp
-}
 
 #[derive(Clone)]
 pub enum Variant {

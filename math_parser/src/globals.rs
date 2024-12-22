@@ -3,9 +3,10 @@ use crate::errors::Error;
 use crate::functions::{create_global_function_defs, FunctionView, GlobalFunctionDef};
 use crate::globals::sources::Source;
 use crate::number::Number;
+use crate::number_format::NumberFormat;
 use crate::resolver::operator::load_operators;
-use crate::resolver::unit::{create_unit_defs, Unit, UnitDef, UnitProperty, UnitsView, UnitTag};
-use crate::resolver::value::{NumberFormat, Value};
+use crate::resolver::unit::{create_unit_defs, Unit, UnitDef, UnitProperty, UnitTag, UnitsView};
+use crate::resolver::value::Value;
 use crate::tokenizer::cursor::Range;
 
 pub mod sources;
