@@ -207,7 +207,7 @@ impl<'a> Cursor<'a> {
             d = (c as i32 - '0' as i32) as f64;
         };
 
-        'the_loop: loop  {
+        loop  {
             match self.peek() {
                 c @ '0'..='9' => {
                     self.next(); //consume
@@ -221,7 +221,7 @@ impl<'a> Cursor<'a> {
                 },
                 '.' => {
                     if decimal_divider > 1.0 { //second time we encounter the decimal divider!
-                        break 'the_loop;
+                        break;
                     }
                     match self.peek_second() {
                         '0'..='9' => {
@@ -245,7 +245,7 @@ impl<'a> Cursor<'a> {
                             }
 
                         }
-                        break 'the_loop;
+                        break;
                     }
                     is_comma_found = true;
                     if self.is_dot_and_comma_decimal {
