@@ -4,6 +4,9 @@ use crate::errors::Error;
 use std::fmt;
 use serde::Serialize;
 use crate::date::Duration;
+use crate::globals::SourceIndex;
+use crate::number::Number;
+use crate::tokenizer::cursor::Range;
 
 #[derive(Clone, Copy, Debug, Serialize, PartialEq)]
 pub enum Month {JAN = 1, FEB = 2, MAR = 3, APR = 4, MAY = 5, JUN = 6, JUL = 7, AUG = 8, SEP = 9, OCT = 10, NOV = 11, DEC = 12, NONE = 0}
@@ -151,6 +154,62 @@ impl Timepoint {
             self.day.unwrap_or(0)
         }
     }
+
+    pub fn normalize(&mut self) {
+        match self.day {
+            Day::Value(day) => {
+                let dayz_in_month = self.days_in_month(); //store, as we wll be changing the month.
+                if day > dayz_in_month {
+                    if (self.month as i32) < 12 {
+                        self.month = month_from_int(self.month as i32 + 1);
+                    } else {
+                        self.month = Month::JAN;
+                        self.year = match self.year {
+                            None => None,
+                            Some(year) => Some(year + 1)
+                        }
+                    }
+                    self.day = Day::Value(day - dayz_in_month);
+                }
+            },
+            Day::Last => {
+                if self.month == Month::NONE {
+                    self.day = Day::None;
+                } else {}
+            }
+            Day::None => {}
+        }
+    }
+
+    fn days_in_month(&self) -> i8 {
+        match self.month {
+            Month::JAN => 31,
+            Month::FEB => {
+                if let Some(year) = self.year {
+                    if (year%4 == 0 && year%100 != 0)
+                        || (year%100 == 0 && year%400 == 0) {
+                         29
+                    } else {
+                         28
+                    }
+                } else {
+                    28
+                }
+            },
+            Month::MAR => 31,
+            Month::APR => 30,
+            Month::MAY => 31,
+            Month::JUN => 30,
+            Month::JUL => 31,
+            Month::AUG => 31,
+            Month::SEP => 30,
+            Month::OCT => 31,
+            Month::NOV => 30,
+            Month::DEC => 31,
+            Month::NONE => 0, //TODO: ths doesn't make sense
+
+        }
+    }
 }
 
 impl ops::Sub<&Timepoint> for &Timepoint {
@@ -162,5 +221,46 @@ impl ops::Sub<&Timepoint> for &Timepoint {
             months: self.month as i32 - rhs.month as i32,
             years: self.year.unwrap_or(0) - rhs.year.unwrap_or(0)
         }
+    }
+}
+
+impl ops::Add<&Number> for &Timepoint {
+    type Output = Timepoint;
+
+    fn add(self, rhs: &Number) -> Self::Output {
+        let mut timepoint = self.clone();
+        let duration = Duration::from_number(rhs, &Range::none(SourceIndex::none()), &mut timepoint.errors); //todo: error is incomplete: no range
+        &timepoint + &duration
+    }
+}
+
+impl ops::Add<&Duration> for &Timepoint {
+    type Output = Timepoint;
+
+    fn add(self, rhs: &Duration) -> Self::Output {
+        let mut timepoint = self.clone();
+        let mut duration = rhs.clone();
+        duration.normalize();
+        timepoint.day = match timepoint.day {
+            Day::Value(dayz) => Day::Value(dayz + duration.days as i8),
+            Day::Last => Day::Value(timepoint.get_normalized_day() + duration.days as i8),
+            Day::None => Day::None,
+        };
+        timepoint.normalize();
+        let mut month = timepoint.month as i32 + duration.months as i32;
+        if month > 12 {
+            timepoint.year = match timepoint.year {
+                Some(year) => Some(year + month / 12),
+                None => None,
+            };
+            month = month % 12;
+        }
+        timepoint.month = month_from_int(month);
+        timepoint.year = match timepoint.year {
+            Some(year) => Some(year + duration.years),
+            None => None,
+        };
+
+        timepoint
     }
 }

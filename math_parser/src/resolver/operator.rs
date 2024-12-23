@@ -106,6 +106,8 @@ pub fn load_operators(globals: &mut Globals) {
     globals.operators.insert(operator_id_from(OT::Number, OperatorType::Modulo, OT::Number), op_num_mod_num);
     globals.operators.insert(operator_id_from(OT::Number, OperatorType::Power, OT::Number), op_num_pow_num);
     globals.operators.insert(operator_id_from(OT::Date, OperatorType::Min, OT::Date), op_date_min_date);
+    globals.operators.insert(operator_id_from(OT::Date, OperatorType::Plus, OT::Number), op_date_plus_number);
+    globals.operators.insert(operator_id_from(OT::Date, OperatorType::Plus, OT::Duration), op_date_plus_duration);
     globals.operators.insert(operator_id_from(OT::Duration, OperatorType::Min, OT::Duration), op_dur_min_dur);
     globals.operators.insert(operator_id_from(OT::Duration, OperatorType::Plus, OT::Duration), op_dur_plus_dur);
     globals.operators.insert(operator_id_from(OT::Duration, OperatorType::Mult, OT::Number), op_dur_mult_num);
@@ -154,6 +156,20 @@ pub fn op_date_min_date(_globals: &Globals, args: &Vec<Value>, range: &Range, _e
     let Variant::Date {date: ref d2, ..} = &args[1].variant else { unreachable!(); }; //has been checked.
 
     Value::from_duration(d1 - d2, range.clone())
+}
+
+pub fn op_date_plus_number(_globals: &Globals, args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>) -> Value {
+    let Variant::Date {date: ref d1, ..} = &args[0].variant else { unreachable!(); }; //has been checked.
+    let Variant::Numeric {number: ref n1, ..} = &args[1].variant else { unreachable!(); }; //has been checked.
+
+    Value::from_date(d1 + n1, range.clone())
+}
+
+pub fn op_date_plus_duration(_globals: &Globals, args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>) -> Value {
+    let Variant::Date {date: ref d1, ..} = &args[0].variant else { unreachable!(); }; //has been checked.
+    let Variant::Duration {duration: ref u1, ..} = &args[1].variant else { unreachable!(); }; //has been checked.
+
+    Value::from_date(d1 + u1, range.clone())
 }
 
 pub fn op_dur_min_dur(_globals: &Globals, args: &Vec<Value>, range: &Range, _errors: &mut Vec<Error>) -> Value {

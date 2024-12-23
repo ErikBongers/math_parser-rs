@@ -19,6 +19,7 @@ impl SourceIndex {
     pub fn as_int(&self) -> i32 {
         self.0 as i32
     }
+    pub fn none() -> SourceIndex { SourceIndex(u8::MAX) } //TODO: magic value
 }
 
 pub struct Globals {

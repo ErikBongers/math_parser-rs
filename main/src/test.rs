@@ -443,9 +443,9 @@ duur=2 days, 3 months;
 dat+duur;", 14, 4, Some(2022));
         test_date(r"
 dat='Jan 12, 2022';
-duur=360 days, 0 months; //calculated year of 30*12 days
+duur=360 days, 0 months; //calculated year of 365.24... days
 dat+duur;
-", 12, 1, Some(2023));
+", 6, 1, Some(2023));
     // test_duration("duur=2 days, 3 months", 2, 3);
     test_error("duur=2 days, 3 months; duur.xxx", ErrorId::UnknownExpr);
     test_error("dat = now() + 5;", ErrorId::EExplicitUnitsExpected);

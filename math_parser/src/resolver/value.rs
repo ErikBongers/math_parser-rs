@@ -99,11 +99,12 @@ impl Value {
     }
 
     pub fn from_date(date: Timepoint, range: Range) -> Self {
+        let has_errors = !date.errors.is_empty();
         Value {
             id: None,
             stmt_range: range,
             variant: Variant::Date {date },
-            has_errors: false,
+            has_errors,
         }
     }
 
