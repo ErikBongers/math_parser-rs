@@ -179,6 +179,17 @@ pub mod test_api {
         assert_eq!(date.year, year);
     }
 
+    pub fn test_duration(text: &str, days: i32, months: i32, years: i32) {
+        let (results, _errors) = get_results(text);
+        let value = results.last().expect("No result found.");
+        let Variant::Duration { duration, .. } = &value.variant else {
+            panic!("Result isn't a duration.");
+        };
+        assert_eq!(duration.days, days);
+        assert_eq!(duration.months, months);
+        assert_eq!(duration.years, years);
+    }
+
     pub fn test_error(text: &str, error_id: ErrorId) {
         let (_results, errors) = get_results(text);
         assert_ne!(errors.iter().filter(|&e| e.id == error_id).count(), 0, "statement \"{}\" did not report error {:?}", text, error_id);

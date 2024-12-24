@@ -1,3 +1,4 @@
+use math_parser::test_api::test_duration;
 use math_parser::test_api::{test_exponent, test_result_with_number_format};
 use math_parser::test_api::{test_compiles, test_result, test_error, test_date, test_no_error};
 use math_parser::errors::ErrorId;
@@ -433,8 +434,8 @@ fn test_incomplete_program () {
 
 #[test]
 fn test_durations(){
-    // test_duration("duur=2 days, 3 months", 2, 3);
-    // test_duration("'Jan 12, 2022'-'Jan 11, 2022';", 1);
+    test_duration("duur=2 days, 3 months", 2, 3, 0);
+    test_duration("'Jan 12, 2022'-'Jan 11, 2022';", 1, 0, 0);
     test_date("'01 jan 2022'+2days", 3, 1, Some(2022));
     test_error("'01 jan 2022'+2", ErrorId::EExplicitUnitsExpected);
     test_date(r"
@@ -446,7 +447,6 @@ dat='Jan 12, 2022';
 duur=360 days, 0 months; //calculated year of 365.24... days
 dat+duur;
 ", 6, 1, Some(2023));
-    // test_duration("duur=2 days, 3 months", 2, 3);
     test_error("duur=2 days, 3 months; duur.xxx", ErrorId::UnknownExpr);
     test_error("dat = now() + 5;", ErrorId::EExplicitUnitsExpected);
     test_result("duur=2 days, 3 months; duur.days;", 2.0, "days");
