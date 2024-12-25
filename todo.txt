@@ -18,15 +18,6 @@
 * localstorage per user, when logged in.
   > Otherwise, files for different users will share the same LocalStorage value.
 
-* bug: units: binop doesn't check if it's the same property.
-
-* decimal dot AND comma
-  > requires changing tokenizer during parsing!
-  > when tokenizer parses a number, it checks for the decimal point.
-    > just set a flag?
-      > this requires resolving DURING tokenizing.
-  > in general
-
 * Comment is just appended to the previous line.
   Note the missing semi-colon:
   rest=q*159
@@ -38,8 +29,6 @@
 * add update of version no to makefile.
   > add inc_version as a build depencency and run it from the target dir.
   
-* makefile: add deps to wasm build.
-
 * add all rust build variations to makefile
 
   >> CodeMirror parser builds:
