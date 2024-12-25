@@ -1,4 +1,11 @@
 #pragma dot_and_comma
-//a=1,2.3;
-a=1.2,3; //Warning
-//list=(1,2,3,4);//Warning
+function funk() {
+(1,2,3,4);
+a=2;
+4/2a;
+m=123/PI;
+B10=; // Error should be here
+B10*3;
+123;
+}
+funk();

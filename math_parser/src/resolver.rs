@@ -9,7 +9,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use crate::date::{parse_date_string, DateFormat, Duration};
 use crate::errors;
-use crate::errors::{has_real_errors, Error};
+use crate::errors::{count_real_errors, has_real_errors, Error};
 use crate::functions::FunctionType;
 use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, DefineExpr, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NodeType, PostfixExpr, Statement, UnaryExpr, UnitExpr};
 use crate::globals::Globals;
@@ -309,7 +309,16 @@ impl<'g, 'a> Resolver<'g, 'a> {
             if !fd.is_correct_arg_count(args_ref.len()) {
                 return Err(errors::func_arg_wrong(&call_expr.function_name, call_expr.function_name_range.clone()));
             };
+            let real_error_count = count_real_errors(self.errors.iter());
             let result = fd.call(&self.scope.clone(), args_ref,  &call_expr.function_name_range, &mut self.errors, self.globals);
+            if real_error_count != count_real_errors(self.errors.iter()) {
+                self.errors.push(errors::func_has_errors(fd.get_name(), call_expr.function_name_range.clone()));
+            }
+            if let Some(parser_errors) = fd.get_parser_errors() {
+                if has_real_errors(parser_errors) {
+                    self.errors.push(errors::func_has_errors(fd.get_name(), call_expr.function_name_range.clone()));
+                }
+            }
             Ok(Resolver::apply_unit(result, unit, &self.scope.borrow().units_view, &call_expr.get_range(), self.errors, self.globals))
         }) else {
             return self.add_error_value(errors::func_not_def(&call_expr.function_name, call_expr.function_name_range.clone()));

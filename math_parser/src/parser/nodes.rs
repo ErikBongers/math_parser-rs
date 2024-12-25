@@ -266,6 +266,7 @@ pub struct CodeBlock {
     pub block_start: Range,
     pub statements: Vec<Statement>,
     pub scope: Rc<RefCell<Scope>>,
+    errors: Vec<Error>,
 }
 
 impl CodeBlock {
@@ -274,7 +275,16 @@ impl CodeBlock {
             block_start,
             scope: Rc::new(scope),
             statements: Vec::new(),
+            errors: Vec::new(),
         }
+    }
+
+    pub fn get_parser_errors(&self) -> &Vec<Error> {
+        &self.errors
+    }
+
+    pub fn append_errors(&mut self, errors: &Vec<Error>) {
+        self.errors.append(&mut errors.clone());
     }
 }
 

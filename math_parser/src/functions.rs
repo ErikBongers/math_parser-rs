@@ -23,6 +23,7 @@ pub trait FunctionDef {
     fn get_name(&self) -> &str;
     fn call(&self, scope: &Rc<RefCell<Scope>>, args: &Vec<Value>, range: &Range, errors: &mut Vec<Error>, globals: &Globals) -> Value;
     fn get_min_args(&self) -> usize;
+    fn get_parser_errors(&self) -> Option<&Vec<Error>>;
 }
 
 #[derive(PartialEq)]
@@ -66,6 +67,10 @@ impl FunctionDef for GlobalFunctionDef {
     fn get_min_args(&self) -> usize {
         self.min_args
     }
+
+    fn get_parser_errors(&self) -> Option<&Vec<Error>> {
+        None
+    }
 }
 
 impl FunctionDef for CustomFunctionDef {
@@ -88,6 +93,10 @@ impl FunctionDef for CustomFunctionDef {
 
     fn get_min_args(&self) -> usize {
         self.min_args
+    }
+
+    fn get_parser_errors(&self) -> Option<&Vec<Error>> {
+        Some(&self.code_block.get_parser_errors())
     }
 }
 

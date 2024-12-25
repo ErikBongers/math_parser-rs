@@ -22,7 +22,8 @@ pub struct Parser<'g, 'a, 't> {
 }
 
 impl<'g, 'a, 't> Into<CodeBlock> for Parser<'g, 'a, 't> {
-    fn into(self) -> CodeBlock {
+    fn into(mut self) -> CodeBlock {
+        self.code_block.append_errors(&self.errors);
         self.code_block
     }
 }
@@ -45,6 +46,7 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
             self.code_block.statements.push(stmt);
             if self.tok.peek().kind == TokenType::CurlClose {
                 if for_block {
+                    self.errors.append(&mut self.tok.get_errors().clone());//TODO: is this clone needed?
                     return;
                 } else {
                     self.errors.push(errors::unknown_expr("}", self.tok.peek().range.clone()));

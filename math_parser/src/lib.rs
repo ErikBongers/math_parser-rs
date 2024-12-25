@@ -52,6 +52,8 @@ impl Api {
             print_nodes(&stmt.node, 0, &self.globals);
         }
 
+        errors.append(&mut code_block.get_parser_errors().clone());
+
         //resolve
         let mut resolver = Resolver {
             scope: code_block.scope.clone(),
@@ -212,7 +214,7 @@ pub mod test_api {
         let mut parser = Parser::new(&globals, &mut tok, &mut errors, code_block);
         parser.parse(false, false);
         let code_block: CodeBlock = parser.into();
-
+        errors.append(&mut code_block.get_parser_errors().clone());
         //resolve
         let mut resolver = Resolver {
             scope: code_block.scope.clone(),

@@ -25,6 +25,7 @@ define_errors!(
     FuncNoBody: E : "Function body is empty for function `{function}`.",
     FuncNoOpenPar: E : "Missing `(` for function `{function}`.",
     FuncFailed: E : "Error in function `{function}`.",
+    FuncHasErrors: E : "Function `{function}` contains errors.",
 
     WDivImplMult: W : "Warning: ambiguous expression: division followed by implicit multiplication.",
     WPowImplMult: W : "Warning: ambiguous expression: exponential combined with implicit multiplication.",
@@ -77,4 +78,11 @@ pub fn has_real_errors<'a, Iter>(errors: Iter) -> bool
     where Iter: IntoIterator<Item=&'a Error>
 {
     errors.into_iter().find(|e| e.error_type == ErrorType::E).is_some()
+}
+
+#[inline]
+pub fn count_real_errors<'a, Iter>(errors: Iter) -> usize
+    where Iter: Iterator<Item=&'a Error>
+{
+    errors.filter(|e| e.error_type == ErrorType::E).count()
 }
