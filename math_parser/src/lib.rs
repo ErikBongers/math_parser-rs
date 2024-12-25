@@ -40,7 +40,7 @@ impl Api {
         let mut errors = Vec::<Error>::new();
         let scope = RefCell::new(Scope::new(&self.globals));
 
-        let code_block = if start_script_id != "" {
+        let code_block = if start_script_id != "" { //TODO: magic value for start script.
             let code_block = self.parse_file(&start_script_id, &mut errors, Either::Scope(scope));
             self.parse_file(&main_script_id, &mut errors, Either::CodeBlock(code_block))
         } else {
