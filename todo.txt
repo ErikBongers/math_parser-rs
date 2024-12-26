@@ -1,5 +1,9 @@
 * #pragma: is not restricted to scope (block)
 
+* var.fragment=x; --> gives error: unexpected ';'. Should be "can't assign to..."
+* date fragment as hls should give error
+    : today.year = 2022; //error!
+
 * PeekingTokenizer copies cursors.
   > But there's only one active cursor (that needs the errors list).
   > Is there a way to move the errors list from active to active cursor without cloning?
@@ -29,16 +33,6 @@
 * add update of version no to makefile.
   > add inc_version as a build depencency and run it from the target dir.
   
-* add all rust build variations to makefile
-
-  >> CodeMirror parser builds:
-  buildmathparser : ok : in /wasm/editor/package.json
-  buildresultparser: ok : in /wasm/editor/package.json
-
-  >> web:
-  index.html : NOK : http://localhost:63342/math_parser-rs/wasm/www/index.html
-  uploadToGoogle: ok : /wasm/ -> script
-
 * now()-1day --> does this work?
 
 * add % unit?
@@ -70,8 +64,6 @@
   > check out https://crates.io/crates/cargo-post
   > there is a way to include build tools in a cargo package.
     > look at skia-rust. It automatically loads tools via build.rs, I think.
-
-* Copy TODOs from C++ project.
 
 * implement a ~= operator to approximately compare floats.
   > PI ~= 3.14
@@ -141,3 +133,160 @@
     > https://medium.com/@gvanrossum_83706/building-a-peg-parser-d4869b5958fb
     > the tokenizer uses an internal vec to store all the parsed tokens so it can quickly be reset to a previous position and go over the already parsed tokens again without having to parse them again. This is memoization.
       > note that this doesn't do 'packrat'-ing yet. The parsed, but rejected, tokens are just in a vec as ordinary tokens, while they could already be stored in a bit of AST.
+
+-----------------------
+from C++ todo list:
+* Wildchart operations.
+  > Atot = a1 + a2 + a3
+    : aTot = a# + ...; /numbers only
+
+  > aTot = a... + ...; //any character.
+  > aTot = a... +; //second ellipsis optional?
+
+  > or...turn variables into lists.
+    : aTot = sum(a#);
+    : aTot = (a#).sum;
+  > or make a datatype VariableList? That holds the result of a wildcard names find?
+    > probably not: if a var with the same pattern is added AFTER the varList is created, it isn't added.
+      > or is that no problem?
+
+  Units: can be turned on an off...
+  > but what about vars that already use them?
+    > duration.days,...
+
+* Implement electronic components notation
+  #define eletro OR use formatted values?
+  > formatted numbers always work, but when electro is defined, these notations can be used directly.
+    > can that principle be aplied to formatted dates and numbers as well?
+  > R103 = 10000 Ohm;
+  > C472
+  > ...?
+  > implement as numberic notation like HEX,...
+  > RES and CAP
+  > only works when activated #define electric
+  > add extra units.
+  > Resistors have more versions of notations
+    R47	    0.47 ohm
+    4R7	    4.7 ohm
+    470R	470 ohm
+    4K7	    4.7 kilohm
+    47K	    47 kilohm
+    47K3	47.3 kilohm
+    470K	470 kilohm
+    4M7	    4.7 megohm
+  > Resistors also have 3 digit notation
+  > require them to always start with an R_ or a C_?
+    > this solves the 3 digit problem.
+    > only required for 3-digit notaton as the above R-notations are probably non ambiguous.
+
+  > a setting for Tokenizer
+  > generalize usage of K and M ?
+    > no
+
+* Implement combined units for V, A, R.
+  > V * A = Watt !!!
+  > Also create units for powers: 24V^2
+
+* use modulo operator for hours and date calculations = less checking to do than with remainder!
+  > Duration::normalize()
+
+* Adding complex units:
+    A.=m/s
+    Or
+    A.=(m/s)
+    Or
+    A.=[m/s]
+    Or
+    A.=(.m/.s) -> easier to program, but less intuitive.
+
+* Custom units:
+    snoep=3"gummies";
+    snoep += 5gummies;
+    snoep*3;
+
+* add an ECHO statement (or function?).
+  > perhaps use the !-notation?
+  > It's not part of a calculation, so it's a statement.
+  > allow formatting or value embedding?
+  > no use of quotes needed?
+  > newline, how?
+  : ! this line contains a {number}
+  : ! the previous line is $ and the result is _
+  : ! line 3 contains this statement: #3 and it's value is #3_
+  : ! line 3 contains this statement: #3 and it's value is #3_
+
+* Examine the Scope object. This should contain the full environment (and parser?) for every scope level. Should Parser and Interpreter be stateless? Probably yes.
+
+* make date() more robust. quick-and-dirty currently.
+  > test types of arguments.
+    > also units
+  > return proper error messages.
+  > take into account the current date format.
+    > current dateformat: put in scope?
+       > and use it in the date() function.
+
+* Date: operator + and - : make generic
+  > Adding a duration may contain negative values in the duration!
+  > Fix this for the +operator
+  > the -operator is just the +operator with all duration values made negative.
+  > Durations allow calculations and max(), floor(),…
+    > Floor is template: floor<Sec>(duration);
+
+WWW
+---
+Nice to have
+---------------
+* units :
+  > mathlab not compact enough:
+    https://nl.mathworks.com/help/symbolic/units-of-measurement-tutorial.html
+  > complex units.
+    > if you set a unit to a var BEFORE an equation:
+      > when the eq is assigned to the var, a warning should be generated if the unit changes. (this allows for checking the physical dimension of your eq.)
+  > custom units
+    : basket = 10"apples";
+    : sack = 20"pears";
+    : basket+sack; //warning: units don't match
+* dates:
+  > half a minute?
+    > 1min.sec/2 => 30sec
+    > imin/2 => omin !!!
+
+  > conversions:
+    - UTC
+    - GPS
+    -...
+* Implicit variable:
+    Implicit var _ always contains the last result (being the result of the previous statement)
+    10+20+30;
+    +40: //add to the result of the previous line.
+    But what if:
+    A=10;
+    +20;//add this to A or only to implicit var or error? -> no error. Add to Implicit result.
+    B=50;
+    +=30; //add to var of previous line.
+    +=40;// continue adding…
+
+    C=_; //underscore is implicit var. Assign last value to C, which is B in this case;
+    70;
+    D=_;//D = 70
+
+* resolve equations
+* Variable ranges and wildcards
+    Sum(a..z) : // sum all vars a to z
+    Sum(a*); sum all vars that start with a; -> ambiguous syntax
+    Sum([a*]);
+    Ranges: always use [] ?
+    Allow both (a..z) and ([a..z])
+
+* simplify
+* Latex visualisation
+
+Vectors
+----------
+* ||x|| is the normalized vector.
+  > If x = (x1, x2, x3) then ||x|| = (x1^2 + x2^2 + x3^2)^(1/2)
+
+
+Extra operators
+---------------
+https://www.statmethods.net/management/operators.html
