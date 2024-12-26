@@ -54,6 +54,7 @@ pub enum NodeType {
     Block(CodeBlock),
     Define(DefineExpr),
     Pragma(PragmaExpr),
+    Assignable(AssignableExpr)
 }
 
 impl NodeType {
@@ -87,6 +88,7 @@ impl HasRange for NodeType {
             N::Block(expr) => expr.get_range(),
             N::Define(expr) => expr.get_range(),
             N::Pragma(expr) => expr.get_range(),
+            N::Assignable(expr) => expr.get_range(),
         }
     }
 }
@@ -122,14 +124,29 @@ impl HasRange for CommentExpr {
     }
 }
 
-pub struct AssignExpr {
+pub struct AssignableExpr {
     pub id: Token,
+    pub fragment: Option<Token>,
+}
+
+impl HasRange for AssignableExpr {
+    fn get_range(&self) -> Range {
+        let mut range = self.id.range.clone();
+        if let Some(fragment)  = &self.fragment {
+            range = &range + &fragment.range;
+        }
+        range
+    }
+}
+
+pub struct AssignExpr {
+    pub assignable: AssignableExpr,
     pub expr: Box<Node>,
 }
 
 impl HasRange for AssignExpr {
     fn get_range(&self) -> Range {
-        &self.id.range + &self.expr.get_range()
+        &self.assignable.get_range() + &self.expr.get_range()
     }
 }
 

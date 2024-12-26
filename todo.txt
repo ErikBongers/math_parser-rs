@@ -22,17 +22,6 @@
 * localstorage per user, when logged in.
   > Otherwise, files for different users will share the same LocalStorage value.
 
-* Comment is just appended to the previous line.
-  Note the missing semi-colon:
-  rest=q*159
-  !//***Tent***
-
-  OUTPUT:
-  rest=1184.55Tent1
-
-* add update of version no to makefile.
-  > add inc_version as a build depencency and run it from the target dir.
-  
 * now()-1day --> does this work?
 
 * add % unit?

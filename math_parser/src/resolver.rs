@@ -103,7 +103,12 @@ impl<'g, 'a> Resolver<'g, 'a> {
             NodeType::Define(expr) => { self.resolve_define_expr(expr) },
             NodeType::Pragma(expr) => { Value::none(expr.get_range()) },
             NodeType::None(expr) => { Value::none(expr.get_range()) },
+            NodeType::Assignable(_) => { self.resolve_assignable_expr() }
         }
+    }
+
+    fn resolve_assignable_expr(&mut self) -> Value {
+        unreachable!() //TODO: how is an assignable resolved? Removed this function if not needed.
     }
 
     fn resolve_codeblock_expr(&mut self, code_block: &CodeBlock) -> Value {
@@ -445,32 +450,32 @@ impl<'g, 'a> Resolver<'g, 'a> {
 
     fn resolve_assign_expr(&mut self, assign_expr: &AssignExpr) -> Value {
         let mut value = self.resolve_node(&assign_expr.expr);
-        let id_str = self.globals.get_text(&assign_expr.id.range).to_string();
+        let id_str = self.globals.get_text(&assign_expr.assignable.id.range).to_string();
         if !self.scope.borrow().variables.contains_key(&id_str) {
             if self.scope.borrow().function_exists(&id_str, self.globals) {
-                self.errors.push(errors::w_var_is_function(id_str.as_str(), assign_expr.id.range.clone()));
+                self.errors.push(errors::w_var_is_function(id_str.as_str(), assign_expr.assignable.id.range.clone()));
             }
             if self.scope.borrow().units_view.units.contains(&id_str) {
                 if self.scope.borrow().strict {
-                    return self.add_error_value(errors::var_is_unit(id_str.as_str(), assign_expr.id.range.clone()));
+                    return self.add_error_value(errors::var_is_unit(id_str.as_str(), assign_expr.assignable.id.range.clone()));
                 } else {
-                    self.errors.push(errors::w_var_is_unit(id_str.as_str(), assign_expr.id.range.clone()));
+                    self.errors.push(errors::w_var_is_unit(id_str.as_str(), assign_expr.assignable.id.range.clone()));
                 }
             }
         }
         //disallow redefine of constant in case of `strict`. Error has already been added
         if self.globals.constants.contains_key(&id_str.as_str()) {
             if self.scope.borrow().strict {
-                self.errors.push(errors::const_redef(id_str.as_str(), assign_expr.id.range.clone()));
+                self.errors.push(errors::const_redef(id_str.as_str(), assign_expr.assignable.id.range.clone()));
                 return value;
             } else {
-                self.errors.push(errors::w_const_redef(id_str.as_str(), assign_expr.id.range.clone()));
+                self.errors.push(errors::w_const_redef(id_str.as_str(), assign_expr.assignable.id.range.clone()));
             }
         }
         self.scope.borrow_mut().variables.insert(id_str.clone(), value.clone());
-        value.id = Some(assign_expr.id.range.clone()); //add id here to avoid adding id to the self.scope.variables.
+        value.id = Some(assign_expr.assignable.id.range.clone()); //add id here to avoid adding id to the self.scope.variables.
         if let Variant::None = value.variant {
-            self.errors.push(errors::var_no_value(id_str.as_str(), assign_expr.id.range.clone()));
+            self.errors.push(errors::var_no_value(id_str.as_str(), assign_expr.assignable.id.range.clone()));
         }
         value
     }

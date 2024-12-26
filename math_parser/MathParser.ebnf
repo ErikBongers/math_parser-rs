@@ -31,8 +31,21 @@ functionParamDefs = { id [ ',' id ] }
 exprStatement = addExpr 
                 assignment
 
-assignment = id '=' listExpr
-             id ('+=' | '-=' | '*=' | '/=') addExpr 
+assignment = assignable '=' listExpr
+             assignable ('+=' | '-=' | '*=' | '/=') addExpr
+
+assignable = id [ '.' fragment ]
+
+fragment = 'day'
+           'month'
+           'year'
+           'days'
+           'months'
+           'years'
+
+//since assignemt may backtrack after parsing what appears to be an assignable, addExpr should allow to start from the already parsed tokens.
+// easy way to backtrack: add a save-point and revert to it, if needed.
+// Van Rossum's way (ratpacking): inifinte backtrack/lookahead. https://medium.com/@gvanrossum_83706/peg-parsers-7ed72462f97c
 
 addExpr = multExpr [ ("+" | "-") multExpr ]
 

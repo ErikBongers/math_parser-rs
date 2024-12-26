@@ -11,6 +11,7 @@ pub struct PeekingTokenizer<'a> {
     prev_cur: Cursor<'a>,
     peeked_token: Token,
     current_number: Number,
+    savepoints: Vec<PeekingTokenizer<'a>>
 }
 
 impl<'a> PeekingTokenizer<'a> {
@@ -24,7 +25,20 @@ impl<'a> PeekingTokenizer<'a> {
             prev_cur,
             peeked_token,
             current_number,
+            savepoints: Vec::new()
         }
+    }
+
+    pub fn set_savepoint(&mut self) {
+        self.savepoints.push(self.clone())
+    }
+
+    pub fn restore_to_savepoint(&mut self) {
+        if let Some(savepoint) = self.savepoints.pop() {
+            *self = savepoint;
+            return;
+        }
+        assert!(false, "Trying to restore a savepoint, but none are present.");
     }
 
     pub fn get_errors(&self) -> &Vec<Error> {self.cur.errors.as_ref()}

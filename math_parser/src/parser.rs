@@ -1,6 +1,6 @@
 use crate::errors;
 use crate::errors::{Error, unknown_expr};
-use crate::parser::nodes::{AssignExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, Define, DefineExpr, DefineType, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NodeType, NoneExpr, PostfixExpr, Pragma, PragmaExpr, PragmaType, Statement, UnaryExpr, UnitExpr};
+use crate::parser::nodes::{AssignExpr, AssignableExpr, BinExpr, CallExpr, CodeBlock, CommentExpr, ConstExpr, ConstType, Define, DefineExpr, DefineType, FunctionDefExpr, HasRange, IdExpr, ListExpr, Node, NodeType, NoneExpr, PostfixExpr, Pragma, PragmaExpr, PragmaType, Statement, UnaryExpr, UnitExpr};
 use crate::parser::nodes::DefineType::Precision;
 use crate::globals::Globals;
 use crate::tokenizer::cursor::Range;
@@ -307,20 +307,23 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     }
 
     fn parse_assign_expr(&mut self) -> Box<Node> {
-        if self.tok.peek().kind != TokenType::Id {
-            return self.parse_add_expr();
-        }
-        use TokenType::*;
-        let op_type = self.tok.peek_second().kind;
-        let (Eq | EqPlus | EqMin | EqMult | EqDiv | EqUnit) = op_type else {
+        self.tok.set_savepoint();
+        let assignable = self.parse_assignable();
+        let Some(assignable) = assignable else {
+            self.tok.restore_to_savepoint();
             return self.parse_add_expr();
         };
-
-        let id = self.tok.next();
+        use TokenType::*;
+        let op_type = self.tok.peek().kind.clone();
+        let (Eq | EqPlus | EqMin | EqMult | EqDiv | EqUnit) = op_type else {
+            self.tok.restore_to_savepoint();
+            return self.parse_add_expr();
+        };
+        //TODO: remove savepoint.
         if let Eq = op_type {
             let eq = self.tok.next();
             let assign_expr = AssignExpr {
-                id,
+                assignable,
                 expr: Parser::reduce_list(Node::boxed(NodeType::List(self.parse_list_expr())))
             };
 
@@ -330,14 +333,14 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
                 }
             }
 
-            let txt = self.globals.get_text(&assign_expr.id.range).to_string();
+            let txt = self.globals.get_text(&assign_expr.assignable.id.range).to_string();
             self.code_block.scope.borrow_mut().var_defs.insert(txt);
             return Node::boxed(NodeType::Assign(assign_expr));
         }
         //build this expression: AssignExpr {id, BinExpr{ IdExpr, op, expr }}
         let eq_op = self.tok.next();
         let id_expr = IdExpr {
-            id: id.clone(),
+            id: assignable.id.clone(),
         };
 
         let expr : Box<Node> = match op_type {
@@ -381,10 +384,19 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
         };
 
         let assign_expr = AssignExpr {
-            id,
+            assignable,
             expr,
         };
         Node::boxed(NodeType::Assign(assign_expr))
+    }
+
+    fn parse_assignable(&mut self) -> Option<AssignableExpr> {
+        if self.tok.peek().kind != TokenType::Id {
+            return None;
+        }
+        let id =self.tok.next();
+        Some(AssignableExpr { id, fragment: None })
+        //TODO: check for fragment.
     }
 
     fn parse_add_expr(&mut self) -> Box<Node> {
