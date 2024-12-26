@@ -195,6 +195,11 @@ day = 23;
 month = 12;
 a_day = date(day, month/2, now().year); // june 23, of this year
 ```
+A special string 'last' can be used instead of a numeric day value. Handy for february, where the last day depends on some conditions.
+```
+#define dmy
+a_day = date('last', 2, now().year); // february 29, of this year...or february 28 !!!
+```
 The parts of a date can be referenced, but not assigned to:
 ```
 thisMonth = now().month;
