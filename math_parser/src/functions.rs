@@ -147,7 +147,7 @@ pub fn create_global_function_defs() -> HashMap<String, GlobalFunctionDef> {
         ("floor".to_string(), GlobalFunctionDef { name: "floor".to_string(), min_args: 1, max_args: 1, execute: floor, func_type: FunctionType::Arithm}),
         ("ceil".to_string(), GlobalFunctionDef { name: "ceil".to_string(), min_args: 1, max_args: 1, execute: ceil, func_type: FunctionType::Arithm}),
 
-        ("factorial".to_string(), GlobalFunctionDef { name: "factors".to_string(), min_args: 1, max_args: 1, execute: factorial, func_type: FunctionType::Arithm}),
+        ("factorial".to_string(), GlobalFunctionDef { name: "factorial".to_string(), min_args: 1, max_args: 1, execute: factorial, func_type: FunctionType::Arithm}),
 
         ("sin".to_string(), GlobalFunctionDef { name: "sin".to_string(), min_args: 1, max_args: 1, execute: sin, func_type: FunctionType::Trig}),
         ("cos".to_string(), GlobalFunctionDef { name: "cos".to_string(), min_args: 1, max_args: 1, execute: cos, func_type: FunctionType::Trig}),
