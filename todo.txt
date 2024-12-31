@@ -1,10 +1,4 @@
-* the infinite peek() problem.
-  A parser buiilds an AST.
-  parse_assignable parses id [ ',' fragment ] and that's a lhs (assignable) expression.
-  This is a mini-ast (a node !)
-
-
-
+* do not implement infinite peek, but parse a potential(!) assignable and check it's validity in the resolver.
 
 * #pragma: is not restricted to scope (block)
 
