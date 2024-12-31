@@ -25,7 +25,7 @@ impl<'a> PeekingTokenizer<'a> {
             prev_cur,
             peeked_token,
             current_number,
-            savepoints: Vec::new()
+            savepoints: Vec::new() //TODO: this happens for EVERY statement as this passes through parse_assign(). Perhaps implement the peek() in function of this vector to implement infinite peek()?
         }
     }
 

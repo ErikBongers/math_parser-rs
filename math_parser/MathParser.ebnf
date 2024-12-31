@@ -102,4 +102,5 @@ dateElement = integer | 'last' | monthName | dayName | timeString
 dateSeparator = ' ' | '/' | '-'
 
 timeSeparator = ':'
-timeString = ...
+timeString = ...todo...
+id = ...starts with a char and can contain no special chars. Well, you know what an ID is.

@@ -1,3 +1,11 @@
+* the infinite peek() problem.
+  A parser buiilds an AST.
+  parse_assignable parses id [ ',' fragment ] and that's a lhs (assignable) expression.
+  This is a mini-ast (a node !)
+
+
+
+
 * #pragma: is not restricted to scope (block)
 
 * var.fragment=x; --> gives error: unexpected ';'. Should be "can't assign to..."
