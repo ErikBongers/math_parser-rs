@@ -5,7 +5,7 @@
 .PHONY: test
 .PHONY: wasm
 
-rust_deps := $(wildcard math_parser/src/*.rs) $(wildcard math_parser/src/*/*.rs)
+rust_deps := $(wildcard math_parser/src/*.rs) $(wildcard math_parser/src/*/*.rs) $(wildcard wasm/src/*.rs)
 parser_deps := $(wildcard www/typescript/*.ts)
 editor_deps := $(wildcard www/editor/lang-mathparser/src/*.ts www/editor/lang-mathparser/src/*.js www/editor/lang-mathparser/src/lezer_generated/*.js)
 #wasm is only build when version.no is changed. Thus assuming a bin build is always done prior to a wasm build.
