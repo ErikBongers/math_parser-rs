@@ -1,3 +1,63 @@
+function funk() {
+#pragma dot_and_comma
+(1,2,3,4);
+a=2;
+4/2a;
+m=123/PI;
+// B10=; // Error should be here
+// B10*3;
+123;
+}
+{
+'01 jan 2022'+2days;
+(1,2,3,4);
+}
+
+funk();
+B100=0;
+B50=1;
+B20=4;
+B10=; // Error should be here
+B5=2;
+Btot=B100*100+B50*50+B20*20+B10*10+B5*5; // But reported here
+
+(0C+0C);
+(((3C.K.-0C.K.)+(3F.K.-0F.K.))+0F.K.)K.F;
+#define dmy
+nu = now();
+daglater = '2024-DEC-7';
+eendag = daglater-nu;
+walater = '2024-DEC-12';
+paardage = walater-nu;
+ikke= age('30/07/1968') + eendag;
+dad = age('12/04/1933');
+(dad - ikke);
+
+
+
+drive1=42/13;
+drive2=77/13;
+drive=drive1*drive2;
+fake=3.2*5.9;
+
+
+1m+12cm;
+
+12.34.56.78;
+#pragma dot_and_comma
+12,34,56,78;
+(1, 2, 3, 4, 5);
+(1,2,3,4,5); //<< should give error!
+25thou.mm;
+{
+fun(5);
+function fun(a)
+{
+a + 3;
+}
+1;
+}
+2thou.mm;
 Δa= 68F.C;
 cos(30deg);
 // #undef trig
@@ -54,9 +114,9 @@ x=(3^2)zzzzsdfsdf; // should give error!!
 lastDay=now().year, 12, 'last'; //31, 30 28 or 29?
 date(lastDay);
 #define dmy
-dat='1/2/3';
+dat='1/2/2023';
 #define mdy
-dat='1/2/3';
+dat='1/2/2023';
 a=13;
 b=2a^3;
 sin(1deg)/2;

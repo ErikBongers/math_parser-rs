@@ -307,19 +307,15 @@ impl<'g, 'a, 't> Parser<'g, 'a, 't> {
     }
 
     fn parse_assign_expr(&mut self) -> Box<Node> {
-        self.tok.set_savepoint();
-        let assignable = self.parse_assignable();
+        let assignable = self.parse_assignable(); //TODO: should only eat assignable. For now, just an ID. We'll deal with fragments later.
         let Some(assignable) = assignable else {
-            self.tok.restore_to_savepoint();
             return self.parse_add_expr();
         };
         use TokenType::*;
         let op_type = self.tok.peek().kind.clone();
         let (Eq | EqPlus | EqMin | EqMult | EqDiv | EqUnit) = op_type else {
-            self.tok.restore_to_savepoint();
             return self.parse_add_expr();
         };
-        //TODO: remove savepoint.
         if let Eq = op_type {
             let eq = self.tok.next();
             let assign_expr = AssignExpr {
